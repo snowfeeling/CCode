@@ -3,10 +3,11 @@
 // Created by Wangss 2022-10-02
 
 #include <stdio.h>
+#include "../inc/sayhello.h"
 
 int main()
 {
-   printf("Helllo World.");
+   SayHello();  
    printf("\nI am listening to the rain.");
    return 0; 
 }
