@@ -17,6 +17,7 @@ int main ()
     //testQuickSort();
 
     testMyBPTree();
+    //testBPTree();
     return 0;
 
 }
