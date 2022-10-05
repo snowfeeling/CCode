@@ -49,12 +49,12 @@ int GetHeight(Node *const root);
 int PathToRoot(Node *const root, Node *child);
 void PrintLeaves(Node *const root);
 void PrintTree(Node *const root);
-void find_and_print(Node *const root, int key, bool verbose);
-void find_and_print_range(Node *const root, int range1, int range2, bool verbose);
-int find_range(Node *const root, int key_start, int key_end, bool verbose,
+void FindAndPrint(Node *const root, int key, bool verbose);
+void FindAndPrintRange(Node *const root, int range1, int range2, bool verbose);
+int FindRange(Node *const root, int key_start, int key_end, bool verbose,
                int returned_keys[], void *returned_pointers[]);
-Node *find_leaf(Node *const root, int key, bool verbose);
-Record *find(Node *root, int key, bool verbose, Node **leaf_out);
+Node *FindLeaf(Node *const root, int key, bool verbose);
+Record *Find(Node *root, int key, bool verbose, Node **leaf_out);
 
 // Insertion：插入的模块
 
@@ -240,8 +240,44 @@ int GetLeftIndex(Node *parent, Node *left)
     return left_index;
 }
 
-/* 输出BP tree,按照层级，每个节点的数值之间，使用 | 分开
- * 如果设定 verbose_output,输出指针的值，使用16进制
+/* Prints the bottom row of keys of the tree (with their respective pointers, if the verbose_output flag is set.)
+*   输出tree的叶子节点的key，就是所有的最底层的节点
+ */
+void PrintLeaves(Node *const root)
+{
+    if (root == NULL)
+    {
+        printf("Empty tree.\n");
+        return;
+    }
+    int i;
+    Node *c = root;
+    while (!c->is_leaf)
+        c = c->pointers[0];  //直接找到最左端的叶子节点
+    while (true)
+    {
+        for (i = 0; i < c->num_keys; i++) // 输出该节点的key值
+        {
+            if (verbose_output)
+                printf("%p ", c->pointers[i]);
+            printf("%d ", c->keys[i]);
+        }
+        if (verbose_output)
+            printf("%p ", c->pointers[order - 1]);
+        if (c->pointers[order - 1] != NULL)
+        {
+            printf(" | ");
+            c = c->pointers[order - 1]; // 走向下一个。说明所有的叶子节点是连着的？
+        }
+        else
+            break;
+    }
+    printf("\n");
+}
+
+/* 输出BP tree,按照层级，每个节点的数值之间，使用 | 分开。
+ * 如果设定 verbose_output,输出指针的值，使用16进制。
+ *  每次做了增删操作之后，就使用该函数输出整个tree。
  */
 void PrintTree(Node *const root)
 {
@@ -261,11 +297,11 @@ void PrintTree(Node *const root)
     while (queue != NULL)
     {
         n = DeQueue(); //弹出一个Node
-        // 如果
+        // 如果 n的父节点不为空，且n就是父节点的最左节点
         if (n->parent != NULL && n == n->parent->pointers[0])
         {
-            new_rank = path_to_root(root, n);
-            if (new_rank != rank)
+            new_rank = path_to_root(root, n); //算出从n到root的高度
+            if (new_rank != rank)  // 如果与原来的高度不一样，就换成新的高度，并换行。
             {
                 rank = new_rank;
                 printf("\n");
@@ -273,15 +309,15 @@ void PrintTree(Node *const root)
         }
         if (verbose_output)
             printf("(%p)", n);
-        for (i = 0; i < n->num_keys; i++)
+        for (i = 0; i < n->num_keys; i++)   //从左边开始，到本节点的最多值数，打印key值
         {
             if (verbose_output)
-                printf("%p ", n->pointers[i]);
-            printf("%d ", n->keys[i]);
+                printf("%p ", n->pointers[i]);  //16进制输出指针的值
+            printf("%d ", n->keys[i]);  // 输出key的值
         }
-        if (!n->is_leaf)
-            for (i = 0; i <= n->num_keys; i++)
-                enqueue(n->pointers[i]);
+        if (!n->is_leaf)  //如果本节点不是叶子，就把所有节点都压入队列。
+            for (i = 0; i <= n->num_keys; i++)   //从0到节点的key数
+                EnQueue(n->pointers[i]);
         if (verbose_output)
         {
             if (n->is_leaf)
@@ -294,6 +330,156 @@ void PrintTree(Node *const root)
     printf("\n");
 }
 
+/* Finds the record under a given key and prints an appropriate message to stdout.
+*   根据Key，找到树中的节点，并打印。
+ */
+void FindAndPrint(Node *const root, int key, bool verbose)
+{
+    Node *leaf = NULL;
+    Record *r = find(root, key, verbose, NULL);
+    if (r == NULL)
+        printf("Record not found under key %d.\n", key);
+    else
+        printf("Record at %p -- key %d, value %d.\n", r, key, r->value);
+}
+
+/* Finds and prints the keys, pointers, and values within a range
+ * of keys between key_start and key_end, including both bounds.
+ */
+void FindAndPrintRange(Node *const root, int key_start, int key_end, bool verbose)
+{
+    int i;
+    int array_size = key_end - key_start + 1;
+    int returned_keys[array_size];
+    void *returned_pointers[array_size];
+    int num_found = find_range(root, key_start, key_end, verbose,
+                               returned_keys, returned_pointers);
+    if (!num_found)
+        printf("None found.\n");
+    else
+    {
+        for (i = 0; i < num_found; i++)
+            printf("Key: %d   Location: %p  Value: %d\n",
+                   returned_keys[i],
+                   returned_pointers[i],
+                   ((Record *) returned_pointers[i]) ->value);
+    }
+}
+
+
+/* Finds keys and their pointers, if present, in the range specified
+ * by key_start and key_end, inclusive.  Places these in the arrays
+ * returned_keys and returned_pointers, and returns the number of
+ * entries found.
+ */
+int FindRange(Node *const root, int key_start, int key_end, bool verbose,
+               int returned_keys[], void *returned_pointers[])
+{
+    int i, num_found;
+    num_found = 0;
+    Node *n = find_leaf(root, key_start, verbose);
+    if (n == NULL)
+        return 0;
+    for (i = 0; i < n->num_keys && n->keys[i] < key_start; i++)
+        ;
+    if (i == n->num_keys)
+        return 0;
+    while (n != NULL)
+    {
+        for (; i < n->num_keys && n->keys[i] <= key_end; i++)
+        {
+            returned_keys[num_found] = n->keys[i];
+            returned_pointers[num_found] = n->pointers[i];
+            num_found++;
+        }
+        n = n->pointers[order - 1];
+        i = 0;
+    }
+    return num_found;
+}
+
+/* Traces the path from the root to a leaf, searching by key.  
+*   Displays information about the path if the verbose flag is set.
+ *  Returns the leaf containing the given key.
+ *  根据key从root开始，寻找一个leaf。
+ */
+Node *FindLeaf(Node *const root, int key, bool verbose)
+{
+    if (root == NULL)
+    {
+        if (verbose)
+            printf("Empty tree.\n");
+        return root;
+    }
+    int i = 0;
+    Node *c = root; //从root开始寻找。
+    while (!c->is_leaf) //如果不是叶子
+    {
+        if (verbose)
+        {
+            printf("[");
+            for (i = 0; i < c->num_keys - 1; i++)
+                printf("%d ", c->keys[i]);
+            printf("%d] ", c->keys[i]);
+        }
+        i = 0;
+        while (i < c->num_keys)     //在节点里面寻找
+        {
+            if (key >= c->keys[i])  //如果key>=当前节点的key值，就往下找
+                i++;
+            else        //如果Key小于当前节点的key值，就停止，从这个点的指针往下走，
+                break;
+        }
+        if (verbose)
+            printf("%d ->\n", i);
+        c = (Node *)c->pointers[i]; // 走到这个点的指针。
+    }
+    if (verbose)
+    {
+        printf("Leaf [");
+        for (i = 0; i < c->num_keys - 1; i++)
+            printf("%d ", c->keys[i]);
+        printf("%d] ->\n", c->keys[i]);
+    }
+    return c;
+}
+
+
+/* ---------------------------------------------------------------------
+ * Finds and returns the record to whicha key refers.
+ */
+Record *Find(Node *root, int key, bool verbose, Node **leaf_out)
+{
+    if (root == NULL)
+    {
+        if (leaf_out != NULL)
+        {
+            *leaf_out = NULL;
+        }
+        return NULL;
+    }
+
+    int i = 0;
+    Node *leaf = NULL;
+
+    leaf = FindLeaf(root, key, verbose);
+
+    /* If root != NULL, leaf must have a value, even  if it does not contain the desired key.
+     * (The leaf holds the range of keys that would include the desired key.) 
+     */
+
+    for (i = 0; i < leaf->num_keys; i++)
+        if (leaf->keys[i] == key)       //如果第i个Key = key，则说明找到，直接退出。
+            break;
+    if (leaf_out != NULL)       //这个参数没有调用
+    {
+        *leaf_out = leaf;
+    }
+    if (i == leaf->num_keys)    //如果找完本节点所有key，说明没有找到。
+        return NULL;
+    else
+        return (Record *)leaf->pointers[i];
+}
 
 // The MAIN program
 
@@ -328,7 +514,7 @@ int testBPTree()
     
     usage_1();
 
-    print_tree(root);
+    PrintTree(root);
 
     // return EXIT_SUCCESS;
 
@@ -344,7 +530,7 @@ int testBPTree()
         case 'd':
             scanf("%d", &input_key);
             root = delete (root, input_key);
-            print_tree(root);
+            PrintTree(root);
             break;
         case 'i':
             fgets(buffer, BUFFER_SIZE, stdin);
@@ -353,12 +539,12 @@ int testBPTree()
             if (count == 1)
                 input_key_2 = input_key;
             root = insert(root, input_key, input_key_2);
-            print_tree(root);
+            PrintTree(root);
             break;
         case 'f':
         case 'p':
             scanf("%d", &input_key);
-            find_and_print(root, input_key, instruction == 'p');
+            FindAndPrint(root, input_key, instruction == 'p');
             break;
         case 'r':
             scanf("%d %d", &input_key, &input_key_2);
@@ -368,10 +554,10 @@ int testBPTree()
                 input_key_2 = input_key;
                 input_key = tmp;
             }
-            find_and_print_range(root, input_key, input_key_2, instruction == 'p');
+            FindAndPrintRange(root, input_key, input_key_2, instruction == 'p');
             break;
         case 'l':
-            print_leaves(root);
+            PrintLeaves(root);
             break;
         case 'q':
             while (getchar() != (int)'\n')
@@ -386,7 +572,7 @@ int testBPTree()
             return EXIT_SUCCESS;
             break;
         case 't':
-            print_tree(root);
+            PrintTree(root);
             break;
         case 'v':
             verbose_output = !verbose_output;
@@ -394,7 +580,7 @@ int testBPTree()
         case 'x':
             if (root)
                 root = destroy_tree(root);
-            print_tree(root);
+            PrintTree(root);
             break;
         default:
             usage_2();
