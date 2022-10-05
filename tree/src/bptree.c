@@ -240,9 +240,8 @@ int GetLeftIndex(Node *parent, Node *left)
     return left_index;
 }
 
-/* Prints the B+ tree in the command line in level (rank) order, with the 
- * keys in each Node and the '|' symbol  to separate Nodes.
- * With the verbose_output flag set,输出指针的值，使用16进制
+/* 输出BP tree,按照层级，每个节点的数值之间，使用 | 分开
+ * 如果设定 verbose_output,输出指针的值，使用16进制
  */
 void PrintTree(Node *const root)
 {
@@ -257,11 +256,12 @@ void PrintTree(Node *const root)
         printf("Empty tree.\n");
         return;
     }
-    queue = NULL;
-    enqueue(root);
+    queue = NULL;   //设置队列为空
+    EnQueue(root);  // 把root压入队列
     while (queue != NULL)
     {
-        n = dequeue();
+        n = DeQueue(); //弹出一个Node
+        // 如果
         if (n->parent != NULL && n == n->parent->pointers[0])
         {
             new_rank = path_to_root(root, n);
