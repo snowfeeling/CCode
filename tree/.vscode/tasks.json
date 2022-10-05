@@ -7,13 +7,10 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                //"${file}",
                 "${cwd}/app/*.c",
                 "${cwd}/src/*.c",
                 "-o",
-                //"${fileDirname}\\${fileBasenameNoExtension}.exe"
-                "${cwd}/bin/${fileBasenameNoExtension}.exe",
-
+                "${cwd}/bin/${fileBasenameNoExtension}.exe"
             ],
             "options": {
                 "cwd": "C:\\msys64\\mingw64\\bin"
@@ -26,7 +23,7 @@
                 "isDefault": true
             },
             "detail": "调试器生成的任务。"
-        }
+        },
     ],
     "version": "2.0.0"
 }

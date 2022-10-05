@@ -7,16 +7,18 @@
 //#include "../inc/testtree.h"
 //#include "../inc/quicksort.h"
 //#include "../inc/btree.h"
-//#include "../inc/bptree.h"
-#include "../inc/mybptree.h"
+#include "../inc/bptree.h"
+//#include "../inc/mybptree.h"
+
 
 int main ()
 {
     SayHello();
     //testTree();
     //testQuickSort();
-    
-    testMyBPTree();
+
+    //testMyBPTree();
+    testBPTree();
     return 0;
 
 }

@@ -901,7 +901,7 @@ int get_neighbor_index(node *n)
 
     // Error state.
     printf("Search for nonexistent pointer to node in parent.\n");
-    printf("Node:  %#lx\n", (unsigned long)n);
+    printf("Node:  %#lx\n", (unsigned long*)n);
     exit(EXIT_FAILURE);
 }
 

@@ -39,17 +39,17 @@ typedef struct record
  * 在叶子节点中，有效Pointer数目=num_keys，存放的是data。
  * 最后的叶子Pointer指向下一个叶子。
  */
-struct node
+struct _node
 {
     void **pointers;  // 有DEFAULT_ORDER个Pointer，
     int *keys ;       // 最多有DEFAULT_ORDER-1个Key
-    struct node *parent;            //指向父节点
+    struct _node *parent;            //指向父节点
     bool is_leaf;                   // 是否是叶子节点
     int num_keys;                   //最多有DEFAULT_ORDER -1个key
-    struct node *next;              // Used for queue.
-};
+    struct _node *next;              // Used for queue.
+} ;
 
-typedef struct node Node;
+typedef struct _node node;
 
 int testBPTree();
 
