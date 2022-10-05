@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 // Default order is 4.B+树的阶数
-#define DEFAULT_ORDER 4
+#define DEFAULT_ORDER 5
 
 // 最小阶数必须是3，最大可以自己确定
 #define MIN_ORDER 3
