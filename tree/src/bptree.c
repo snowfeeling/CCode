@@ -14,7 +14,7 @@
  *  Usage:  bpt [order]
  *  where order is an optional argument
  *  (integer MIN_ORDER <= order <= MAX_ORDER)
- *  defined as the maximal number of pointers in any node.
+ *  defined as the maximal number of pointers in any Node.
  *
  */
 
@@ -42,11 +42,26 @@ Node *queue = NULL;
 bool verbose_output = false;
 void usage_1(void);
 void usage_2(void);
-void enqueue(Node *new_node);
-Node *dequeue(void);
+int Cut(int length);
+void EnQueue(Node *NewNode);
+Node *DeQueue(void);
+int GetHeight(Node *const root);
+int PathToRoot(Node *const root, Node *child);
+void PrintLeaves(Node *const root);
+void PrintTree(Node *const root);
+void find_and_print(Node *const root, int key, bool verbose);
+void find_and_print_range(Node *const root, int range1, int range2, bool verbose);
+int find_range(Node *const root, int key_start, int key_end, bool verbose,
+               int returned_keys[], void *returned_pointers[]);
+Node *find_leaf(Node *const root, int key, bool verbose);
+Record *find(Node *root, int key, bool verbose, Node **leaf_out);
 
-Record *make_record(int value);
+// Insertion：插入的模块
 
+Record *MakeRecord(int value);
+Node *MakeEmptyNode(void);
+Node * MakeEmptyLeaf(void);
+int GetLeftIndex(Node *parent, Node *left);
 
 /* First message to the user.
  */
@@ -76,14 +91,29 @@ void usage_2(void)
            "\t? -- Print this help message.\n");
 }
 
+/*  Finds the appropriate place to *split a Node that is too big into two.
+*   如果一个节点太大，就分裂成两个。变成几个，根据长度来决定。
+*   如果长度是2的倍速，就变成长度/2
+*   如是长度不是2的倍数，就变成（长度/2）+1
+*   length=4，则变成2
+*   length=5，则变成3
+ */
+int Cut(int length)
+{
+    if (length % 2 == 0)
+        return length / 2;
+    else
+        return length / 2 + 1;
+}
+
 /* Helper function for printing the  tree out.  See print_tree.
  */
-void enqueue(Node *new_node)
+void EnQueue(Node *NewNode)
 {
     Node *c;
     if (queue == NULL)
     {
-        queue = new_node;
+        queue = NewNode;
         queue->next = NULL;
     }
     else
@@ -93,14 +123,14 @@ void enqueue(Node *new_node)
         {
             c = c->next;
         }
-        c->next = new_node;
-        new_node->next = NULL;
+        c->next = NewNode;
+        NewNode->next = NULL;
     }
 }
 
 /* Helper function for printing the tree out.  See print_tree.
  */
-Node *dequeue(void)
+Node *DeQueue(void)
 {
     Node *n = queue;
     queue = queue->next;
@@ -108,10 +138,43 @@ Node *dequeue(void)
     return n;
 }
 
+/* Utility function to give the height of the tree, which length in number of edges
+ * of the path from the root to any leaf.
+ *  从根开始，如果不是leaf，就从最左边的节点指针往下找。
+ */
+int GetHeight(Node *const root)
+{
+    int h = 0;
+    Node *c = root;
+    while (!c->is_leaf)
+    {
+        c = c->pointers[0];
+        h++;
+    }
+    return h;
+}
+
+/* Utility function to give the length in edges of the path from any Node to the root.
+ *  返回从节点到root的高度数值。
+ */
+int PathToRoot(Node *const root, Node *child)
+{
+    int length = 0;
+    Node *c = child;
+    while (c != root)
+    {
+        c = c->parent;
+        length++;
+    }
+    return length;
+}
+
+
+
 /* Creates a new record to hold the value
  * to which a key refers.
  */
-Record *make_record(int value)
+Record * MakeRecord(int value)
 {
     Record *new_record = (Record *)malloc(sizeof(Record));
     if (new_record == NULL)
@@ -124,6 +187,111 @@ Record *make_record(int value)
         new_record->value = value;
     }
     return new_record;
+}
+
+Node * MakeEmptyNode(void)
+{
+    Node *NewNode;
+    NewNode = malloc(sizeof(Node));
+    if (NewNode == NULL)
+    {
+        perror("Node creation.");
+        exit(EXIT_FAILURE);
+    }
+    NewNode->keys = malloc((order - 1) * sizeof(int)); // （阶数-1） 个key
+    if (NewNode->keys == NULL)
+    {
+        perror("New Node keys array.");
+        exit(EXIT_FAILURE);
+    }
+    NewNode->pointers = malloc(order * sizeof(void *)); // （阶数） 个key
+    if (NewNode->pointers == NULL)
+    {
+        perror("New Node pointers array.");
+        exit(EXIT_FAILURE);
+    }
+    NewNode->is_leaf = false;
+    NewNode->num_keys = 0;
+    NewNode->parent = NULL;
+    NewNode->next = NULL;
+    return NewNode;
+}
+
+/* Creates a new leaf by creating a Node
+ * and then adapting it appropriately.
+ */
+Node * MakeEmptyLeaf(void)
+{
+    Node *leaf = MakeEmptyNode();
+    leaf->is_leaf = true;
+    return leaf;
+}
+
+/* Helper function used in insert_into_parent  to find the index of the parent's pointer to 
+ * the Node to the left of the key to be inserted.
+ * 在insert_into_parent中使用，找到父节点的指针，指向即将插入的key所在的节点，返回该节点的index.
+ * 从父节点，从左边开始寻找，如果小于父节点的key数，且父节点的pointer不是left，继续寻找，直到找到是left。
+ */
+int GetLeftIndex(Node *parent, Node *left)
+{
+    int left_index = 0;
+    while (left_index <= parent->num_keys && parent->pointers[left_index] != left)
+        left_index++;
+    return left_index;
+}
+
+/* Prints the B+ tree in the command line in level (rank) order, with the 
+ * keys in each Node and the '|' symbol  to separate Nodes.
+ * With the verbose_output flag set,输出指针的值，使用16进制
+ */
+void PrintTree(Node *const root)
+{
+
+    Node *n = NULL;
+    int i = 0;
+    int rank = 0;
+    int new_rank = 0;
+
+    if (root == NULL)
+    {
+        printf("Empty tree.\n");
+        return;
+    }
+    queue = NULL;
+    enqueue(root);
+    while (queue != NULL)
+    {
+        n = dequeue();
+        if (n->parent != NULL && n == n->parent->pointers[0])
+        {
+            new_rank = path_to_root(root, n);
+            if (new_rank != rank)
+            {
+                rank = new_rank;
+                printf("\n");
+            }
+        }
+        if (verbose_output)
+            printf("(%p)", n);
+        for (i = 0; i < n->num_keys; i++)
+        {
+            if (verbose_output)
+                printf("%p ", n->pointers[i]);
+            printf("%d ", n->keys[i]);
+        }
+        if (!n->is_leaf)
+            for (i = 0; i <= n->num_keys; i++)
+                enqueue(n->pointers[i]);
+        if (verbose_output)
+        {
+            if (n->is_leaf)
+                printf("%p ", n->pointers[order - 1]);
+            else
+                printf("%p ", n->pointers[n->num_keys]);
+        }
+        printf("| ");
+    }
+    printf("\n");
 }
 
 

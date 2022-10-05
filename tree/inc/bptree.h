@@ -41,8 +41,8 @@ typedef struct record
  */
 struct node
 {
-    void *pointers[DEFAULT_ORDER];  // 有DEFAULT_ORDER个Pointer，
-    int keys [DEFAULT_ORDER];       // 最多有DEFAULT_ORDER-1个Key
+    void **pointers;  // 有DEFAULT_ORDER个Pointer，
+    int *keys ;       // 最多有DEFAULT_ORDER-1个Key
     struct node *parent;            //指向父节点
     bool is_leaf;                   // 是否是叶子节点
     int num_keys;                   //最多有DEFAULT_ORDER -1个key
