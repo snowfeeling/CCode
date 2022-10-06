@@ -37,7 +37,7 @@ int order = DEFAULT_ORDER;
  * 用于打印tree，按level顺序，从root开始，每层一行，到叶子结束
  */
 node *queue = NULL;
-
+TREE tree;
 /* 
  * 决定是否使用16进制打印
  */
@@ -91,6 +91,19 @@ node *delete (node *root, int key);
 
 // FUNCTION DEFINITIONS.
 
+/*====================================
+*   Tree functions.
+*   
+*/
+int init_tree();
+int empty_tree();
+int set_tree_order();
+int set_tree_height(node * root);
+int set_tree_root(node * root);
+int calc_leaf_num(node *const root);
+int set_tree_leaf_num(node * root);
+
+
 // OUTPUT AND UTILITIES
 
 /* Copyright and license notice to user at startup. 
@@ -137,6 +150,7 @@ void usage_2(void)
            "\tt -- Print the B+ tree.\n"
            "\tl -- Print the keys of the leaves (bottom row of the tree).\n"
            "\tv -- Toggle output of pointer addresses (\"verbose\") in tree and leaves.\n"
+           "\ts -- Show the tree information\n"
            "\tq -- Quit. (Or use Ctl-D or Ctl-C.)\n"
            "\t? -- Print this help message.\n");
 }
@@ -1263,6 +1277,100 @@ node *destroy_tree(node *root)
     return NULL;
 }
 
+/*  ==============================
+*   tree function implementation
+*/
+int init_tree()
+{
+    tree.root = NULL;
+    tree.leaf_num = 0;
+    tree.tree_height = 0;
+    tree.tree_order = order;
+    return 0;
+}
+int empty_tree()
+{
+    tree.root = NULL;
+    tree.leaf_num = 0;
+    tree.tree_height = 0;
+    tree.tree_order = order;
+    return 0;
+
+}
+
+int set_tree_order()
+{
+    tree.tree_order = order;
+    return 0;
+}
+
+int set_tree_height(node * root)
+{
+    tree.tree_height = height(root) + 1;
+}
+
+int set_tree_root(node * root)
+{
+    tree.root= root;
+    return 0;
+}
+
+int set_tree_leaf_num(node * root)
+{
+    tree.leaf_num = calc_leaf_num(root);
+    return 0;
+}
+int get_tree_height()
+{
+    return tree.tree_height;
+}
+int get_tree_leaf_num()
+{
+    return tree.leaf_num;
+}
+
+int calc_leaf_num(node *const root)
+{
+    if (root == NULL)
+        return 0;
+
+    int leaf_num = 0;
+    node *c = root;
+    while (!c->is_leaf)
+        c = c->pointers[0];
+    do 
+    {
+        leaf_num +=  c->num_keys;        
+        c = c->pointers[order - 1]; // 走向下一个叶子节点
+    } while (c != NULL);
+   
+    return leaf_num;
+}
+
+int get_tree_info(node * root)
+{
+    if (root)
+    {
+        set_tree_root(root);
+        set_tree_height(root);
+        set_tree_order();
+        set_tree_leaf_num(root);
+    }
+    else
+        empty_tree();
+    return 0;
+}
+int show_tree_info()
+{
+    if (tree.root == NULL)
+        printf("\nThe tree is empty. \n");
+
+    printf("The tree is at          : [%p]\n", tree.root);
+    printf("The tree order is       : [%d]\n", tree.tree_order);
+    printf("the tree hight is       : [%d]\n", tree.tree_height);
+    printf("The tree leaf number is : [%d]\n", tree.leaf_num);
+    return 0;
+}
 // MAIN
 
 int testBPTree()
@@ -1360,6 +1468,10 @@ int testBPTree()
             if (root)
                 root = destroy_tree(root);
             print_tree(root);
+            break;
+        case 's':
+            get_tree_info(root);
+            show_tree_info();
             break;
         default:
             usage_2();

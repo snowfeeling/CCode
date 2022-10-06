@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 // Default order is 4.B+树的阶数
-#define DEFAULT_ORDER 4
+#define DEFAULT_ORDER 6
 
 // 最小阶数必须是3，最大可以自己确定
 #define MIN_ORDER 3
@@ -50,6 +50,28 @@ struct _node
 } ;
 
 typedef struct _node node;
+
+/* Tree struct
+*   Record the tree's character 
+*   
+*/
+
+struct my_tree
+{
+    node * root;
+    int leaf_num;
+    int tree_height;
+    int tree_order;
+};
+
+
+typedef struct my_tree TREE;
+
+/*=======================================
+*   Tree functions
+*/
+int get_tree_height();
+int get_tree_leaf_num();
 
 int testBPTree();
 
