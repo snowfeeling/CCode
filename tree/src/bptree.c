@@ -65,8 +65,9 @@ node *find_leaf(node *const root, int key, bool verbose);
 Record *find(node *root, int key, bool verbose, node **leaf_out);
 int cut(int length);
 
-// Insertion.
-
+/* Insert functions.
+*   
+*/
 Record *make_record(int value);
 node *make_node(void);
 node *make_leaf(void);
@@ -80,8 +81,9 @@ node *insert_into_new_root(node *left, int key, node *right);
 node *start_new_tree(int key, Record *pointer);
 node *insert(node *root, int key, int value);
 
-// Deletion.
-
+/*
+*   Deletion.
+*/
 int get_neighbor_index(node *n);
 node *adjust_root(node *root);
 node *coalesce_nodes(node *root, node *n, node *neighbor, int neighbor_index, int k_prime);
@@ -101,18 +103,16 @@ int get_tree_height(node * root);
 int get_tree_root(node * root);
 int calc_leaf_num(node *const root);
 
-// OUTPUT AND UTILITIES
+/* OUTPUT AND UTILITIES
+*/
 
 /* Copyright and license notice to user at startup. 
  */
 void license_notice(void)
 {
-    printf("bpt version %s -- Copyright (c) 2018  Amittai Aviram "
-           "http://www.amittai.com\n",
-           Version);
+    printf("BPlus Tree version %s -- Copyright (c) 2022 Wangs", Version);
     printf("This program comes with ABSOLUTELY NO WARRANTY.\n"
-           "This is free software, and you are welcome to redistribute it\n"
-           "under certain conditions.\n"
+           "This is free software, and you are welcome to redistribute it under certain conditions.\n"
            "Please see the headnote in the source code for details.\n");
 }
 
@@ -175,9 +175,7 @@ void enqueue(node *new_node)
     {
         c = queue;
         while (c->next != NULL)
-        {
             c = c->next;
-        }
         c->next = new_node;
         new_node->next = NULL;
     }
@@ -361,8 +359,7 @@ void find_and_print_range(node *const root, int key_start, int key_end, bool ver
  * returned_keys and returned_pointers, and returns the number of
  * entries found.
  */
-int find_range(node *const root, int key_start, int key_end, bool verbose,
-               int returned_keys[], void *returned_pointers[])
+int find_range(node *const root, int key_start, int key_end, bool verbose, int returned_keys[], void *returned_pointers[])
 {
     int i, num_found;
     num_found = 0;
@@ -1301,7 +1298,6 @@ int get_tree_root(node * root)
     tree.root= root;
     return EXIT_SUCCESS;
 }
-
 
 int calc_leaf_num(node *const root)
 {
