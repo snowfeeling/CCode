@@ -95,14 +95,11 @@ node *delete (node *root, int key);
 *   Tree functions.
 *   
 */
-int init_tree();
 int empty_tree();
-int set_tree_order();
-int set_tree_height(node * root);
-int set_tree_root(node * root);
+int get_tree_order();
+int get_tree_height(node * root);
+int get_tree_root(node * root);
 int calc_leaf_num(node *const root);
-int set_tree_leaf_num(node * root);
-
 
 // OUTPUT AND UTILITIES
 
@@ -346,8 +343,7 @@ void find_and_print_range(node *const root, int key_start, int key_end, bool ver
     int array_size = key_end - key_start + 1;
     int returned_keys[array_size];
     void *returned_pointers[array_size];
-    int num_found = find_range(root, key_start, key_end, verbose,
-                               returned_keys, returned_pointers);
+    int num_found = find_range(root, key_start, key_end, verbose, returned_keys, returned_pointers);
     if (!num_found)
         printf("None found.\n");
     else
@@ -356,9 +352,7 @@ void find_and_print_range(node *const root, int key_start, int key_end, bool ver
             printf("Key: %d   Location: %p  Value: %d\n",
                    returned_keys[i],
                    returned_pointers[i],
-                   ((Record *)
-                        returned_pointers[i])
-                       ->value);
+                   ((Record *) returned_pointers[i]) ->value);
     }
 }
 
@@ -857,7 +851,7 @@ node *insert(node *root, int key, int value)
     record_pointer = find(root, key, false, NULL);
     if (record_pointer != NULL)
     {
-        /* If the key already exists in this tree, update   he value and return the tree. */
+        /* If the key already exists in this tree, update  the value and return the tree. */
         record_pointer->value = value;
         return root;
     }
@@ -1280,81 +1274,65 @@ node *destroy_tree(node *root)
 /*  ==============================
 *   tree function implementation
 */
-int init_tree()
-{
-    tree.root = NULL;
-    tree.leaf_num = 0;
-    tree.tree_height = 0;
-    tree.tree_order = order;
-    return 0;
-}
 int empty_tree()
 {
     tree.root = NULL;
     tree.leaf_num = 0;
     tree.tree_height = 0;
     tree.tree_order = order;
-    return 0;
+    return EXIT_SUCCESS;
 
 }
 
-int set_tree_order()
+int get_tree_order()
 {
     tree.tree_order = order;
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-int set_tree_height(node * root)
+int get_tree_height(node * root)
 {
     tree.tree_height = height(root) + 1;
+    return EXIT_SUCCESS;
 }
 
-int set_tree_root(node * root)
+int get_tree_root(node * root)
 {
     tree.root= root;
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-int set_tree_leaf_num(node * root)
-{
-    tree.leaf_num = calc_leaf_num(root);
-    return 0;
-}
-int get_tree_height()
-{
-    return tree.tree_height;
-}
-int get_tree_leaf_num()
-{
-    return tree.leaf_num;
-}
 
 int calc_leaf_num(node *const root)
 {
     if (root == NULL)
-        return 0;
+    {
+        tree.leaf_num = 0;
+        return EXIT_SUCCESS;
+    }
 
     int leaf_num = 0;
     node *c = root;
     while (!c->is_leaf)
-        c = c->pointers[0];
+        c = c->pointers[0]; //找到叶子。
     do 
     {
         leaf_num +=  c->num_keys;        
         c = c->pointers[order - 1]; // 走向下一个叶子节点
     } while (c != NULL);
    
-    return leaf_num;
+    tree.leaf_num = leaf_num;
+    return EXIT_SUCCESS;
 }
 
 int get_tree_info(node * root)
 {
     if (root)
     {
-        set_tree_root(root);
-        set_tree_height(root);
-        set_tree_order();
-        set_tree_leaf_num(root);
+        get_tree_root(root);
+        get_tree_height(root);
+        get_tree_order();
+        calc_leaf_num(root);
     }
     else
         empty_tree();
