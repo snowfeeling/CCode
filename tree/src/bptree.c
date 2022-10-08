@@ -1425,6 +1425,7 @@ int testBPTree()
                 ;
             if (root)
             {
+                print_tree(root);
                 root = destroy_tree(root);
                 if (root == NULL)
                     printf("The tree is destoried.\n");
@@ -1449,6 +1450,7 @@ int testBPTree()
             break;
         default:
             usage_2();
+            line_consumed = true; // 需要在这里加上输入被消费的标识。否则需要输入一个回车。
             break;
         }
         if (!line_consumed)
