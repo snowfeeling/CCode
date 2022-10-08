@@ -654,8 +654,7 @@ node *insert_into_leaf_after_splitting(node *root, node *leaf, int key, Record *
  * into a node into which these can fit
  * without violating the B+ tree properties.
  */
-node *insert_into_node(node *root, node *n,
-                       int left_index, int key, node *right)
+node *insert_into_node(node *root, node *n, int left_index, int key, node *right)
 {
     int i;
 
