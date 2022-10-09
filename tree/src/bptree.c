@@ -654,7 +654,8 @@ node *insert_into_leaf_after_splitting(node *root, node *leaf, int key, Record *
  * into a node into which these can fit
  * without violating the B+ tree properties.
  */
-node *insert_into_node(node *root, node *n, int left_index, int key, node *right)
+node *insert_into_node(node *root, node *n,
+                       int left_index, int key, node *right)
 {
     int i;
 
@@ -681,13 +682,9 @@ node *insert_into_node_after_splitting(node *root, node *old_node, int left_inde
     int *temp_keys;
     node **temp_pointers;
 
-    /* First create a temporary set of keys and pointers
-	 * to hold everything in order, including
-	 * the new key and pointer, inserted in their
-	 * correct places. 
-	 * Then create a new node and copy half of the 
-	 * keys and pointers to the old node and
-	 * the other half to the new.
+    /* First create a temporary set of keys and pointers to hold everything in order, including
+	 * the new key and pointer, inserted in their  correct places. 
+	 * Then create a new node and copy half of the keys and pointers to the old node and the other half to the new.
 	 */
 
     temp_pointers = malloc((order + 1) * sizeof(node *));
@@ -720,8 +717,7 @@ node *insert_into_node_after_splitting(node *root, node *old_node, int left_inde
     temp_pointers[left_index + 1] = right;
     temp_keys[left_index] = key;
 
-    /* Create the new node and copy
-	 * half the keys and pointers to the
+    /* Create the new node and copy half the keys and pointers to the
 	 * old and half to the new.
 	 */
     split = cut(order);
