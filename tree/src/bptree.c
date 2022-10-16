@@ -956,9 +956,7 @@ node *adjust_root(node *root)
     /* Case: empty root. 
 	 */
 
-    // If it has a child, promote
-    // the first (only) child
-    // as the new root.
+    // If it has a child, promote the first (only) child as the new root.
 
     if (!root->is_leaf)
     {
