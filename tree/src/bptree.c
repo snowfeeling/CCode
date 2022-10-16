@@ -213,7 +213,8 @@ void print_leaves(node *const root)
         {
             if (verbose_output)
                 printf("%p ", c->pointers[i]);
-            printf("%d ", c->keys[i]);
+            //printf("%d ", c->keys[i]);
+            printf("%d ", ((Record*)(c->pointers[i]))->value);
         }
         if (verbose_output)
             printf("%p ", c->pointers[order - 1]);
@@ -328,8 +329,8 @@ void find_and_print(node *const root, int key, bool verbose)
     if (r == NULL)
         printf("Record not found under key %d.\n", key);
     else
-        printf("Record at %p -- key %d, value %d.\n",
-               r, key, r->value);
+        printf("Record at %p -- key:[%d], \nvalue:[%d] NAME:[%s] Publish Date:[%s].\n",
+               r, key, r->value, r->name, r->publish_date);
 }
 
 /* Finds and prints the keys, pointers, and values within a range
@@ -492,6 +493,8 @@ Record *make_record(int value)
     else
     {
         new_record->value = value;
+        strcpy (new_record->name , "Name A");
+        strcpy(new_record->publish_date, "20221016");
     }
     return new_record;
 }

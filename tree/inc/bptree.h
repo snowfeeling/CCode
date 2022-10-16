@@ -15,6 +15,10 @@
 // Constant for optional command-line input with "i" command.
 #define BUFFER_SIZE 256
 
+// Record Length
+#define NAME_LENGTH 20
+#define DATE_LENGTH 8
+
 // TYPES.
 
 /* 
@@ -23,6 +27,8 @@
 typedef struct record
 {
     int value;
+    char name[NAME_LENGTH];
+    char publish_date[DATE_LENGTH+1];
 } Record;
 
 /* Type representing a node in the B+ tree.
