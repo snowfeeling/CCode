@@ -72,7 +72,7 @@ int cut(int length);
 Record *make_record(int value);
 node *make_node(void);
 node *make_leaf(void);
-int get_current_time( char * time_info);
+size_t get_current_time( char * time_info);
 int get_left_index(node *parent, node *left);
 node *insert_into_leaf(node *leaf, int key, Record *pointer);
 node *insert_into_leaf_after_splitting(node *root, node *leaf, int key, Record *pointer);
@@ -107,15 +107,15 @@ int calc_leaf_num(node *const root);
 
 /* OUTPUT AND UTILITIES
 */
-int get_current_time( char * time_info)
+size_t get_current_time( char * time_info)
 {
     time_t current_time;
     struct tm *ptime;
 
     time(&current_time);
     ptime = localtime(&current_time);
-    int rint = strftime (time_info, 20,"%Y-%m-%d %H:%M:%S",ptime);
-    //printf("\n%s", time_info);
+    size_t result_num = strftime (time_info, 20,"%Y-%m-%d %H:%M:%S",ptime);
+    return result_num;
 }
 
 /* Copyright and license notice to user at startup. 
