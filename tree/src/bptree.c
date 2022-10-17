@@ -1379,6 +1379,12 @@ int testBPTree()
             root = insert(root, input_key, input_key);
         else
         {
+            if (root)
+            {
+                print_tree(root);
+                destroy_tree(root);
+            }
+
             perror("Input error.");
             exit(EXIT_FAILURE);
         }
