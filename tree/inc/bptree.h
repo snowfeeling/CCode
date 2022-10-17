@@ -17,7 +17,7 @@
 
 // Record Length
 #define NAME_LENGTH 20
-#define DATE_LENGTH 8
+#define DATE_LENGTH 20
 
 // TYPES.
 
