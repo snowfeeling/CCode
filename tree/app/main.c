@@ -7,8 +7,9 @@
 //#include "../inc/testtree.h"
 //#include "../inc/quicksort.h"
 //#include "../inc/btree.h"
-#include "../inc/bptree.h"
+//#include "../inc/bptree.h"
 //#include "../inc/mybptree.h"
+#include "../inc/mytree.h"
 
 
 int main ()
@@ -17,7 +18,8 @@ int main ()
     //testTree();
     //testQuickSort();
 
-    testBPTree();
+    //testBPTree();
+    mybptree();
     return 0;
 
 }
