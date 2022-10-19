@@ -73,6 +73,7 @@ Record *make_record(int value);
 node *make_node(void);
 node *make_leaf(void);
 size_t get_current_time( char * time_info);
+int compare_key(int key1, int key2);
 int get_left_index(node *parent, node *left);
 node *insert_into_leaf(node *leaf, int key, Record *pointer);
 node *insert_into_leaf_after_splitting(node *root, node *leaf, int key, Record *pointer);
@@ -118,6 +119,15 @@ size_t get_current_time( char * time_info)
     return result_num;
 }
 
+int compare_key(int key1, int key2)
+{
+    if (key1 > key2)
+        return 1;
+    else if (key1 == key2)
+        return 0;
+    else 
+        return -1;
+}
 /* Copyright and license notice to user at startup. 
  */
 void license_notice(void)
@@ -365,6 +375,7 @@ void find_and_print_range(node *const root, int key_start, int key_end, bool ver
                    returned_pointers[i],
                    ((Record *) returned_pointers[i]) ->value);
     }
+    
 }
 
 /* Finds keys and their pointers, if present, in the range specified
@@ -379,13 +390,16 @@ int find_range(node *const root, int key_start, int key_end, bool verbose, int r
     node *n = find_leaf(root, key_start, verbose);
     if (n == NULL)
         return 0;
-    for (i = 0; i < n->num_keys && n->keys[i] < key_start; i++)
+    //for (i = 0; i < n->num_keys && n->keys[i] < key_start; i++)
+    for (i = 0; i < n->num_keys && compare_key(n->keys[i] ,  key_start) < 0; i++)
+    
         ;
     if (i == n->num_keys)
         return 0;
     while (n != NULL)
     {
-        for (; i < n->num_keys && n->keys[i] <= key_end; i++)
+        //for (; i < n->num_keys && n->keys[i] <= key_end; i++)
+        for (; i < n->num_keys && compare_key(n->keys[i], key_end) <= 0; i++)
         {
             returned_keys[num_found] = n->keys[i];
             returned_pointers[num_found] = n->pointers[i];
@@ -424,7 +438,8 @@ node *find_leaf(node *const root, int key, bool verbose)
         i = 0;
         while (i < c->num_keys)
         {
-            if (key >= c->keys[i])
+            //if (key >= c->keys[i])
+            if (compare_key(key , c->keys[i]) >= 0)
                 i++;
             else
                 break;
@@ -467,7 +482,8 @@ Record *find(node *root, int key, bool verbose, node **leaf_out)
      */
 
     for (i = 0; i < leaf->num_keys; i++)
-        if (leaf->keys[i] == key)
+        //if (leaf->keys[i] == key)
+        if (compare_key(leaf->keys[i], key) ==0 )
             break;
     if (leaf_out != NULL)
     {
@@ -572,7 +588,8 @@ node *insert_into_leaf(node *leaf, int key, Record *pointer)
     int i, insertion_point;
 
     insertion_point = 0;
-    while (insertion_point < leaf->num_keys && leaf->keys[insertion_point] < key)
+    //while (insertion_point < leaf->num_keys && leaf->keys[insertion_point] < key)
+      while (insertion_point < leaf->num_keys && compare_key(leaf->keys[insertion_point], key)<0)
         insertion_point++;
 
     for (i = leaf->num_keys; i > insertion_point; i--)
@@ -616,7 +633,8 @@ node *insert_into_leaf_after_splitting(node *root, node *leaf, int key, Record *
     }
 
     insertion_index = 0;
-    while (insertion_index < order - 1 && leaf->keys[insertion_index] < key)
+    //while (insertion_index < order - 1 && leaf->keys[insertion_index] < key)
+    while (insertion_index < order - 1 && compare_key(leaf->keys[insertion_index], key) < 0)
         insertion_index++;
 
     for (i = 0, j = 0; i < leaf->num_keys; i++, j++)
