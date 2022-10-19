@@ -63,16 +63,16 @@ FILE * get_file()
 int get_data_from_file(FILE *fp)
 {
     int input_key;
-    char input_number[9], input_name[20];
+    char input_id[9], input_name[20];
     int i;
 
     fp = get_file();
 
     while (!feof(fp))
     {
-        i = fscanf(fp, "%d %s %s\n", &input_key, input_number, input_name);
+        i = fscanf(fp, "%d %s %s\n", &input_key, input_id, input_name);
         if (i == 3)
-            printf("[Key%d] [No:%s] [Name:%s] \n", input_key, input_number, input_name);
+            printf("[Key%4d] [No:%8s] [Name:%20s] \n", input_key, input_id, input_name);
         else
         {
             fclose(fp);
