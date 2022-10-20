@@ -14,22 +14,22 @@
 // Record Length
 #define ID_LENGTH   9
 #define NAME_LENGTH 20
-#define DATE_LENGTH 20
+#define TIME_LENGTH 20
 
 /* 
  * 这个是key所代表的记录，可能是在DB/文件中的数据
  */
 typedef struct data_record
 {
-    int value;
+    int key;
     char id[ID_LENGTH];
     char name[NAME_LENGTH];
-    char publish_date[DATE_LENGTH+1];
+    char create_time[TIME_LENGTH+1];
 } Data_Record;
 
 struct tree_node
 {
-    void **pointers;  // 有DEFAULT_ORDER个Pointer，
+    void **pointers;  // 有DEFAULT_ORDER个Pointer,叶子节点，指向Data_Record; 非叶子节点，指向Tree_Node
     int *keys ;       // 最多有DEFAULT_ORDER-1个Key
     struct tree_node *parent;            //指向父节点
     bool is_leaf;                   // 是否是叶子节点
@@ -42,14 +42,14 @@ typedef struct tree_node Tree_Node;
 /* Tree struct
 *   Record the tree's character 
 */
-struct my_tree
+struct bp_tree
 {
     Tree_Node * root;
     int leaf_num;
     int tree_height;
     int tree_order;
 };
-typedef struct my_tree My_TREE;
+typedef struct bp_tree BP_TREE;
 
 
 int mybptree();
