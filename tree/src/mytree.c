@@ -17,7 +17,7 @@ int tree_order = DEFAULT_ORDER;
 Tree_Node *queue = NULL;
 bool verbose_output = false;
 Tree_Node * root = NULL;
-
+BP_TREE tree;
 
 /*  Base Function declarion.
 *   For general use.
@@ -28,10 +28,17 @@ void usage();
 size_t get_current_time( char * time_info);
 int compare_key(int key1, int key2);
 Tree_Node *  get_data_from_file();
+int cut(int length);
+void enqueue(Tree_Node *new_node);
+Tree_Node *dequeue(void);
+int path_to_root(Tree_Node *const root, Tree_Node *child);
+void print_tree(Tree_Node *const root);
 
 int get_left_index(Tree_Node *parent, Tree_Node *left);
 
 Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_Node *right);
+void destroy_tree_nodes(Tree_Node *root);
+Tree_Node *destroy_tree(Tree_Node *root);
 
 
 /* the input data
@@ -170,12 +177,13 @@ void print_tree(Tree_Node *const root)
             else
                 printf("%p ", n->pointers[n->num_keys]);
         }
-        printf("| ");
+        printf("|");
     }
     printf("\n");
 }
-/* Creates a new record to hold the value
- * to which a key refers.
+/* 功能：根据传入的记录，创建一个Node。
+* 输入： 数据指针
+* 输出： 返回生成记录的指针。
  */
 Data_Record *make_record(Data_Record *dr)
 {
@@ -188,8 +196,9 @@ Data_Record *make_record(Data_Record *dr)
     else
     {
         new_record->key = dr->key;
+        strcpy(new_record->id, dr->id);
         strcpy (new_record->name , dr->name);
-        get_current_time(new_record->create_time);
+        strcpy(new_record->create_time, dr->create_time);
     }
     return new_record;
 }
@@ -614,8 +623,9 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *dr)
     rp = find_key_in_tree(root, dr, false, NULL);
     if (rp != NULL)
     {
-        /* 如果树中已经有了，更新一下value */
-        rp->key = dr->key;
+        /* 如果树中已经有了，更新一下时间 */
+        //rp->key = dr->key;
+        strcpy(rp->create_time, dr->create_time);
         return root;
     }
 
@@ -687,6 +697,332 @@ Tree_Node * get_data_from_file( )
     return root;
 }
 
+/* ---------------------------------------------------------------------
+ * Finds and returns the record to whicha key refers.
+ */
+Data_Record *find(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node **leaf_out)
+{
+    if (root == NULL)
+    {
+        if (leaf_out != NULL)
+        {
+            *leaf_out = NULL;
+        }
+        return NULL;
+    }
+
+    int i = 0;
+    int key = dr->key;
+    Tree_Node *leaf = NULL;
+
+    leaf = find_leaf(root, dr, verbose);
+
+    /* If root != NULL, leaf must have a value, even  if it does not contain the desired key.
+     * (The leaf holds the range of keys that would include the desired key.) 
+     */
+
+    for (i = 0; i < leaf->num_keys; i++)
+        //if (leaf->keys[i] == key)
+        if (compare_key(leaf->keys[i], key) ==0 )
+            break;
+    if (leaf_out != NULL)
+    {
+        *leaf_out = leaf;
+    }
+    if (i == leaf->num_keys)
+        return NULL;
+    else
+        return (Data_Record *)leaf->pointers[i];
+}
+
+/* Finds the record under a given key and prints an
+ * appropriate message to stdout.
+ */
+void find_and_print(Tree_Node *const root, Data_Record *dr, bool verbose)
+{
+    Tree_Node *leaf = NULL;
+    Data_Record *r = find(root, dr, verbose, NULL);
+    if (r == NULL)
+        printf("Record not found under key %d.\n", dr->key);
+    else
+        printf("Record at %p -- key:[%d], \nID:[%s] NAME:[%s] Create Time:[%s].\n",
+               r, dr->key, r->id, r->name, r->create_time);
+}
+
+void list_leaves(Tree_Node * const root);
+
+void list_leaves(Tree_Node * const root)
+{
+    if (root == NULL)
+    {
+        printf("The tree is empty.\n");
+        return;
+    }
+    int i;
+    Tree_Node * c = root;
+    while (! c->is_leaf)
+        c= c->pointers[0];
+    while (true)
+    {
+        for (i = 0; i< c->num_keys; i++)
+        {
+            Data_Record * drp = (Data_Record*) (c->pointers[i]);
+            printf("[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
+        }
+        if (c->pointers[tree_order - 1] != NULL)
+        {
+            c = c->pointers[tree_order -1];
+        }
+        else
+            break;
+    }
+    printf("\n");
+}
+
+/*
+* 功能：按照节点，显示叶子节点。
+*/
+void print_leaves(Tree_Node *const root)
+{
+    if (root == NULL)
+    {
+        printf("Empty tree.\n");
+        return;
+    }
+    int i;
+    Tree_Node *c = root;
+    while (!c->is_leaf)
+        c = c->pointers[0];
+    while (true)
+    {
+        for (i = 0; i < c->num_keys; i++)
+        {
+            if (verbose_output)
+                printf("%p ", c->pointers[i]);
+            //printf("%d ", c->keys[i]);
+            printf("%d ", ((Data_Record*)(c->pointers[i]))->key);
+        }
+        if (verbose_output)
+            printf("%p ", c->pointers[tree_order - 1]);
+        if (c->pointers[tree_order - 1] != NULL)
+        {
+            printf(" | ");
+            c = c->pointers[tree_order - 1]; // 走向下一个
+        }
+        else
+            break;
+    }
+    printf("\n");
+}
+
+
+/* ===========================================================
+*  Destory Tree functions
+*/
+
+void destroy_tree_nodes(Tree_Node *root)
+{
+    int i;
+    if (root->is_leaf)
+        for (i = 0; i < root->num_keys; i++)
+            free(root->pointers[i]);
+    else
+        for (i = 0; i < root->num_keys + 1; i++)
+            destroy_tree_nodes(root->pointers[i]);
+    free(root->pointers);
+    free(root->keys);
+    free(root);
+}
+
+Tree_Node *destroy_tree(Tree_Node *root)
+{
+    if (root)
+        destroy_tree_nodes(root);
+    return NULL;
+}
+
+
+/*  ==============================
+*   tree function implementation
+*/
+int height(Tree_Node *const root)
+{
+    int h = 0;
+    Tree_Node *c = root;
+    while (!c->is_leaf)
+    {
+        c = c->pointers[0];
+        h++;
+    }
+    return h;
+}
+int empty_tree()
+{
+    tree.root = NULL;
+    tree.leaf_num = 0;
+    tree.tree_height = 0;
+    tree.tree_order = tree_order;
+    return EXIT_SUCCESS;
+
+}
+
+int get_tree_order()
+{
+    tree.tree_order = tree_order;
+    return EXIT_SUCCESS;
+}
+
+int get_tree_height(Tree_Node * root)
+{
+    tree.tree_height = height(root) + 1;
+    return EXIT_SUCCESS;
+}
+
+int get_tree_root(Tree_Node * root)
+{
+    tree.root= root;
+    return EXIT_SUCCESS;
+}
+
+int calc_leaf_num(Tree_Node *const root)
+{
+    if (root == NULL)
+    {
+        tree.leaf_num = 0;
+        return EXIT_SUCCESS;
+    }
+
+    int leaf_num = 0;
+    Tree_Node *c = root;
+    while (!c->is_leaf)
+        c = c->pointers[0]; //找到叶子。
+    do 
+    {
+        leaf_num +=  c->num_keys;        
+        c = c->pointers[tree_order - 1]; // 走向下一个叶子节点
+    } while (c != NULL);
+   
+    tree.leaf_num = leaf_num;
+    return EXIT_SUCCESS;
+}
+
+int get_tree_info(Tree_Node * root)
+{
+    if (root)
+    {
+        get_tree_root(root);
+        get_tree_height(root);
+        get_tree_order();
+        calc_leaf_num(root);
+    }
+    else
+        empty_tree();
+    return 0;
+}
+int show_tree_info()
+{
+    if (tree.root == NULL)
+        printf("\nThe tree is empty. \n");
+
+    printf("The tree is at          : [%p]\n", tree.root);
+    printf("The tree order is       : [%d]\n", tree.tree_order);
+    printf("the tree hight is       : [%d]\n", tree.tree_height);
+    printf("The tree leaf number is : [%d]\n", tree.leaf_num);
+    return 0;
+}
+/* 显示菜单和操作界面
+*/
+void show_manual(void)
+{
+    printf("Enter any of the following commands after the prompt > :\n"
+           "\ti <key> <ID> <Name> -- Insert the value <Key> (an integer) and ID (String) , Name (String).\n"
+           "\tf <k>  -- Find the value under key <k>.\n"
+           "\tp <k> -- Print the path from the root to key k and its associated value.\n"
+           "\tr <k1> <k2> -- Print the keys and values found in the range [<k1>, <k2>\n"
+           "\td <k>  -- Delete key <k> and its associated value.\n"
+           "\tx -- Destroy the whole tree.  Start again with an empty tree of the same order.\n"
+           "\tt -- Show the tree information and Print the B+ tree.\n"
+           "\tl -- Print the keys of the leaves (bottom row of the tree).\n"
+           "\tv -- Toggle output of pointer addresses (\"verbose\") in tree and leaves.\n"
+           "\tq -- Quit. (Or use Ctl-D or Ctl-C.)\n"
+           "\t? -- Print this help message.\n");
+}
+int manual()
+{
+
+    char command;
+    bool input_consumed = false;
+    char buffer[BUFFER_SIZE];
+    Data_Record dr;
+    int count = 0;
+    int input_key;
+
+    printf("> ");
+    while (scanf("%c", &command) != EOF)
+    {
+        input_consumed= false;
+        switch (command)
+        {
+        case 'i':
+            fgets(buffer, BUFFER_SIZE, stdin);
+            input_consumed = true;
+            count = sscanf(buffer, "%d %s %s", &dr.key, dr.id, dr.name);;
+            if (count ==3)
+            {
+                get_current_time(dr.create_time);
+                root = insert_into_tree(root, &dr);
+                print_tree(root);
+            }
+            else
+            {
+                printf("Inpout error.\n");
+            }
+            break;
+        case 'f':
+        case 'p':
+            count = scanf("%d", &dr.key);
+            if (count == 1)
+            {
+                get_current_time(dr.create_time);
+                find_and_print(root, &dr, command == 'p');
+            }
+            break;
+        case 'l':
+            print_leaves(root);
+            list_leaves(root);
+            break;
+         case 'x':
+            root = destroy_tree(root);            
+            printf("The tree is destoryed.\n");
+            break;
+        case 't':
+            if (root)
+            {
+                get_tree_info(root);
+                show_tree_info();
+                print_tree(root);
+            }
+            break;
+        case 'R':
+            root = destroy_tree(root);
+            root = get_data_from_file();
+            print_tree(root);
+            break;
+        case 'q':           
+            root = destroy_tree(root);
+            return EXIT_SUCCESS;
+        default:
+            show_manual();
+            input_consumed = true;
+            break;
+        }
+        if (!input_consumed)
+            while (getchar() != (int)'\n');
+        printf("> ");
+    }
+    return EXIT_SUCCESS;
+}
+
 int mybptree()
 {
     FILE *fp;
@@ -695,6 +1031,7 @@ int mybptree()
     root = get_data_from_file();
     print_tree(root);
 
+    manual();
     return EXIT_SUCCESS;
 }
 

@@ -16,8 +16,6 @@
 int main ()
 {
     SayHello();
-    //testTree();
-    //testQuickSort();
 
     //testBPTree();
     mybptree();
