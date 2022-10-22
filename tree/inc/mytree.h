@@ -13,7 +13,7 @@
 #define BUFFER_SIZE 256
 // Record Length
 #define ID_LENGTH   9
-#define NAME_LENGTH 20
+#define NAME_LENGTH 40
 #define TIME_LENGTH 20
 
 /* 

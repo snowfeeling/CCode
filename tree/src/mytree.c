@@ -14,32 +14,56 @@
 
 /* Global Variable */
 int tree_order = DEFAULT_ORDER;
-Tree_Node *queue = NULL;
 bool verbose_output = false;
 Tree_Node * root = NULL;
+Tree_Node *queue = NULL;
 BP_TREE tree;
 
 /*  Base Function declarion.
 *   For general use.
 */
-
+void ERROR_EXIT(char* str);
 void usage();
-
 size_t get_current_time( char * time_info);
 int compare_key(int key1, int key2);
-Tree_Node *  get_data_from_file();
+Tree_Node *get_data_from_file();
 int cut(int length);
 void enqueue(Tree_Node *new_node);
 Tree_Node *dequeue(void);
 int path_to_root(Tree_Node *const root, Tree_Node *child);
 void print_tree(Tree_Node *const root);
+Data_Record *make_record(Data_Record *dr);
+Tree_Node *make_empty_node(void);
+Tree_Node *make_empty_leaf(void);
+void list_leaves(Tree_Node * const root);
+void print_leaves(Tree_Node *const root);
 
 int get_left_index(Tree_Node *parent, Tree_Node *left);
-
+Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose);
+Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node ** leaf_out);
+Tree_Node *insert_into_new_root(Tree_Node *left, int key, Tree_Node *right);
 Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_Node *right);
+
+// 释放tree的函数
 void destroy_tree_nodes(Tree_Node *root);
 Tree_Node *destroy_tree(Tree_Node *root);
 
+// 寻找两个数值的节点的函数
+void get_and_print_range(Tree_Node *const root, int key_start, int key_end, bool verbose);
+int get_range(Tree_Node *const root, int key_start, int key_end, bool verbose, int returned_keys[], void *returned_pointers[]);
+
+// 关于Tree 的函数定义
+int height(Tree_Node *const root);
+int empty_tree();
+int get_tree_order();
+int get_tree_height(Tree_Node * root);
+int get_tree_root(Tree_Node * root);
+int calc_leaf_num(Tree_Node *const root);
+int get_tree_info(Tree_Node * root);
+int show_tree_info();
+// 主界面的函数
+void show_manual(void);
+int manual();
 
 /* the input data
 19 |
@@ -50,6 +74,17 @@ Tree_Node *destroy_tree(Tree_Node *root);
 
 /* Funcation Definition.
 */
+void ERROR_EXIT(char* str)
+    {
+        if (root)
+        {
+            list_leaves(root);
+            destroy_tree(root);
+        }
+        perror(str);
+        exit(EXIT_FAILURE);
+    }
+
 
 void usage()
 {
@@ -142,7 +177,7 @@ void print_tree(Tree_Node *const root)
 
     if (root == NULL)
     {
-        printf("Empty tree.\n");
+        printf("The tree is empty.\n");
         return;
     }
     queue = NULL;
@@ -190,8 +225,7 @@ Data_Record *make_record(Data_Record *dr)
     Data_Record *new_record = (Data_Record *)malloc(sizeof(Data_Record));
     if (new_record == NULL)
     {
-        perror("Record creation.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("Record creation.");
     }
     else
     {
@@ -204,31 +238,28 @@ Data_Record *make_record(Data_Record *dr)
 }
 
 
-/* Insertion functions
+/* ======================================================================================
+* Insertion functions
+* 
+* 创建新的节点信息。
+* 注意：Key的数量=阶数-1. 指针的数量=阶数
 */
-/* 创建新的节点信息。
- * 注意：Key的数量=阶数-1. 指针的数量=阶数
- */
 Tree_Node *make_empty_node(void)
 {
     Tree_Node *new_node;
     new_node = malloc(sizeof(Tree_Node));
     if (new_node == NULL)
-    {
-        perror("Node creation.");
-        exit(EXIT_FAILURE);
-    }
+        ERROR_EXIT("Node creation.");
+    
     new_node->keys = malloc((tree_order - 1) * sizeof(int)); // （阶数-1） 个key
     if (new_node->keys == NULL)
     {
-        perror("New node keys array.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("New node keys array.");
     }
     new_node->pointers = malloc(tree_order * sizeof(void *)); // （阶数） 个key
     if (new_node->pointers == NULL)
     {
-        perror("New node pointers array.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("New node pointers array.");
     }
     new_node->is_leaf = false;
     new_node->num_keys = 0;
@@ -246,7 +277,6 @@ Tree_Node *make_empty_leaf(void)
 }
 
 
-int get_left_index(Tree_Node *parent, Tree_Node *left);
 /* 
  * 从root开始，找key，直到到叶子。
  * 非叶子节点上，Key的所处的叶子，是在key的右部指针上的。所以，在非叶子节点中，找到比key大的指针。
@@ -360,8 +390,7 @@ int get_left_index(Tree_Node *parent, Tree_Node *left)
  * into a node into which these can fit
  * without violating the B+ tree properties.
  */
-Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n,
-                       int left_index, int key, Tree_Node *right)
+Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n, int left_index, int key, Tree_Node *right)
 {
     int i;
 
@@ -396,13 +425,12 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
     temp_pointers = malloc((tree_order + 1) * sizeof(Tree_Node *));
     if (temp_pointers == NULL)
     {
-        perror("Temporary pointers array for splitting nodes.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("Temporary pointers array for splitting nodes.");
     }
     temp_keys = malloc(tree_order * sizeof(int));
     if (temp_keys == NULL)
     {
-        perror("Temporary keys array for splitting nodes.");
+        ERROR_EXIT("Temporary keys array for splitting nodes.");
         exit(EXIT_FAILURE);
     }
 
@@ -423,9 +451,7 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
     temp_pointers[left_index + 1] = right;
     temp_keys[left_index] = key;
 
-    /* Create the new node and copy half the keys and pointers to the
-	 * old and half to the new.
-	 */
+    // Create the new node and copy half the keys and pointers to the old and half to the new.
     split = cut(tree_order);
     new_node = make_empty_node();
     old_node->num_keys = 0;
@@ -496,6 +522,7 @@ Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_No
 
 /* 功能：把一个key和新记录插入到一个叶子，超过叶子的容量（order-1）导致叶子拆分成两个
 *  输入：root,  leaf, key, data
+*  返回：root
  */
 Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, int key, Data_Record *pointer)
 {
@@ -510,15 +537,13 @@ Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, in
     temp_keys = malloc(tree_order * sizeof(int));
     if (temp_keys == NULL)
     {
-        perror("Temporary keys array.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("Temporary keys array.");
     }
 
     temp_pointers = malloc(tree_order * sizeof(void *));
     if (temp_pointers == NULL)
     {
-        perror("Temporary pointers array.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("Temporary pointers array.");
     }
 
     insertion_index = 0;
@@ -623,8 +648,10 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *dr)
     rp = find_key_in_tree(root, dr, false, NULL);
     if (rp != NULL)
     {
-        /* 如果树中已经有了，更新一下时间 */
+        /* 如果树中已经有了，更新一下节点内容 */
         //rp->key = dr->key;
+        strcpy(rp->id, dr->id);
+        strcpy(rp->name, dr->name);
         strcpy(rp->create_time, dr->create_time);
         return root;
     }
@@ -646,9 +673,7 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *dr)
         return root;
     }
 
-    /* 
-    *  如果叶子节点已经满了，就需要把叶子节点拆分，返回的是root指针
-	 */
+    // 如果叶子节点已经满了，就需要把叶子节点拆分，返回的是root指针
 
     return insert_into_leaf_after_splitting(root, leaf, dr->key, rp);
 
@@ -670,8 +695,7 @@ Tree_Node * get_data_from_file( )
     fp = fopen(input_file_name, "r");
     if ( fp== NULL)
     {
-        perror("Failure to open input file.");
-        exit(EXIT_FAILURE);
+        ERROR_EXIT("Failure to open input file.");
     }
 
     while (!feof(fp))
@@ -680,15 +704,14 @@ Tree_Node * get_data_from_file( )
         if (i == 3)
         {
             get_current_time(dr.create_time);
-            printf("[Key:%4d] [No:%8s] [Name:%-20s] [Create_timme: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
+            printf("[Key:%4d] [No:%8s] [Name:%30s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
             root = insert_into_tree(root, &dr);
             counter ++;
         }
         else
         {
             fclose(fp);
-            perror("Input data error.");
-            exit(EXIT_FAILURE);
+            ERROR_EXIT("Input data error.");
         }
     }
     fclose(fp);
@@ -698,7 +721,8 @@ Tree_Node * get_data_from_file( )
 }
 
 /* ---------------------------------------------------------------------
- * Finds and returns the record to whicha key refers.
+ * 功能：找到指定的key所在的叶子节点.
+ * 返回: 叶子节点的指针
  */
 Data_Record *find(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node **leaf_out)
 {
@@ -749,7 +773,6 @@ void find_and_print(Tree_Node *const root, Data_Record *dr, bool verbose)
                r, dr->key, r->id, r->name, r->create_time);
 }
 
-void list_leaves(Tree_Node * const root);
 
 void list_leaves(Tree_Node * const root)
 {
@@ -767,11 +790,11 @@ void list_leaves(Tree_Node * const root)
         for (i = 0; i< c->num_keys; i++)
         {
             Data_Record * drp = (Data_Record*) (c->pointers[i]);
-            printf("[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
+            printf("[Key:%4d] [ID:%8s] [Name:%30s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
         }
         if (c->pointers[tree_order - 1] != NULL)
         {
-            c = c->pointers[tree_order -1];
+            c = c->pointers[tree_order - 1];
         }
         else
             break;
@@ -806,15 +829,77 @@ void print_leaves(Tree_Node *const root)
             printf("%p ", c->pointers[tree_order - 1]);
         if (c->pointers[tree_order - 1] != NULL)
         {
-            printf(" | ");
+            printf("|");
             c = c->pointers[tree_order - 1]; // 走向下一个
         }
         else
             break;
     }
-    printf("\n");
+    printf("|\n");
 }
 
+/*======================================================================================
+* 功能：从tree中找一定范围的值。并显示出来
+* 输入：root，开始值，结束值，显示标志
+* 返回：无
+*/
+
+void get_and_print_range(Tree_Node *const root, int key_start, int key_end, bool verbose)
+{
+    int i;
+    int array_size = key_end - key_start + 1;
+    int returned_keys[array_size];
+    void *returned_pointers[array_size];
+    int num_found = get_range(root, key_start, key_end, verbose, returned_keys, returned_pointers);
+    if (!num_found)
+        printf("None found.\n");
+    else
+    {
+        for (i = 0; i < num_found; i++)
+            printf("Key: %d   Location: %p  Value: %d %s %s %s\n",
+                   returned_keys[i],
+                   returned_pointers[i],
+                   ((Data_Record *) returned_pointers[i]) ->key,
+                   ((Data_Record *)returned_pointers[i])->id,
+                   ((Data_Record *)returned_pointers[i])->name,
+                   ((Data_Record *)returned_pointers[i])->create_time
+                   );
+    }
+    
+}
+
+/* 功能：找到起止key之间的叶子
+*  输入：root，起止key，输出标识。找到的key数组、找到的叶子数组
+*  返回：找到的数量。
+ */
+int get_range(Tree_Node *const root, int key_start, int key_end, bool verbose, int returned_keys[], void *returned_pointers[])
+{
+    Data_Record dr;    
+    dr.key = key_start;
+    Tree_Node *n = find_leaf(root, &dr, verbose);
+    if (n == NULL)
+        return 0;
+
+    int i;
+    int num_found = 0;
+
+    for (i = 0; i < n->num_keys && compare_key(n->keys[i] ,  key_start) < 0; i++)
+        ;
+    if (i == n->num_keys)
+        return 0;
+    while (n != NULL)
+    {
+        for (; i < n->num_keys && compare_key(n->keys[i], key_end) <= 0; i++)
+        {
+            returned_keys[num_found] = n->keys[i];
+            returned_pointers[num_found] = n->pointers[i];
+            num_found++;
+        }
+        n = n->pointers[tree_order - 1];
+        i = 0;
+    }
+    return num_found;
+}
 
 /* ===========================================================
 *  Destory Tree functions
@@ -923,19 +1008,373 @@ int show_tree_info()
 {
     if (tree.root == NULL)
         printf("\nThe tree is empty. \n");
-
-    printf("The tree is at          : [%p]\n", tree.root);
-    printf("The tree order is       : [%d]\n", tree.tree_order);
-    printf("the tree hight is       : [%d]\n", tree.tree_height);
-    printf("The tree leaf number is : [%d]\n", tree.leaf_num);
+    else
+    {
+        printf("The tree is at          : [%p]\n", tree.root);
+        printf("The tree order is       : [%d]\n", tree.tree_order);
+        printf("the tree hight is       : [%d]\n", tree.tree_height);
+        printf("The tree leaf number is : [%d]\n", tree.leaf_num);
+    }
     return 0;
 }
+
+/*============================================================================
+*  删除Key的函数
+*/
+int get_neighbor_index(Tree_Node *n);
+Tree_Node *remove_entry_from_node(Tree_Node *n, int key, Tree_Node *pointer);
+Tree_Node *adjust_root(Tree_Node *root);
+Tree_Node *coalesce_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime);
+Tree_Node *redistribute_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime_index, int k_prime);
+Tree_Node *delete_entry(Tree_Node *root, Tree_Node *n, int key, void *pointer);
+Tree_Node *delete_key (Tree_Node *root, int key);
+
+int get_neighbor_index(Tree_Node *n)
+{
+    int i;
+    /* Return the index of the key to the left of the pointer in the parent pointing to n.  
+	 * If n is the leftmost child, this means  return -1.
+	 */
+    for (i = 0; i <= n->parent->num_keys; i++)
+        if (n->parent->pointers[i] == n)
+            return i - 1;
+
+    // Error state.
+    printf("Search for nonexistent pointer to node in parent.\n");
+    printf("Node:  %#lx\n",  (unsigned long*)n);
+    exit(EXIT_FAILURE);
+}
+
+Tree_Node *remove_entry_from_node(Tree_Node *n, int key, Tree_Node *pointer)
+{
+
+    int i, num_pointers;
+
+    // Remove the key and shift other keys accordingly.
+    i = 0;
+    while (n->keys[i] != key)
+        i++;
+    for (++i; i < n->num_keys; i++)
+        n->keys[i - 1] = n->keys[i];
+
+    // Remove the pointer and shift other pointers accordingly.
+    // First determine number of pointers.
+    num_pointers = n->is_leaf ? n->num_keys : n->num_keys + 1;
+    i = 0;
+    while (n->pointers[i] != pointer)
+        i++;
+    for (++i; i < num_pointers; i++)
+        n->pointers[i - 1] = n->pointers[i];
+
+    // One key fewer.
+    n->num_keys--;
+
+    // Set the other pointers to NULL for tidiness.
+    // A leaf uses the last pointer to point to the next leaf.
+    if (n->is_leaf)
+        for (i = n->num_keys; i < tree_order - 1; i++)
+            n->pointers[i] = NULL;
+    else
+        for (i = n->num_keys + 1; i < tree_order; i++)
+            n->pointers[i] = NULL;
+
+    return n;
+}
+
+Tree_Node *adjust_root(Tree_Node *root)
+{
+
+    Tree_Node *new_root;
+
+    /* Case: nonempty root.
+	 * Key and pointer have already been deleted,
+	 * so nothing to be done.
+	 */
+
+    if (root->num_keys > 0)
+        return root;
+
+    /* Case: empty root.*/
+
+    // If it has a child, promote the first (only) child as the new root.
+
+    if (!root->is_leaf)
+    {
+        new_root = root->pointers[0];
+        new_root->parent = NULL;
+    }
+
+    // If it is a leaf (has no children),
+    // then the whole tree is empty.
+
+    else
+        new_root = NULL;
+
+    free(root->keys);
+    free(root->pointers);
+    free(root);
+
+    return new_root;
+}
+
+/* Coalesces a node that has become
+ * too small after deletion
+ * with a neighboring node that
+ * can accept the additional entries
+ * without exceeding the maximum.
+ */
+Tree_Node *coalesce_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime)
+{
+
+    int i, j, neighbor_insertion_index, n_end;
+    Tree_Node *tmp;
+
+    /* Swap neighbor with node if node is on the
+	 * extreme left and neighbor is to its right.
+	 */
+
+    if (neighbor_index == -1)
+    {
+        tmp = n;
+        n = neighbor;
+        neighbor = tmp;
+    }
+
+    /* Starting point in the neighbor for copying
+	 * keys and pointers from n.
+	 * Recall that n and neighbor have swapped places
+	 * in the special case of n being a leftmost child.
+	 */
+
+    neighbor_insertion_index = neighbor->num_keys;
+
+    /* Case:  nonleaf node.
+	 * Append k_prime and the following pointer.
+	 * Append all pointers and keys from the neighbor.
+	 */
+
+    if (!n->is_leaf)
+    {
+
+        /* Append k_prime.
+		 */
+
+        neighbor->keys[neighbor_insertion_index] = k_prime;
+        neighbor->num_keys++;
+
+        n_end = n->num_keys;
+
+        for (i = neighbor_insertion_index + 1, j = 0; j < n_end; i++, j++)
+        {
+            neighbor->keys[i] = n->keys[j];
+            neighbor->pointers[i] = n->pointers[j];
+            neighbor->num_keys++;
+            n->num_keys--;
+        }
+
+        /* The number of pointers is always one more than the number of keys. */
+
+        neighbor->pointers[i] = n->pointers[j];
+
+        /* All children must now point up to the same parent. */
+
+        for (i = 0; i < neighbor->num_keys + 1; i++)
+        {
+            tmp = (Tree_Node *)neighbor->pointers[i];
+            tmp->parent = neighbor;
+        }
+    }
+
+    /* In a leaf, append the keys and pointers of  n to the neighbor.
+	 * Set the neighbor's last pointer to point to  what had been n's right neighbor.
+	 */
+
+    else
+    {
+        for (i = neighbor_insertion_index, j = 0; j < n->num_keys; i++, j++)
+        {
+            neighbor->keys[i] = n->keys[j];
+            neighbor->pointers[i] = n->pointers[j];
+            neighbor->num_keys++;
+        }
+        neighbor->pointers[tree_order - 1] = n->pointers[tree_order - 1];
+    }
+
+    root = delete_entry(root, n->parent, k_prime, n);
+    free(n->keys);
+    free(n->pointers);
+    free(n);
+    return root;
+}
+
+/* Redistributes entries between two nodes when
+ * one has become too small after deletion
+ * but its neighbor is too big to append the
+ * small node's entries without exceeding the
+ * maximum
+ */
+Tree_Node *redistribute_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index,
+                         int k_prime_index, int k_prime)
+{
+
+    int i;
+    Tree_Node *tmp;
+
+    /* Case: n has a neighbor to the left. 
+	 * Pull the neighbor's last key-pointer pair over
+	 * from the neighbor's right end to n's left end.
+	 */
+
+    if (neighbor_index != -1)
+    {
+        if (!n->is_leaf)
+            n->pointers[n->num_keys + 1] = n->pointers[n->num_keys];
+        for (i = n->num_keys; i > 0; i--)
+        {
+            n->keys[i] = n->keys[i - 1];
+            n->pointers[i] = n->pointers[i - 1];
+        }
+        if (!n->is_leaf)
+        {
+            n->pointers[0] = neighbor->pointers[neighbor->num_keys];
+            tmp = (Tree_Node *)n->pointers[0];
+            tmp->parent = n;
+            neighbor->pointers[neighbor->num_keys] = NULL;
+            n->keys[0] = k_prime;
+            n->parent->keys[k_prime_index] = neighbor->keys[neighbor->num_keys - 1];
+        }
+        else
+        {
+            n->pointers[0] = neighbor->pointers[neighbor->num_keys - 1];
+            neighbor->pointers[neighbor->num_keys - 1] = NULL;
+            n->keys[0] = neighbor->keys[neighbor->num_keys - 1];
+            n->parent->keys[k_prime_index] = n->keys[0];
+        }
+    }
+
+    /* Case: n is the leftmost child.
+	 * Take a key-pointer pair from the neighbor to the right.
+	 * Move the neighbor's leftmost key-pointer pair
+	 * to n's rightmost position.
+	 */
+
+    else
+    {
+        if (n->is_leaf)
+        {
+            n->keys[n->num_keys] = neighbor->keys[0];
+            n->pointers[n->num_keys] = neighbor->pointers[0];
+            n->parent->keys[k_prime_index] = neighbor->keys[1];
+        }
+        else
+        {
+            n->keys[n->num_keys] = k_prime;
+            n->pointers[n->num_keys + 1] = neighbor->pointers[0];
+            tmp = (Tree_Node *)n->pointers[n->num_keys + 1];
+            tmp->parent = n;
+            n->parent->keys[k_prime_index] = neighbor->keys[0];
+        }
+        for (i = 0; i < neighbor->num_keys - 1; i++)
+        {
+            neighbor->keys[i] = neighbor->keys[i + 1];
+            neighbor->pointers[i] = neighbor->pointers[i + 1];
+        }
+        if (!n->is_leaf)
+            neighbor->pointers[i] = neighbor->pointers[i + 1];
+    }
+
+    /* n now has one more key and one more pointer;
+	 * the neighbor has one fewer of each.
+	 */
+
+    n->num_keys++;
+    neighbor->num_keys--;
+
+    return root;
+}
+
+
+Tree_Node *delete_entry(Tree_Node *root, Tree_Node *n, int key, void *pointer)
+{
+
+    int min_keys;
+    Tree_Node *neighbor;
+    int neighbor_index;
+    int k_prime_index, k_prime;
+    int capacity;
+
+    // Remove key and pointer from node.
+    n = remove_entry_from_node(n, key, pointer);
+
+    /* Case:  deletion from the root.  */
+    if (n == root)
+        return adjust_root(root);
+
+    /* Case:  deletion from a node below the root. (Rest of function body.)	 */
+
+    /* Determine minimum allowable size of node, to be preserved after deletion. */
+
+    min_keys = n->is_leaf ? cut(tree_order - 1) : cut(tree_order) - 1;
+
+    /* Case:  node stays at or above minimum.* (The simple case.) */
+
+    if (n->num_keys >= min_keys)
+        return root;
+
+    /* Case:  node falls below minimum.
+	 * Either coalescence or redistribution is needed.
+	 */
+
+    /* Find the appropriate neighbor node with which to coalesce.
+	 * Also find the key (k_prime) in the parent between the pointer to node n and the pointer to the neighbor.
+	 */
+
+    neighbor_index = get_neighbor_index(n);
+    k_prime_index = neighbor_index == -1 ? 0 : neighbor_index;
+    k_prime = n->parent->keys[k_prime_index];
+    neighbor = neighbor_index == -1 ? n->parent->pointers[1] : n->parent->pointers[neighbor_index];
+
+    capacity = n->is_leaf ? tree_order : tree_order - 1;
+
+    /* Coalescence. */
+    if (neighbor->num_keys + n->num_keys < capacity)
+        return coalesce_nodes(root, n, neighbor, neighbor_index, k_prime);
+
+    /* Redistribution. */
+    else
+        return redistribute_nodes(root, n, neighbor, neighbor_index, k_prime_index, k_prime);
+
+}
+
+/* 功能：删除一个key的主程序
+*  返回值：root
+ */
+Tree_Node *delete_key (Tree_Node *root, int key)
+{
+
+    Tree_Node *key_leaf = NULL;
+    Data_Record *key_record = NULL;
+    Data_Record dr;
+    dr.key = key;
+
+    //找到叶子节点中的数据块指针。并返回Key所在的叶子节点。
+    key_record = find(root, &dr, false, &key_leaf);
+
+    /* 如果Ke所在的记录和叶子节点都存在，就删除，并释放空间 */
+    if (key_record != NULL && key_leaf != NULL)
+    {
+        root = delete_entry(root, key_leaf, key, key_record);
+        free(key_record);
+    }
+    return root;
+}
+
 /* 显示菜单和操作界面
 */
 void show_manual(void)
 {
     printf("Enter any of the following commands after the prompt > :\n"
-           "\ti <key> <ID> <Name> -- Insert the value <Key> (an integer) and ID (String) , Name (String).\n"
+           "\ti <key> <ID> <Name> -- Insert the value <Key> (an integer), ID (String) , Name (String).\n"
            "\tf <k>  -- Find the value under key <k>.\n"
            "\tp <k> -- Print the path from the root to key k and its associated value.\n"
            "\tr <k1> <k2> -- Print the keys and values found in the range [<k1>, <k2>\n"
@@ -947,6 +1386,9 @@ void show_manual(void)
            "\tq -- Quit. (Or use Ctl-D or Ctl-C.)\n"
            "\t? -- Print this help message.\n");
 }
+/* 功能：主操作界面
+*  返回值：0
+*/
 int manual()
 {
 
@@ -955,7 +1397,7 @@ int manual()
     char buffer[BUFFER_SIZE];
     Data_Record dr;
     int count = 0;
-    int input_key;
+    int input_key, input_key_2;
 
     printf("> ");
     while (scanf("%c", &command) != EOF)
@@ -963,6 +1405,18 @@ int manual()
         input_consumed= false;
         switch (command)
         {
+        case 'd':
+            count = scanf("%d", &input_key);
+            if (count ==1)
+            {
+                root = delete_key (root, input_key);
+                print_tree(root);
+            }
+            else
+            {
+                printf("Input error. Please press ? to get help.\n");
+            }
+            break;
         case 'i':
             fgets(buffer, BUFFER_SIZE, stdin);
             input_consumed = true;
@@ -971,11 +1425,11 @@ int manual()
             {
                 get_current_time(dr.create_time);
                 root = insert_into_tree(root, &dr);
-                print_tree(root);
+                print_tree(root);;
             }
             else
-            {
-                printf("Inpout error.\n");
+            {                
+                printf("Input error. Please press ? to get help.\n");
             }
             break;
         case 'f':
@@ -985,6 +1439,10 @@ int manual()
             {
                 get_current_time(dr.create_time);
                 find_and_print(root, &dr, command == 'p');
+            }
+            else
+            {
+                printf("Input error. Please press ? to get help.\n");
             }
             break;
         case 'l':
@@ -1002,27 +1460,69 @@ int manual()
                 show_tree_info();
                 print_tree(root);
             }
+            else
+                printf("The tree is empty.\n");
             break;
         case 'R':
             root = destroy_tree(root);
-            root = get_data_from_file();
+            root = get_data_from_file();    //reload the data from file.
             print_tree(root);
             break;
+        case 'o':
+            int input_order;
+            count = scanf("%d", &input_order);
+            if (count == 1)
+                tree_order = input_order;
+            else
+                printf("Input error. Please press ? to get help.\n");
+            break;
         case 'q':           
-            root = destroy_tree(root);
+            if (root)
+            {
+                root = destroy_tree(root);
+                printf("The tree is not empty and is cleanned. Quit safely.\n");
+            }
+            else
+            {
+                printf("The tree is empty. Quit safely.\n");
+            }
             return EXIT_SUCCESS;
-        default:
-            show_manual();
+        case 'r':
+            if (scanf("%d %d", &input_key, &input_key_2) == 2)
+            {
+                if (input_key > input_key_2)
+                {
+                    int tmp = input_key_2;
+                    input_key_2 = input_key;
+                    input_key = tmp;
+                }
+                get_and_print_range(root, input_key, input_key_2, command == 'p');
+            }
+            else
+            {
+                printf("Input error.\n");
+            }
+            break;
+        case '\n':
             input_consumed = true;
             break;
+        default:
+            show_manual();
+            //input_consumed = true;
         }
         if (!input_consumed)
-            while (getchar() != (int)'\n');
+        {
+            while ( getchar() != (int)'\n')
+                ;
+        }
         printf("> ");
     }
+    printf("\n");
+
     return EXIT_SUCCESS;
 }
-
+//===============================================================================
+// 主测试函数
 int mybptree()
 {
     FILE *fp;
