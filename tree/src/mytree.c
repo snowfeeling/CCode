@@ -12,13 +12,14 @@
 
 #include "../inc/mytree.h"
 
+//=============================================================================
 /* Global Variable */
 int tree_order = DEFAULT_ORDER;
 bool verbose_output = false;
-Tree_Node * root = NULL;
+Tree_Node *root = NULL;
 Tree_Node *queue = NULL;
 BP_TREE tree;
-
+//=============================================================================
 /*  Base Function declarion.
 *   For general use.
 */
@@ -31,27 +32,54 @@ int cut(int length);
 void enqueue(Tree_Node *new_node);
 Tree_Node *dequeue(void);
 int path_to_root(Tree_Node *const root, Tree_Node *child);
-void print_tree(Tree_Node *const root);
-Data_Record *make_record(Data_Record *dr);
+Data_Record *make_data_record(Data_Record *drp);
 Tree_Node *make_empty_node(void);
 Tree_Node *make_empty_leaf(void);
 void list_leaves(Tree_Node * const root);
 void print_leaves(Tree_Node *const root);
+void print_tree(Tree_Node *const root);
 
-int get_left_index(Tree_Node *parent, Tree_Node *left);
-Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose);
-Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node ** leaf_out);
+//=============================================================================
+// 插入tree的函数
+int get_index_in_parent(Tree_Node *parent, Tree_Node *left);
 Tree_Node *insert_into_new_root(Tree_Node *left, int key, Tree_Node *right);
+Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n, int left_index, int key, Tree_Node *right);
+Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node, int left_index, int key, Tree_Node *right);
 Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_Node *right);
+Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, int key, Data_Record *pointer);
+Tree_Node *insert_into_leaf(Tree_Node *leaf, int key, Data_Record *pointer);
+Tree_Node *start_new_tree(Data_Record *drp, Data_Record *pointer);
+Tree_Node *insert_into_tree(Tree_Node *root, Data_Record *drp);
 
+
+//=============================================================================
 // 释放tree的函数
 void destroy_tree_nodes(Tree_Node *root);
 Tree_Node *destroy_tree(Tree_Node *root);
 
+//=============================================================================
+// 查找单个Key的函数
+void find_and_print_record(Tree_Node *const root, Data_Record *drp, bool verbose);
+Tree_Node *find_leaf(Tree_Node *const root, Data_Record * drp, bool verbose);
+Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *drp, bool verbose, Tree_Node ** leaf_out);
+
+/*============================================================================
+*  删除Key的函数
+*/
+int get_neighbor_index(Tree_Node *n);
+Tree_Node *remove_entry_from_node(Tree_Node *n, int key, Tree_Node *pointer);
+Tree_Node *adjust_root(Tree_Node *root);
+Tree_Node *coalesce_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime);
+Tree_Node *redistribute_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime_index, int k_prime);
+Tree_Node *delete_entry(Tree_Node *root, Tree_Node *n, int key, void *pointer);
+Tree_Node *delete_key (Tree_Node *root, int key);
+
+//=============================================================================
 // 寻找两个数值的节点的函数
 void get_and_print_range(Tree_Node *const root, int key_start, int key_end, bool verbose);
 int get_range(Tree_Node *const root, int key_start, int key_end, bool verbose, int returned_keys[], void *returned_pointers[]);
 
+//=============================================================================
 // 关于Tree 的函数定义
 int height(Tree_Node *const root);
 int empty_tree();
@@ -61,6 +89,7 @@ int get_tree_root(Tree_Node * root);
 int calc_leaf_num(Tree_Node *const root);
 int get_tree_info(Tree_Node * root);
 int show_tree_info();
+
 // 主界面的函数
 void show_manual(void);
 int manual();
@@ -84,7 +113,6 @@ void ERROR_EXIT(char* str)
         perror(str);
         exit(EXIT_FAILURE);
     }
-
 
 void usage()
 {
@@ -216,11 +244,11 @@ void print_tree(Tree_Node *const root)
     }
     printf("\n");
 }
-/* 功能：根据传入的记录，创建一个Node。
+/* 功能：根据传入的记录，创建一个数据块。
 * 输入： 数据指针
 * 输出： 返回生成记录的指针。
  */
-Data_Record *make_record(Data_Record *dr)
+Data_Record *make_data_record(Data_Record *drp)
 {
     Data_Record *new_record = (Data_Record *)malloc(sizeof(Data_Record));
     if (new_record == NULL)
@@ -229,10 +257,10 @@ Data_Record *make_record(Data_Record *dr)
     }
     else
     {
-        new_record->key = dr->key;
-        strcpy(new_record->id, dr->id);
-        strcpy (new_record->name , dr->name);
-        strcpy(new_record->create_time, dr->create_time);
+        new_record->key = drp->key;
+        strcpy(new_record->id, drp->id);
+        strcpy (new_record->name , drp->name);
+        strcpy(new_record->create_time, drp->create_time);
     }
     return new_record;
 }
@@ -277,11 +305,13 @@ Tree_Node *make_empty_leaf(void)
 }
 
 
-/* 
+/* 功能：找到比Key大的叶子节点
+*  输入：root, key所在的记录，显示标志
+*  返回：叶子节点的指针。
  * 从root开始，找key，直到到叶子。
  * 非叶子节点上，Key的所处的叶子，是在key的右部指针上的。所以，在非叶子节点中，找到比key大的指针。
  */
-Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose)
+Tree_Node *find_leaf(Tree_Node *const root, Data_Record * drp, bool verbose)
 {
     if (root == NULL)
     {
@@ -304,7 +334,7 @@ Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose)
         while (i < c->num_keys)
         {
             //if (key >= c->keys[i]) 如果Key>=节点上的key，就往下找。直到找到第一个更大的key
-            if (compare_key(dr->key , c->keys[i]) >= 0)
+            if (compare_key(drp->key , c->keys[i]) >= 0)
                 i++;
             else
                 break;
@@ -317,7 +347,9 @@ Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose)
     {
         printf("Leaf [");
         for (i = 0; i < c->num_keys - 1; i++)
+        {    
             printf("%d ", c->keys[i]);
+        }
         printf("%d] ->\n", c->keys[i]);
     }
     return c;
@@ -325,10 +357,10 @@ Tree_Node *find_leaf(Tree_Node *const root, Data_Record * dr, bool verbose)
 
 /*
 * 功能：在Tree里面，找是否有有这个Key
-输入参数： root 和 传入的数据指针。verbose：是否输出过程。Leaf_out: 找到的可以所在叶子节点的位置指针
-返回参数：在叶子节点上的数据指针
+*  输入参数： root 和 传入的数据指针。verbose：是否输出过程。Leaf_out: 找到的可以所在叶子节点的位置指针
+*  返回参数：在叶子节点上的数据指针
 */
-Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node ** leaf_out)
+Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *drp, bool verbose, Tree_Node ** leaf_out)
 {
     if (root == NULL)
     {
@@ -343,10 +375,10 @@ Data_Record * find_key_in_tree(Tree_Node *root, Data_Record *dr, bool verbose, T
     /* 如果root不为空，叶子节点必然包含有value，即使没有包含想查询的key
      * 先找到叶子节点，包含想要查询的key的范围 
      */
-    leaf = find_leaf(root, dr, verbose);
+    leaf = find_leaf(root, drp, verbose);
 
     for (i = 0; i < leaf->num_keys; i++)
-        if (compare_key(leaf->keys[i], dr->key) ==0 )
+        if (compare_key(leaf->keys[i], drp->key) ==0 )
             break;
     if (leaf_out != NULL)
         *leaf_out = leaf;
@@ -377,7 +409,7 @@ Tree_Node *insert_into_new_root(Tree_Node *left, int key, Tree_Node *right)
 }
 
 /* 在父节点找左节点的位置*/
-int get_left_index(Tree_Node *parent, Tree_Node *left)
+int get_index_in_parent(Tree_Node *parent, Tree_Node *left)
 {
     int left_index = 0;
     while (left_index <= parent->num_keys && parent->pointers[left_index] != left)
@@ -431,7 +463,6 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
     if (temp_keys == NULL)
     {
         ERROR_EXIT("Temporary keys array for splitting nodes.");
-        exit(EXIT_FAILURE);
     }
 
     for (i = 0, j = 0; i < old_node->num_keys + 1; i++, j++)
@@ -507,7 +538,7 @@ Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_No
 
     /* Find the parent's pointer to the left node. */
 
-    left_index = get_left_index(parent, left);
+    left_index = get_index_in_parent(parent, left);
 
     /* Simple case: the new key fits into the node.  */
 
@@ -605,11 +636,10 @@ Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, in
 Tree_Node *insert_into_leaf(Tree_Node *leaf, int key, Data_Record *pointer)
 {
 
-    int i, insertion_point;
+    int i;
+    int insertion_point = 0;
 
-    insertion_point = 0;
-    //while (insertion_point < leaf->num_keys && leaf->keys[insertion_point] < key)
-      while (insertion_point < leaf->num_keys && compare_key(leaf->keys[insertion_point], key)<0)
+    while (insertion_point < leaf->num_keys && compare_key(leaf->keys[insertion_point], key)<0)
         insertion_point++;
 
     for (i = leaf->num_keys; i > insertion_point; i--)
@@ -624,10 +654,10 @@ Tree_Node *insert_into_leaf(Tree_Node *leaf, int key, Data_Record *pointer)
 }
 
 /* 如果是第一次插入，就建立一个新树root  */
-Tree_Node *start_new_tree(Data_Record *dr, Data_Record *pointer)
+Tree_Node *start_new_tree(Data_Record *drp, Data_Record *pointer)
 {
     Tree_Node *root = make_empty_leaf();
-    root->keys[0] = dr->key;
+    root->keys[0] = drp->key;
     root->pointers[0] = pointer;
     root->pointers[tree_order - 1] = NULL;
     root->parent = NULL;
@@ -639,43 +669,43 @@ Tree_Node *start_new_tree(Data_Record *dr, Data_Record *pointer)
 *  输入参数： root，节点数据指针
 *  返回结果：root指针
 */
-Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *dr)
+Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *drp)
 {
-    Data_Record *rp = NULL;
+    Data_Record *lrp = NULL;
     Tree_Node *leaf = NULL;
 
     // 首先找是否在树中有该值
-    rp = find_key_in_tree(root, dr, false, NULL);
-    if (rp != NULL)
+    lrp = find_key_in_tree(root, drp, false, NULL);
+    if (lrp != NULL)
     {
         /* 如果树中已经有了，更新一下节点内容 */
-        //rp->key = dr->key;
-        strcpy(rp->id, dr->id);
-        strcpy(rp->name, dr->name);
-        strcpy(rp->create_time, dr->create_time);
+        //rp->key = drp->key;
+        strcpy(lrp->id, drp->id);
+        strcpy(lrp->name, drp->name);
+        strcpy(lrp->create_time, drp->create_time);
         return root;
     }
 
     /* 建立一个新的记录节点， 把传入记录写进去*/
-    rp = make_record(dr);
+    lrp = make_data_record(drp);
 
     /* 如果root是空，就建立一个新的树。直接返回。	 */
     if (root == NULL)
-        return start_new_tree(dr, rp);
+        return start_new_tree(drp, lrp);
 
     /* 如果树非空，找到叶子节点	 */
-    leaf = find_leaf(root, dr, false);
+    leaf = find_leaf(root, drp, false);
 
     /* 如果叶子节点有空间，就插入到叶子节点中。判断条件是：目前叶子的key< oreder-1	 */
     if (leaf->num_keys < tree_order - 1)
     {
-        leaf = insert_into_leaf(leaf, dr->key, rp);
+        leaf = insert_into_leaf(leaf, drp->key, lrp);
         return root;
     }
 
     // 如果叶子节点已经满了，就需要把叶子节点拆分，返回的是root指针
 
-    return insert_into_leaf_after_splitting(root, leaf, dr->key, rp);
+    return insert_into_leaf_after_splitting(root, leaf, drp->key, lrp);
 
 }
 
@@ -687,90 +717,58 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *dr)
 Tree_Node * get_data_from_file( )
 {
     FILE *fp;
-        char * input_file_name = "../data/mytree.txt";
-
-    Data_Record dr;
-    int i, counter =0;
+    char * input_file_name = "../data/mytree.txt";
 
     fp = fopen(input_file_name, "r");
     if ( fp== NULL)
     {
         ERROR_EXIT("Failure to open input file.");
     }
-
-    while (!feof(fp))
-    {
-        i = fscanf(fp, "%d %s %s\n", &dr.key, dr.id, dr.name);
-        if (i == 3)
-        {
-            get_current_time(dr.create_time);
-            printf("[Key:%4d] [No:%8s] [Name:%30s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
-            root = insert_into_tree(root, &dr);
-            counter ++;
-        }
-        else
-        {
-            fclose(fp);
-            ERROR_EXIT("Input data error.");
-        }
-    }
-    fclose(fp);
-    printf("\n%4d records are gotten.\n", counter);
-
-    return root;
-}
-
-/* ---------------------------------------------------------------------
- * 功能：找到指定的key所在的叶子节点.
- * 返回: 叶子节点的指针
- */
-Data_Record *find(Tree_Node *root, Data_Record *dr, bool verbose, Tree_Node **leaf_out)
-{
-    if (root == NULL)
-    {
-        if (leaf_out != NULL)
-        {
-            *leaf_out = NULL;
-        }
-        return NULL;
-    }
-
-    int i = 0;
-    int key = dr->key;
-    Tree_Node *leaf = NULL;
-
-    leaf = find_leaf(root, dr, verbose);
-
-    /* If root != NULL, leaf must have a value, even  if it does not contain the desired key.
-     * (The leaf holds the range of keys that would include the desired key.) 
-     */
-
-    for (i = 0; i < leaf->num_keys; i++)
-        //if (leaf->keys[i] == key)
-        if (compare_key(leaf->keys[i], key) ==0 )
-            break;
-    if (leaf_out != NULL)
-    {
-        *leaf_out = leaf;
-    }
-    if (i == leaf->num_keys)
-        return NULL;
     else
-        return (Data_Record *)leaf->pointers[i];
+    {
+        Data_Record dr;
+        int i;
+        int count =0;
+
+        while (!feof(fp))
+        {
+            i = fscanf(fp, "%d %s %s\n", &dr.key, dr.id, dr.name);
+            if (i == 3)
+            {
+                char str1[BUFFER_SIZE];
+                get_current_time(dr.create_time);
+                sprintf(str1, "[Key:%4d] [No:%8s] [Name:%30s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
+                printf(str1);
+                root = insert_into_tree(root, &dr);
+                count ++;
+            }
+            else
+            {   //输入值有问题。废弃掉。
+                fclose(fp);
+                ERROR_EXIT("Input data error.");
+            }
+        }
+        fclose(fp);
+        printf("\n%4d records are created.\n", count);
+
+        return root;
+    }
 }
 
-/* Finds the record under a given key and prints an
- * appropriate message to stdout.
+
+/* 功能：从tree中找到一个key所在的记录，并打印出来
+*  输入：root，要查找的值，显示标识
+*  返回：无
  */
-void find_and_print(Tree_Node *const root, Data_Record *dr, bool verbose)
+void find_and_print_record(Tree_Node *const root, Data_Record *drp, bool verbose)
 {
     Tree_Node *leaf = NULL;
-    Data_Record *r = find(root, dr, verbose, NULL);
+    Data_Record *r = find_key_in_tree(root, drp, verbose, NULL);
     if (r == NULL)
-        printf("Record not found under key %d.\n", dr->key);
+        printf("Record not found under key %d.\n", drp->key);
     else
         printf("Record at %p -- key:[%d], \nID:[%s] NAME:[%s] Create Time:[%s].\n",
-               r, dr->key, r->id, r->name, r->create_time);
+               r, drp->key, r->id, r->name, r->create_time);
 }
 
 
@@ -790,7 +788,7 @@ void list_leaves(Tree_Node * const root)
         for (i = 0; i< c->num_keys; i++)
         {
             Data_Record * drp = (Data_Record*) (c->pointers[i]);
-            printf("[Key:%4d] [ID:%8s] [Name:%30s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
+            printf("[Key:%4d] [ID:%8s] [Name:%40s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
         }
         if (c->pointers[tree_order - 1] != NULL)
         {
@@ -822,7 +820,6 @@ void print_leaves(Tree_Node *const root)
         {
             if (verbose_output)
                 printf("%p ", c->pointers[i]);
-            //printf("%d ", c->keys[i]);
             printf("%d ", ((Data_Record*)(c->pointers[i]))->key);
         }
         if (verbose_output)
@@ -1021,13 +1018,6 @@ int show_tree_info()
 /*============================================================================
 *  删除Key的函数
 */
-int get_neighbor_index(Tree_Node *n);
-Tree_Node *remove_entry_from_node(Tree_Node *n, int key, Tree_Node *pointer);
-Tree_Node *adjust_root(Tree_Node *root);
-Tree_Node *coalesce_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime);
-Tree_Node *redistribute_nodes(Tree_Node *root, Tree_Node *n, Tree_Node *neighbor, int neighbor_index, int k_prime_index, int k_prime);
-Tree_Node *delete_entry(Tree_Node *root, Tree_Node *n, int key, void *pointer);
-Tree_Node *delete_key (Tree_Node *root, int key);
 
 int get_neighbor_index(Tree_Node *n)
 {
@@ -1358,7 +1348,7 @@ Tree_Node *delete_key (Tree_Node *root, int key)
     dr.key = key;
 
     //找到叶子节点中的数据块指针。并返回Key所在的叶子节点。
-    key_record = find(root, &dr, false, &key_leaf);
+    key_record = find_key_in_tree(root, &dr, false, &key_leaf);
 
     /* 如果Ke所在的记录和叶子节点都存在，就删除，并释放空间 */
     if (key_record != NULL && key_leaf != NULL)
@@ -1438,7 +1428,7 @@ int manual()
             if (count == 1)
             {
                 get_current_time(dr.create_time);
-                find_and_print(root, &dr, command == 'p');
+                find_and_print_record(root, &dr, command == 'p');
             }
             else
             {
@@ -1469,12 +1459,19 @@ int manual()
             print_tree(root);
             break;
         case 'o':
-            int input_order;
-            count = scanf("%d", &input_order);
-            if (count == 1)
-                tree_order = input_order;
+            if (root)
+            {
+                printf("The tree is active. Please press \'x\' to release or \'R\' to reload the tree.\n");
+             }
             else
-                printf("Input error. Please press ? to get help.\n");
+            {
+                int input_order;
+                count = scanf("%d", &input_order);
+                if (count == 1)
+                    tree_order = input_order;
+                else
+                    printf("Input error. Please press ? to get help.\n");
+            }
             break;
         case 'q':           
             if (root)
@@ -1500,7 +1497,7 @@ int manual()
             }
             else
             {
-                printf("Input error.\n");
+                printf("Input error. Please press ? to get help.\n");
             }
             break;
         case '\n':
