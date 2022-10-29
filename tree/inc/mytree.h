@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 
-#define DEFAULT_ORDER   7
+#define DEFAULT_ORDER   4
 #define BUFFER_SIZE 256
 // Record Length
 #define ID_LENGTH   9

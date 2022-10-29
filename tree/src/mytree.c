@@ -43,12 +43,12 @@ void print_tree(Tree_Node *const root);
 // 插入tree的函数
 int get_index_in_parent(Tree_Node *parent, Tree_Node *left);
 Tree_Node *insert_into_new_root(Tree_Node *left, int key, Tree_Node *right);
-Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n, int left_index, int key, Tree_Node *right);
+int insert_into_node(Tree_Node *n, int left_index, int key, Tree_Node *right);
 Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node, int left_index, int key, Tree_Node *right);
 Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_Node *right);
 Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, int key, Data_Record *pointer);
 Tree_Node *insert_into_leaf(Tree_Node *leaf, int key, Data_Record *pointer);
-Tree_Node *start_new_tree(Data_Record *drp, Data_Record *pointer);
+Tree_Node *create_new_tree(Data_Record *drp, Data_Record *pointer);
 Tree_Node *insert_into_tree(Tree_Node *root, Data_Record *drp);
 
 
@@ -330,13 +330,11 @@ Tree_Node *find_leaf(Tree_Node *const root, Data_Record * drp, bool verbose)
                 printf("%d ", c->keys[i]);
             printf("%d] ", c->keys[i]);
         }
-        i = 0;
-        while (i < c->num_keys)
+
+        for (i = 0; i < c->num_keys; i++)
         {
             //if (key >= c->keys[i]) 如果Key>=节点上的key，就往下找。直到找到第一个更大的key
-            if (compare_key(drp->key , c->keys[i]) >= 0)
-                i++;
-            else
+            if (compare_key(drp->key, c->keys[i]) < 0)
                 break;
         }
         if (verbose)
@@ -418,11 +416,10 @@ int get_index_in_parent(Tree_Node *parent, Tree_Node *left)
 }
 
 
-/* Inserts a new key and pointer to a node
- * into a node into which these can fit
- * without violating the B+ tree properties.
+/* 把一个key插入到Node里面。已经确认不违反B+ tree的规则了。
+ * .
  */
-Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n, int left_index, int key, Tree_Node *right)
+int insert_into_node(Tree_Node *n, int left_index, int key, Tree_Node *right)
 {
     int i;
 
@@ -434,7 +431,7 @@ Tree_Node *insert_into_node(Tree_Node *root, Tree_Node *n, int left_index, int k
     n->pointers[left_index + 1] = right;
     n->keys[left_index] = key;
     n->num_keys++;
-    return root;
+    return EXIT_SUCCESS;
 }
 
 /* Inserts a new key and pointer to a node
@@ -446,24 +443,11 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
 
     int i, j, split, k_prime;
     Tree_Node *new_node, *child;
-    int *temp_keys;
-    Tree_Node **temp_pointers;
+    int temp_keys[tree_order];
+    Tree_Node *temp_pointers[tree_order+1];
 
-    /* First create a temporary set of keys and pointers to hold everything in order, including
-	 * the new key and pointer, inserted in their  correct places. 
-	 * Then create a new node and copy half of the keys and pointers to the old node and the other half to the new.
+    /* 先把新key插入到临时列表。再把临时列表做拆分。按照拆分原则分成两个节点。再插入到父节点中。
 	 */
-
-    temp_pointers = malloc((tree_order + 1) * sizeof(Tree_Node *));
-    if (temp_pointers == NULL)
-    {
-        ERROR_EXIT("Temporary pointers array for splitting nodes.");
-    }
-    temp_keys = malloc(tree_order * sizeof(int));
-    if (temp_keys == NULL)
-    {
-        ERROR_EXIT("Temporary keys array for splitting nodes.");
-    }
 
     for (i = 0, j = 0; i < old_node->num_keys + 1; i++, j++)
     {
@@ -482,8 +466,9 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
     temp_pointers[left_index + 1] = right;
     temp_keys[left_index] = key;
 
-    // Create the new node and copy half the keys and pointers to the old and half to the new.
+    //计算切分点。应该是一半
     split = cut(tree_order);
+    //建立一个新的node，把一半的节点复制过去。把一半的节点复制到旧的node
     new_node = make_empty_node();
     old_node->num_keys = 0;
     for (i = 0; i < split - 1; i++)
@@ -493,7 +478,9 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
         old_node->num_keys++;
     }
     old_node->pointers[i] = temp_pointers[i];
-    k_prime = temp_keys[split - 1];
+    
+    k_prime = temp_keys[split - 1]; // 拆分点的key。
+
     for (++i, j = 0; i < tree_order; i++, j++)
     {
         new_node->pointers[j] = temp_pointers[i];
@@ -501,8 +488,6 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
         new_node->num_keys++;
     }
     new_node->pointers[j] = temp_pointers[i];
-    free(temp_pointers);
-    free(temp_keys);
     new_node->parent = old_node->parent;
     for (i = 0; i <= new_node->num_keys; i++)
     {
@@ -510,17 +495,14 @@ Tree_Node *insert_into_node_after_splitting(Tree_Node *root, Tree_Node *old_node
         child->parent = new_node;
     }
 
-    /* Insert a new key into the parent of the two
-	 * nodes resulting from the split, with
-	 * the old node to the left and the new to the right.
-	 */
+    /* 把新key插入到父节点，拆分后的旧的节点在左边，新节点在右边     */
 
     return insert_into_parent(root, old_node, k_prime, new_node);
 }
 
-/* Inserts a new node (leaf or internal node) into the B+ tree.
- * Returns the root of the tree after insertion.
- */
+/* 把一个节点（叶子或者内节点）插入tree
+ * 返回：root （插入后的tree）
+*/
 Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_Node *right)
 {
 
@@ -529,25 +511,23 @@ Tree_Node *insert_into_parent(Tree_Node *root, Tree_Node *left, int key, Tree_No
 
     parent = left->parent;
 
-    /* Case: new root. */
-
+    /* 父节点为空，则需要插入到新的root. */
     if (parent == NULL)
         return insert_into_new_root(left, key, right);
+    {        
+        /* Find the parent's pointer to the left node. */
+        left_index = get_index_in_parent(parent, left);
 
-    /* Case: leaf or node. (Remainder of  function body.)   */
-
-    /* Find the parent's pointer to the left node. */
-
-    left_index = get_index_in_parent(parent, left);
-
-    /* Simple case: the new key fits into the node.  */
-
-    if (parent->num_keys < tree_order - 1)
-        return insert_into_node(root, parent, left_index, key, right);
-
-    /* Harder case:  split a node in order  to preserve the B+ tree properties. */
-
-    return insert_into_node_after_splitting(root, parent, left_index, key, right);
+        /* 如父节点还没有满，就插入父节点.  */
+        if (parent->num_keys < tree_order - 1)
+        {
+            insert_into_node(parent, left_index, key, right);
+            return root;
+        }
+        else
+        /* 父节点已满， 就要分裂该节点，再插入. */
+            return insert_into_node_after_splitting(root, parent, left_index, key, right); 
+    }
 }
 
 
@@ -559,26 +539,14 @@ Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, in
 {
 
     Tree_Node *new_leaf;
-    int *temp_keys;
-    void **temp_pointers;
+    int temp_keys[tree_order];
+    void *temp_pointers[tree_order];
     int insertion_index, split, new_key, i, j;
 
     new_leaf = make_empty_leaf();
 
-    temp_keys = malloc(tree_order * sizeof(int));
-    if (temp_keys == NULL)
-    {
-        ERROR_EXIT("Temporary keys array.");
-    }
-
-    temp_pointers = malloc(tree_order * sizeof(void *));
-    if (temp_pointers == NULL)
-    {
-        ERROR_EXIT("Temporary pointers array.");
-    }
-
     insertion_index = 0;
-    //while (insertion_index < order - 1 && leaf->keys[insertion_index] < key)
+
     while (insertion_index < tree_order - 1 && compare_key(leaf->keys[insertion_index], key) < 0)
         insertion_index++;
 
@@ -611,9 +579,6 @@ Tree_Node *insert_into_leaf_after_splitting(Tree_Node *root, Tree_Node *leaf, in
         new_leaf->keys[j] = temp_keys[i];
         new_leaf->num_keys++;
     }
-
-    free(temp_pointers);
-    free(temp_keys);
 
     new_leaf->pointers[tree_order - 1] = leaf->pointers[tree_order - 1];
     leaf->pointers[tree_order - 1] = new_leaf;
@@ -654,7 +619,7 @@ Tree_Node *insert_into_leaf(Tree_Node *leaf, int key, Data_Record *pointer)
 }
 
 /* 如果是第一次插入，就建立一个新树root  */
-Tree_Node *start_new_tree(Data_Record *drp, Data_Record *pointer)
+Tree_Node *create_new_tree(Data_Record *drp, Data_Record *pointer)
 {
     Tree_Node *root = make_empty_leaf();
     root->keys[0] = drp->key;
@@ -678,7 +643,7 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *drp)
     lrp = find_key_in_tree(root, drp, false, NULL);
     if (lrp != NULL)
     {
-        /* 如果树中已经有了，更新一下节点内容 */
+        /* 如果树中已经有了，更新节点内容 */
         //rp->key = drp->key;
         strcpy(lrp->id, drp->id);
         strcpy(lrp->name, drp->name);
@@ -691,7 +656,7 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *drp)
 
     /* 如果root是空，就建立一个新的树。直接返回。	 */
     if (root == NULL)
-        return start_new_tree(drp, lrp);
+        return create_new_tree(drp, lrp);
 
     /* 如果树非空，找到叶子节点	 */
     leaf = find_leaf(root, drp, false);
@@ -709,9 +674,9 @@ Tree_Node * insert_into_tree(Tree_Node *root, Data_Record *drp)
 
 }
 
-/* 从文件里读取数据。数据格式
-*   [25 20211425 LiTongHe]
-*   int char[9]  char[20]   
+/* 从文件里读取数据。插入到树里面。
+*  数据格式  [25 20211425 LiTongHe]
+*            int char[9]  char[20]   
 */
 
 Tree_Node * get_data_from_file( )
@@ -807,7 +772,7 @@ void print_leaves(Tree_Node *const root)
 {
     if (root == NULL)
     {
-        printf("Empty tree.\n");
+        printf("The tree is Empty, no leaf will be printed.\n");
         return;
     }
     int i;
@@ -856,7 +821,7 @@ void get_and_print_range(Tree_Node *const root, int key_start, int key_end, bool
             printf("Key: %d   Location: %p  Value: %d %s %s %s\n",
                    returned_keys[i],
                    returned_pointers[i],
-                   ((Data_Record *) returned_pointers[i]) ->key,
+                   ((Data_Record *)returned_pointers[i]) ->key,
                    ((Data_Record *)returned_pointers[i])->id,
                    ((Data_Record *)returned_pointers[i])->name,
                    ((Data_Record *)returned_pointers[i])->create_time
