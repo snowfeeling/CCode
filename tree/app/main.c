@@ -9,16 +9,15 @@
 //#include "../inc/quicksort.h"
 //#include "../inc/btree.h"
 //#include "../inc/bptree.h"
-
-#include "../inc/mytree.h"
-
+//#include "../inc/mytree.h"
+#include "../inc/bplustree.h"
 
 int main ()
 {
     SayHello();
 
-    //testBPTree();
-    mybptree();
+    test_bplus_tree();
+    //mybptree();
     return 0;
 
 }
