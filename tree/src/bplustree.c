@@ -276,7 +276,7 @@ void list_bptree_leaves(BPT_Node * const root)
     printf("\n");
 }
 
-/* Show the tree leaves.
+/* Just the tree leaves from the leaf level.
 */
 static int print_bptree_leaves(BPLUS_TREE bptree)
 {
@@ -305,7 +305,7 @@ static int print_bptree_leaves(BPLUS_TREE bptree)
     return EXIT_SUCCESS;
 }
 
-/* Show the tree from the root to leaves
+/* Show the tree from the root to leaves.
 */
 static void print_bptree(BPT_Node *const root)
 {
@@ -596,7 +596,10 @@ static BPT_Node *insert_into_bptree_node(BPT_Node *np, DATA_RECORD *drp)
     }
 }
 
-
+/* Make the BPlus Tree from the designated Data file, and print the leaves.
+* Input: <void>
+* Return: the root pointer (BPT_Node*). 
+*/
 static BPT_Node *make_tree_from_file()
 {
     FILE *fp;
@@ -634,20 +637,19 @@ static BPT_Node *make_tree_from_file()
             }
         }
         fclose(fp);
-        printf("\n%4d records are created.\n", count);
+        printf("\n%d records are created.\n", count);
         print_bptree_leaves(bptree);
 
         return bptree.root;
     }
 }
 
-
 /*======================================================================================
-* 功能：从tree中找一定范围的值。并显示出来
+*/
+/* 功能：从tree中找一定范围的值。并显示出来
 * 输入：root，开始值，结束值，显示标志
 * 返回：无
 */
-
 static void get_and_print_range(BPT_Node *const root, int key_start, int key_end)
 {
     int i;
@@ -705,10 +707,13 @@ static int get_range(BPT_Node *const root, int key_start, int key_end, int retur
     }
 }
 
-/* ===========================================================
-*  Destory Tree functions
+/* ============================================================================*/
+/*  Destory Tree functions
 */
-
+/* Destory the BPlus noedes of BPlus tree.
+*  Input    : root
+*  Return   : <void>
+*/
 static void destroy_bptree_nodes(BPT_Node *root)
 {
     int i;
@@ -730,26 +735,26 @@ static BPT_Node *destroy_bptree(BPLUS_TREE *bptree)
     return NULL;
 }
 
-/* ===========================================================
-*  Delete Tree functions
+/* ============================================================================
+*  Deletion functions
 */
-
 static int deleteElement (int deletedValue);
 static int doDelete (BPT_Node *root, int val);
 static BPT_Node *mergeRight (BPT_Node *tree);
 static BPT_Node *stealFromRight (BPT_Node *tree, int parentIndex) ;
 static BPT_Node *repairAfterDelete (BPT_Node *tree);
 
-
 static int deleteElement (int deletedValue)
 {
 
 	doDelete(bptree.root, deletedValue);
-	if (bptree.root->keys_num == 0)
-	{
-		bptree.root = bptree.root->pointers[0];
-		bptree.root->parent = NULL;
-	}
+    if (bptree.root)
+
+        if (bptree.root->keys_num == 0)
+        {
+            bptree.root = bptree.root->pointers[0];
+            bptree.root->parent = NULL;
+        }
 	return 0;				
 }
 
@@ -769,7 +774,9 @@ static int doDelete (BPT_Node *root, int val)
 				doDelete(tree->pointers[tree->keys_num], val);
 			}
 			else
-			{		}
+			{	
+                //print_bptree(bptree.root);
+            }
 		}
 		else
         { 
@@ -792,11 +799,7 @@ static int doDelete (BPT_Node *root, int val)
 				            tree->keys[j] = tree->keys[j+1];
                             tree->leaf[j] = tree->leaf[j+1];
 		            	}
-                        tree->keys_num--;
-                        if (tree->next != NULL)
-                        {
-                        }
-			
+                        tree->keys_num--;			
                         // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
                         //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
                         if (i == 0 && tree->parent != NULL)
@@ -804,12 +807,13 @@ static int doDelete (BPT_Node *root, int val)
                             int nextSmallest = 0;
                             BPT_Node *parentNode = tree->parent;
                             int parentIndex;
-                            for (parentIndex = 0; parentNode->pointers[parentIndex] != tree; parentIndex++);
+                            for (parentIndex = 0; parentNode->pointers[parentIndex] != tree; parentIndex++)
+                                ;
                             if (tree->keys_num == 0)
                             {
                                 if (parentIndex == parentNode->keys_num)
                                 {
-                                    nextSmallest == 0;
+                                    nextSmallest = 0;
                                 }
                                 else
                                 {
@@ -890,7 +894,6 @@ static BPT_Node *mergeRight (BPT_Node *tree)
 	else
 	{
 		tree->keys_num = tree->keys_num + rightSib->keys_num;
-
 		tree->next = rightSib->next;
 		if (rightSib->next != NULL)
 		{
@@ -907,6 +910,7 @@ static BPT_Node *mergeRight (BPT_Node *tree)
 	parentNode->keys_num--;
 	if (!tree->is_leaf)
 	{
+        print_bptree(bptree.root);
 	}
 
 	return tree;
