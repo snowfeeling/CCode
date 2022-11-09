@@ -830,8 +830,8 @@ static int doDelete (BPT_Node *root, int val)
                         {
                             if (parentIndex == parentNode->keys_num)
                             {
-                                nextSmallest = -999;
-                                //nextSmallest = val;
+                                //nextSmallest = -999;
+                                nextSmallest = val;
                             }
                             else
                             {
@@ -847,14 +847,14 @@ static int doDelete (BPT_Node *root, int val)
                             if (parentIndex > 0 && parentNode->keys[parentIndex - 1] == val)
                             {
                                 parentNode->keys[parentIndex - 1] = nextSmallest;
-                            }
+                                debug_bptree("go up to parent.");
+                           }
                             BPT_Node *grandParent = parentNode->parent;
                             for (parentIndex = 0; grandParent != NULL && grandParent->pointers[parentIndex] != parentNode; parentIndex++)
                                 ;
                             parentNode = grandParent;                                
                         }                            
                     }
-                    print_bptree(bptree.root);
                     repairAfterDelete(tree);
                 }
             }
@@ -910,7 +910,7 @@ static BPT_Node *mergeRight (BPT_Node *tree)
 		tree->next = rightSib->next;
 		if (rightSib->next != NULL)
 		{        
-            debug_bptree("BPT-D003: Merge Right(Right Sib next != NULL).");
+            //debug_bptree("BPT-D003: Merge Right(Right Sib next != NULL).");
 		}
 	}
 	for (i = parentIndex+1; i < parentNode->keys_num; i++)
@@ -922,7 +922,7 @@ static BPT_Node *mergeRight (BPT_Node *tree)
 	parentNode->keys_num--;
 	if (!tree->is_leaf)
 	{
-        debug_bptree("BPT-D004: Merge Right( node is not leaf).");
+        //debug_bptree("BPT-D004: Merge Right( node is not leaf).");
 	}
 
 	return tree;
@@ -971,7 +971,7 @@ static BPT_Node *stealFromRight (BPT_Node *tree, int parentIndex)
 	{
 		if (rightSib->next != NULL)
 		{
-            debug_bptree("BPT-D006: stealFromRight( leaf and rightSib->next != NULL).");
+            //debug_bptree("BPT-D006: stealFromRight( leaf and rightSib->next != NULL).");
 		}		
 	}
 	return tree;
@@ -1024,7 +1024,7 @@ static BPT_Node *stealFromLeft (BPT_Node *tree, int parentIndex)
 	
 	if (tree->is_leaf)
 	{
-        debug_bptree("BPT-D007: stealFromLeft( leaf ).");
+        //debug_bptree("BPT-D007: stealFromLeft( leaf ).");
     }
 
 	return tree;
@@ -1167,8 +1167,8 @@ static int bpt_manual()
             }
             break;
         case 'l':
-            print_bptree(bptree.root);
             list_bptree_leaves(bptree.root);
+            print_bptree(bptree.root);
             break;
          case 'x':
             bptree.root = destroy_bptree(&bptree);            

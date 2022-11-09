@@ -22,7 +22,7 @@ const definition.
 #define ID_LENGTH 9
 #define NAME_LENGTH 40
 #define TIME_LENGTH 20
-#define DEFALUT_TREE_DEGREE 4
+#define DEFALUT_TREE_DEGREE 5
 
 /* Leaf - Data Record Struct
 */
