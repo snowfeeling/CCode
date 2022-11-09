@@ -788,7 +788,7 @@ static int doDelete (BPT_Node *root, int val)
 		}
 		else
         { 
-            if (!tree->is_leaf)
+            if (!tree->is_leaf)  // The inner node.
             {
                 if ( tree->keys[i] == val)
                 {
@@ -796,17 +796,21 @@ static int doDelete (BPT_Node *root, int val)
                 }
                 else 
                 {
-                     doDelete(tree->pointers[i], val);
+                    doDelete(tree->pointers[i], val);
                 }
             }
-            else
+            else //In the leaf, Tree->key[i] > val or Tree->key[i]== val
             {
                 if (tree->keys[i] > val)
                 {
                     printf("Not find the key.\n");
                 }
-                else // find the key and deleting it.
+                else // "Tree->key[i] == val", find the key and deleting it.
                 {
+                    // Release the memory.
+                    free(tree->leaf[i]);
+                    printf("The Key %d is deleted with the memory is released.\n", tree->keys[i]);
+
                     for (int j = i; j < tree->keys_num - 1; j++)
                     {
                         tree->keys[j] = tree->keys[j+1];
@@ -827,6 +831,7 @@ static int doDelete (BPT_Node *root, int val)
                             if (parentIndex == parentNode->keys_num)
                             {
                                 nextSmallest = -999;
+                                //nextSmallest = val;
                             }
                             else
                             {
@@ -849,6 +854,7 @@ static int doDelete (BPT_Node *root, int val)
                             parentNode = grandParent;                                
                         }                            
                     }
+                    print_bptree(bptree.root);
                     repairAfterDelete(tree);
                 }
             }
@@ -1033,9 +1039,12 @@ static BPT_Node *repairAfterDelete (BPT_Node *tree)
 		{
 			if (tree->keys_num == 0)
 			{
+                BPT_Node * tmp = bptree.root;
 			    bptree.root = tree->pointers[0];
 				if (bptree.root != NULL)
+                {   free(tmp);
 					bptree.root->parent = NULL;
+                }
 			}
 		}
 		else 
