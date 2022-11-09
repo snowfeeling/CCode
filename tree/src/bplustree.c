@@ -336,7 +336,7 @@ static void print_bptree(BPT_Node *const root)
         printf("[");
         for (i = 0; i < n->keys_num; i++)
         {
-            printf(" %d ", n->keys[i]);
+            printf("%d ", n->keys[i]);
         }
         if (!n->is_leaf)
             for (i = 0; i <= n->keys_num; i++)
