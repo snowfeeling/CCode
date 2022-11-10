@@ -263,7 +263,7 @@ void list_bptree_leaves(BPT_Node * const root)
         for (i = 0; i< c->keys_num; i++)
         {
             DATA_RECORD * drp = (DATA_RECORD*) (c->leaf[i]);
-            printf("[Key:%4d] [ID:%8s] [Name:%40s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
+            printf("[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
         }
         if (c->next != NULL)
         {
@@ -622,7 +622,7 @@ static BPT_Node *make_tree_from_file()
             {
                 char str1[BUFFER_SIZE];
                 get_current_time(dr.create_time);
-                sprintf(str1, "[Key:%4d] [No:%8s] [Name:%30s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
+                sprintf(str1, "[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
                 printf(str1);
                 insert_record_to_tree(&bptree, &dr);
                 print_bptree(bptree.root);
@@ -637,7 +637,7 @@ static BPT_Node *make_tree_from_file()
         }
         fclose(fp);
         printf("\n%d records are created.\n", count);
-        print_bptree_leaves(bptree);
+        //print_bptree_leaves(bptree);
 
         return bptree.root;
     }
@@ -775,14 +775,14 @@ static int doDelete (BPT_Node *root, int val)
 		int i;
 		for (i = 0; i < tree->keys_num && tree->keys[i] < val; i++)
             ;
-		if (i == tree->keys_num)
+		if (i == tree->keys_num) /*找到本节点的最后，说明在本节点找不到，*/
 		{
-			if (!tree->is_leaf)
+			if (!tree->is_leaf) /*如果在本节点找不到，且不是叶子，就找下一层*/
 			{
 				doDelete(tree->pointers[tree->keys_num], val);
 			}
 			else
-			{	// this is the leaf.
+			{	//如果在本节点找不到，且是leaf.说明没找到。
                 printf("Not find the key.\n");
             }
 		}
@@ -794,7 +794,7 @@ static int doDelete (BPT_Node *root, int val)
                 {
                     doDelete(tree->pointers[i+1], val);
                 }
-                else 
+                else /* tree->keys[i] > val*/
                 {
                     doDelete(tree->pointers[i], val);
                 }
@@ -819,7 +819,7 @@ static int doDelete (BPT_Node *root, int val)
                     tree->keys_num--;			
                     // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
                     //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
-                    if (i == 0 && tree->parent != NULL)
+                    if (i == 0 && tree->parent != NULL) // 如果是第一个值
                     {
                         int nextSmallest = 0;
                         BPT_Node *parentNode = tree->parent;
@@ -1035,14 +1035,15 @@ static BPT_Node *repairAfterDelete (BPT_Node *tree)
 {
 	if (tree->keys_num < bptree.min_key_num)
 	{
-		if (tree->parent == NULL)
+		if (tree->parent == NULL) /* Root */
 		{
-			if (tree->keys_num == 0)
+			if (tree->keys_num == 0) /* The root is empty.*/
 			{
                 BPT_Node * tmp = bptree.root;
 			    bptree.root = tree->pointers[0];
 				if (bptree.root != NULL)
-                {   free(tmp);
+                {   
+                    free(tmp);
 					bptree.root->parent = NULL;
                 }
 			}
