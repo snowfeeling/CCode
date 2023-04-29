@@ -166,7 +166,7 @@ static int print_key_of_bptree_leaves(BPLUS_TREE bptree)
             {
                 printf(" %d", tmp->keys[i]);
             }    
-            printf(" ] ");
+            printf("] ");
             tmp = tmp->next;
         }
         printf("\n");
@@ -365,48 +365,50 @@ BPT_NODE *split_bptree(BPT_NODE *np)
     
     BPT_NODE *rightNode = create_empty_leaf();
 	
-	int risingNode = np->keys[bptree.split_index];
+	int risingKey = np->keys[bptree.split_index];
     int i, parentIndex;
 	if (np->parent != NULL)
 	{
 		BPT_NODE *currentParent = np->parent;
+        //找到在父节点中，本节点的位置 parentIndex；
 		for (parentIndex = 0; parentIndex < currentParent->keys_num + 1 && currentParent->pointers[parentIndex] != np; parentIndex++);
 		if (parentIndex == currentParent->keys_num + 1)
-		{
+		{   //如果没有找到，就是肯定时出错了
 			ERROR_EXIT("Couldn't find which child we were!");
 		}
 		for (i = currentParent->keys_num; i > parentIndex; i--)
-		{
-			currentParent->pointers[i+1] = currentParent->pointers[i];
+		{   //把父节点中比上升key大的key的位置往后挪动；在父节点中，leaf是没有意义的
+			currentParent->pointers[i+1] = currentParent->pointers[i];    
 			currentParent->keys[i] = currentParent->keys[i-1];
             currentParent->leaf[i] = currentParent->leaf[i-1];
 		}
-		currentParent->keys_num++;
-		currentParent->keys[parentIndex] = risingNode;
-		currentParent->pointers[parentIndex+1] = rightNode;
-		rightNode->parent = currentParent;
+
+		currentParent->keys_num++;  //父节点的key增加了
+		currentParent->keys[parentIndex] = risingKey;  //把上升的key写入到所应在的位置中
+		currentParent->pointers[parentIndex+1] = rightNode;  // 把右节点的位置写入到上升key的右边指针
+		rightNode->parent = currentParent;      //把右节点的父节点设置成当前的父节点；
 	}
 	
+    //处理右边的拆分数据
 	int rightSplit;
 	
 	if (np->is_leaf)
-	{
-		rightSplit = bptree.split_index; // If 
-		rightNode->next = np->next;
-		np->next = rightNode;
+	{   //如果是叶子节点，拆分数量点是树的拆分点
+		rightSplit = bptree.split_index; 
+		rightNode->next = np->next; //右节点的next，继承当前节点的next
+		np->next = rightNode;   //当前节点的next, 指定右节点
 	}
 	else
-	{
+	{   //如果不是叶子节点，拆分数量是树的拆分数量+1
 		rightSplit = bptree.split_index + 1;
-	}
-	
-	rightNode->keys_num = np->keys_num - rightSplit;
-
-    // Pointer 是比 key_number要多一个的。
+	}	
+	rightNode->keys_num = np->keys_num - rightSplit;    //计算右节点的key数量 = 当前节点的-分拆数量
 	for (int i = rightSplit; i < np->keys_num + 1; i++)
 	{
         BPT_NODE * tmp = (BPT_NODE*) np->pointers[i];
 		rightNode->pointers[i - rightSplit] = tmp;
+		rightNode->keys[i - rightSplit] = np->keys[i];
+        rightNode->leaf[i - rightSplit] = np->leaf[i];
 
 		if (tmp != NULL)
 		{
@@ -414,11 +416,6 @@ BPT_NODE *split_bptree(BPT_NODE *np)
 			tmp->parent = rightNode;
             tmp = NULL;
 		}
-	}
-    for (int i = rightSplit; i < np->keys_num; i++)
-	{
-		rightNode->keys[i - rightSplit] = np->keys[i];
-        rightNode->leaf[i - rightSplit] = np->leaf[i];
 	}
     // To handle the LEFT node.
 	BPT_NODE *leftNode = np;
@@ -431,7 +428,7 @@ BPT_NODE *split_bptree(BPT_NODE *np)
 	else //			if (tree.parent == null)
 	{
 		BPT_NODE *treeRoot = create_empty_node();
-		treeRoot->keys[0] = risingNode;
+		treeRoot->keys[0] = risingKey;
 		treeRoot->pointers[0] = leftNode;
 		treeRoot->pointers[1] = rightNode;
 		leftNode->parent = treeRoot;
@@ -585,7 +582,7 @@ static void show_bpt_manual(void)
            "\tp <k> -- Print the path from the root to key k and its associated value.\n"
            "\tr <k1> <k2> -- Print the keys and values found in the range [<k1>, <k2>\n"
            "\td <k>  -- Delete key <k> and its associated value.\n"
-           "\tx -- Destroy the whole tree.  Start again with an empty tree of the same order.\n"
+           "\tx -- Destroy the whole tree.  \n"
            "\tt -- Show the tree information and Print the B+ tree.\n"
            "\tl -- Print the keys of the leaves (bottom row of the tree).\n"
            "\tR -- Destory and recreate the tree.\n"
@@ -633,9 +630,9 @@ static int bpt_manual()
             if (count ==3)
             {
                 show_msg("Delete one key.");
-                //get_current_time(dr.create_time);
-                //insert_record_to_tree(&bptree, &dr);
-                //print_bptree(bptree.root);;
+                get_current_time(dr.create_time);
+                insert_record_to_tree(&bptree, &dr);
+                print_bptree(bptree.root);;
             }
             else
             {                
@@ -647,7 +644,7 @@ static int bpt_manual()
             if (count == 1)
             {
                 show_msg("Find one key.");
-                //get_current_time(dr.create_time);
+                get_current_time(dr.create_time);
                 //find_and_print_record(bptree.root, &dr);
             }
             else
@@ -656,16 +653,15 @@ static int bpt_manual()
             }
             break;
         case 'l':
-            show_msg("List the bplus tree.");
+            show_msg("\nList the bplus tree.");
 
             list_bptree_leaves(bptree.root);
             print_bptree(bptree.root);
             break;
          case 'x':
-            show_msg("Destory the bplus tree.");
-
-            //bptree.root = destroy_bptree(&bptree);            
-            //printf("The tree is destoryed.\n");
+            //show_msg("Destory the bplus tree.");
+            bptree.root = destroy_bptree(&bptree);            
+            printf("The tree is destoryed.\n");
             break;
         case 't':
             if (bptree.root)
