@@ -689,6 +689,7 @@ static int get_range(BPT_Node *const root, int key_start, int key_end, int retur
 
         for (i = 0; i < n->keys_num && (n->keys[i] <  key_start); i++)
             ;
+       
         if (i == n->keys_num)
             return 0;
         while (n != NULL)
@@ -920,6 +921,8 @@ static BPT_Node *mergeRight (BPT_Node *tree)
 		parentNode->leaf[i-1] = parentNode->leaf[i];
 	}
 	parentNode->keys_num--;
+    free(rightSib);
+
 	if (!tree->is_leaf)
 	{
         //debug_bptree("BPT-D004: Merge Right( node is not leaf).");
@@ -1208,7 +1211,7 @@ static int bpt_manual()
             if (bptree.root)
             {
                 destroy_bptree(&bptree);
-                printf("The tree is not empty and is cleanned. Quit safely.\n");
+                printf("The tree is not empty and is cleaned. Quit safely.\n");
             }
             else
             {
