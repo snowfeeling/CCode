@@ -571,6 +571,89 @@ static BPT_NODE *make_tree_from_file()
     }
 }
 
+/*s=======================Functions of Finding key in tree==============================*/
+/* 功能：找到比Key大的叶子节点
+*  输入：root, key所在的记录，显示标志
+*  返回：叶子节点的指针。
+ * 从root开始，找key，直到到叶子。
+ * 非叶子节点上，Key的所处的叶子，是在key的右部指针上的。所以，在非叶子节点中，找到比key大的指针。
+ */
+static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD * drp)
+{
+    if (root == NULL)
+    {
+        return root;
+    }
+    else
+    {
+        int i = 0;
+        BPT_NODE *c = root;
+        while (!c->is_leaf)
+        {
+            for (i = 0; i < c->keys_num; i++)
+            {
+                //如果Key>=节点上的key，就往下找。直到找到第一个更大的key
+                if (drp->key < c->keys[i])
+                    break;
+            }
+            c = (BPT_NODE *)c->pointers[i]; //走到下一层去。
+        }
+        return c;
+    }
+}
+
+
+
+/* 功能：在Tree里面，找是否有有这个Key
+*  输入参数： root 和 drp 传入的数据指针。Leaf_out: 找到的可以所在叶子节点的位置指针
+*  返回参数：在叶子节点上的数据指针
+*/
+static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out)
+{
+    if (root == NULL)
+    {
+        if (leaf_out != NULL)
+            *leaf_out = NULL;
+        return NULL;
+    }
+
+    int i = 0;
+    BPT_NODE *leaf = NULL;
+
+    /* 如果root不为空，先找到叶子节点(包含想要查询的key的范围) 
+     */
+    leaf = find_leaf_node_in_bptree(root, drp);
+    if (leaf_out != NULL)
+        *leaf_out = leaf;
+    for (i = 0; i < leaf->keys_num; i++)
+        if (leaf->keys[i] ==  drp->key )
+            break;
+    if (i == leaf->keys_num)
+        return NULL;  // 如找到最后了，说明叶子节点中没有这个值。返回NULL。
+    else
+        return (BPT_DATA_RECORD *)leaf->leaf[i];
+}
+
+/* 功能：从tree中找到一个key所在的记录，并打印出来
+*  输入：root，要查找的值，显示标识
+*  返回：无
+ */
+static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
+{
+    BPT_NODE *leaf = NULL;
+    BPT_DATA_RECORD *r = find_leaf_data_in_bptree(root, drp, NULL);
+
+    if (r == NULL)
+    {    
+        printf("Not found the key %d.\n", drp->key);
+    }
+    else
+    {
+        printf("Record at %p -- key:[%d], \nID:[%s] NAME:[%s] Create Time:[%s].\n",
+               r, drp->key, r->id, r->name, r->create_time);
+    }
+}
+
 
 /*=================The functions to show the main manual.=====================
 */
@@ -643,9 +726,9 @@ static int bpt_manual()
             count = scanf("%d", &dr.key);
             if (count == 1)
             {
-                show_msg("Find one key.");
+                //show_msg("Find one key.");
                 get_current_time(dr.create_time);
-                //find_and_print_record(bptree.root, &dr);
+                find_and_print_record(bptree.root, &dr);
             }
             else
             {
