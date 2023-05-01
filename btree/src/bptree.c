@@ -571,18 +571,18 @@ static BPT_NODE *make_tree_from_file()
     }
 }
 
-/*s=======================Functions of Finding key in tree==============================*/
-/* 功能：找到比Key大的叶子节点
-*  输入：root, key所在的记录，显示标志
+/*=======================Functions of Finding key in tree==============================*/
+/* 功能：找到>=Key的叶子节点
+*  输入：root, key所在的记录
 *  返回：叶子节点的指针。
  * 从root开始，找key，直到到叶子。
  * 非叶子节点上，Key的所处的叶子，是在key的右部指针上的。所以，在非叶子节点中，找到比key大的指针。
  */
 static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD * drp)
 {
-    if (root == NULL)
-    {
-        return root;
+    if (root == NULL || drp == NULL)
+    {   //处理异常情况
+        return NULL;
     }
     else
     {
@@ -591,26 +591,23 @@ static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD 
         while (!c->is_leaf)
         {
             for (i = 0; i < c->keys_num; i++)
-            {
-                //如果Key>=节点上的key，就往下找。直到找到第一个更大的key
-                if (drp->key < c->keys[i])
+            {   //如果要查找的key <= 节点上的key，就找到了所在的节点指针；否则就往下找。直到找到本节点的最后一个
+                if (drp->key <= c->keys[i])
                     break;
             }
-            c = (BPT_NODE *)c->pointers[i]; //走到下一层去。
+            c = (BPT_NODE *)c->pointers[i]; //走到下一层去。直到叶子节点去。
         }
         return c;
     }
 }
 
-
-
 /* 功能：在Tree里面，找是否有有这个Key
 *  输入参数： root 和 drp 传入的数据指针。Leaf_out: 找到的可以所在叶子节点的位置指针
 *  返回参数：在叶子节点上的数据指针
 */
-static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out)
+static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex)
 {
-    if (root == NULL)
+    if (root == NULL || drp == NULL)
     {
         if (leaf_out != NULL)
             *leaf_out = NULL;
@@ -623,11 +620,14 @@ static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECOR
     /* 如果root不为空，先找到叶子节点(包含想要查询的key的范围) 
      */
     leaf = find_leaf_node_in_bptree(root, drp);
-    if (leaf_out != NULL)
-        *leaf_out = leaf;
     for (i = 0; i < leaf->keys_num; i++)
         if (leaf->keys[i] ==  drp->key )
             break;
+    if (leaf_out != NULL)
+    {
+        *leaf_out = leaf;
+        *fIndex = i;
+    }
     if (i == leaf->keys_num)
         return NULL;  // 如找到最后了，说明叶子节点中没有这个值。返回NULL。
     else
@@ -640,8 +640,10 @@ static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECOR
  */
 static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
 {
-    BPT_NODE *leaf = NULL;
-    BPT_DATA_RECORD *r = find_leaf_data_in_bptree(root, drp, NULL);
+    BPT_NODE *fNode = NULL;
+    int fIndex = 0;
+    BPT_DATA_RECORD *r;
+    r = find_leaf_data_in_bptree(root, drp, &fNode, &fIndex);
 
     if (r == NULL)
     {    
@@ -649,8 +651,37 @@ static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
     }
     else
     {
-        printf("Record at %p -- key:[%d], \nID:[%s] NAME:[%s] Create Time:[%s].\n",
-               r, drp->key, r->id, r->name, r->create_time);
+        int i, iStop =0;
+        BPT_DATA_RECORD * nr;
+        BPT_NODE * c = fNode;
+        while (!iStop)
+        {
+            for (i = fIndex; i< c->keys_num; i++)
+            {
+                nr = (BPT_DATA_RECORD*) (c->leaf[i]);
+                if (nr->key== drp->key)
+                {  
+                    print_one_bpt_data_record(nr);
+                }
+                else
+                {
+                    iStop = 1;
+                    break;
+                }
+            }
+            fIndex  = 0;
+            if (c->next != NULL)
+            {
+                c = c->next;
+            }
+            else
+                iStop = 1;
+        }
+        printf("\n");
+
+        /*printf("Record at %p -- key:[%d], ID:[%s] NAME:[%s] Create Time:[%s].\n",
+               nr, nr->key, nr->id, nr->name, nr->create_time);*/
+    
     }
 }
 
@@ -712,7 +743,7 @@ static int bpt_manual()
             count = sscanf(buffer, "%d %s %s", &dr.key, dr.id, dr.name);;
             if (count ==3)
             {
-                show_msg("Delete one key.");
+                //show_msg(" Insert one key.");
                 get_current_time(dr.create_time);
                 insert_record_to_tree(&bptree, &dr);
                 print_bptree(bptree.root);;
@@ -737,7 +768,6 @@ static int bpt_manual()
             break;
         case 'l':
             show_msg("\nList the bplus tree.");
-
             list_bptree_leaves(bptree.root);
             print_bptree(bptree.root);
             break;
@@ -758,9 +788,9 @@ static int bpt_manual()
                 printf("The tree is empty.\n");
             break;
         case 'R':
-            show_msg("ReCreate the bplus tree.");
-            //bptree.root = destroy_bptree(&bptree);            
-            //make_tree_from_file();
+            //show_msg("ReCreate the bplus tree.");
+            bptree.root = destroy_bptree(&bptree);            
+            make_tree_from_file();
             break;
         case 'o':
             if (bptree.root)
@@ -780,8 +810,7 @@ static int bpt_manual()
         case 'q':           
             if (bptree.root)
             {
-                
-                //destroy_bptree(&bptree);
+                destroy_bptree(&bptree);
                 printf("The tree is not empty and is cleaned. Quit safely.\n");
             }
             else
