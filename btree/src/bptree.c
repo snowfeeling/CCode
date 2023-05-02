@@ -1101,6 +1101,86 @@ static int deleteElement (int deletedValue)
 	return 0;				
 }
 
+/*=================Tree functions=========================
+*
+*/
+static int get_tree_info(BPLUS_TREE *bpt);
+static int show_tree_info(BPLUS_TREE *bpt);
+static int get_tree_hight(BPLUS_TREE *bpt);
+static int get_tree_leaf_num(BPLUS_TREE *bpt);
+
+static int get_tree_hight(BPLUS_TREE *bpt)
+{
+    BPT_NODE *r = bpt->root;
+    int h = 0;
+    if (r != NULL)
+    {
+        do
+        {
+            h++;            
+            r = r->pointers[0];
+        }
+        while (!r->is_leaf );
+        h++;
+    }
+    bpt->tree_height = h; 
+    return h;
+}
+
+static int get_tree_leaf_num(BPLUS_TREE *bpt)
+{
+    BPT_NODE *r = bpt->root;
+    int c = 0;
+    if (r != NULL)
+    {
+        do
+        {
+            r = r->pointers[0];
+        } while (!r->is_leaf );
+        while (r != NULL)
+        {
+            
+            c = c +r->keys_num;
+            r = r->next;
+        } ;
+
+    }
+    bpt->leaf_num = c; 
+    return c;
+
+}
+
+static int get_tree_info(BPLUS_TREE *bpt)
+{
+    get_tree_hight(bpt);
+    get_tree_leaf_num(bpt);
+}
+
+/*{
+    int max_degreee;
+    int min_key_num;
+    int max_key_num;
+    int split_index;
+    int next_index;
+    int leaf_num;
+    int tree_height;
+    BPT_NODE *root;
+};
+*/
+
+static int show_tree_info(BPLUS_TREE *bpt)
+{
+    printf("\n************ The tree information ***************\n");
+
+    printf("\tDEGREE     :%d\n", bpt->max_degreee);
+    printf("\tMin Key Num:%d\n", bpt->min_key_num);
+    printf("\tMax Key Num:%d\n", bpt->max_key_num);
+    printf("\tSplit Index:%d\n", bpt->split_index);
+    printf("\tLeaf Number:%d\n", bpt->leaf_num);
+    printf("\tTree Hight :%d\n", bpt->tree_height);
+
+}
+
 /*=================The functions to show the main manual.=====================
 */
 static void show_bpt_manual(void)
@@ -1194,9 +1274,9 @@ static int bpt_manual()
             if (bptree.root)
             {
                 show_msg("Show the tree.");
-                //get_tree_info(root);
-                //show_tree_info();
-                //print_tree(root);
+                get_tree_info(&bptree);
+                show_tree_info(&bptree);
+                print_bptree(bptree.root);
             }
             else
                 printf("The tree is empty.\n");
