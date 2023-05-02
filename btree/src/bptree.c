@@ -525,7 +525,7 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 
 /* Make the BPlus Tree from the designated Data file, and print the leaves.
 * Input: <void>
-* Return: the root pointer (BPT_Node*). 
+* Return: the root pointer (BPT_NODE*). 
 */
 static BPT_NODE *make_tree_from_file()
 {
@@ -550,11 +550,10 @@ static BPT_NODE *make_tree_from_file()
             {
                 char str1[BUFFER_SIZE];
                 get_current_time(dr.create_time);
-                sprintf(str1, "[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time: %20s]\n", dr.key, dr.id, dr.name, dr.create_time);
-                printf(str1);
+                print_one_bpt_data_record(&dr);
                 insert_record_to_tree(&bptree, &dr);
-                print_bptree(bptree.root);
-                printf("\n");
+                //print_bptree(bptree.root);
+                //printf("\n");
                 count ++;
             }
             else
@@ -564,15 +563,16 @@ static BPT_NODE *make_tree_from_file()
             }
         }
         fclose(fp);
+        print_bptree(bptree.root);
+        printf("\n");
         printf("\n%d records are created.\n", count);
-        //print_bptree_leaves(bptree);
 
         return bptree.root;
     }
 }
 
 /*=======================Functions of Finding key in tree==============================*/
-/* 功能：找到>=Key的叶子节点
+/* 功能：找到key可能所在的叶子节点
 *  输入：root, key所在的记录
 *  返回：叶子节点的指针。
  * 从root开始，找key，直到到叶子。
@@ -591,8 +591,8 @@ static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD 
         while (!c->is_leaf)
         {
             for (i = 0; i < c->keys_num; i++)
-            {   //如果要查找的key <= 节点上的key，就找到了所在的节点指针；否则就往下找。直到找到本节点的最后一个
-                if (drp->key <= c->keys[i])
+            {   //如果要查找的key < 非叶子节点上的key，就找到了所在的节点指针；否则就往下找。直到找到本节点的最后一个
+                if (drp->key < c->keys[i])
                     break;
             }
             c = (BPT_NODE *)c->pointers[i]; //走到下一层去。直到叶子节点去。
@@ -603,6 +603,7 @@ static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD 
 
 /* 功能：在Tree里面，找是否有有这个Key
 *  输入参数： root 和 drp 传入的数据指针。Leaf_out: 找到的可以所在叶子节点的位置指针
+*  输出参数："找到的叶子节点" 和 "key所在的index"
 *  返回参数：在叶子节点上的数据指针
 */
 static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex)
@@ -677,14 +678,428 @@ static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
             else
                 iStop = 1;
         }
-        printf("\n");
-
-        /*printf("Record at %p -- key:[%d], ID:[%s] NAME:[%s] Create Time:[%s].\n",
-               nr, nr->key, nr->id, nr->name, nr->create_time);*/
-    
+        printf("\n");    
     }
 }
 
+
+/*============Find the range between two keys =============================================================
+*/
+
+/* 功能：找到起止key之间的叶子
+*  输入：root，起止key，输出标识。找到的key数组、找到的叶子数组
+*  返回：找到的数量。
+ */
+static int get_range(BPT_NODE *const root, int key_start, int key_end, int returned_keys[], void *returned_pointers[])
+{
+    BPT_DATA_RECORD dr;    
+    dr.key = key_start;
+    BPT_NODE *n = find_leaf_node_in_bptree(root, &dr);
+    if (n == NULL)
+        return 0;
+    else
+    {
+        int i, iStop = 0;
+        int num_found = 0;
+        for (i = 0; i < n->keys_num && (n->keys[i] <  key_start); i++)
+            ;
+        if (i == n->keys_num)
+            //return ;
+        {
+            n = n->next;
+            i = 0;   
+        }
+        while (n != NULL && ! iStop)
+        {
+            for (; i < n->keys_num && (!iStop); i++)
+            {
+                if (n->keys[i] <= key_end)
+                {
+                    returned_keys[num_found] = n->keys[i];
+                    returned_pointers[num_found] = n->leaf[i];
+                    num_found++;
+                }
+                else
+                    iStop = 1;
+            }
+            n = n->next;
+            i = 0;
+        }
+        return num_found;
+    }
+}
+
+/* 功能：从tree中找一定范围的值。并显示出来
+* 输入：root，开始值，结束值，显示标志
+* 返回：无
+*/
+static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end)
+{
+    int i;
+    int array_size = 100; // key_end - key_start + 1;
+    int returned_keys[array_size];
+    void *returned_pointers[array_size];
+    int num_found = get_range(root, key_start, key_end, returned_keys, returned_pointers);
+    if (!num_found)
+        printf("None found.\n");
+    else
+    {
+        for (i = 0; i < num_found; i++)
+        {
+            print_one_bpt_data_record((BPT_DATA_RECORD *)returned_pointers[i]);
+        }
+        printf("\n%d records found.\n", num_found);
+    }
+    
+}
+
+/* ==================Delete functions =========================
+*/
+static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
+
+/* Function： Delete one record with the key.
+*/
+
+
+
+static int doDelete (BPT_NODE *root, int val)
+{
+    BPT_NODE *tree;
+    tree = root;
+	if (tree != NULL)
+	{
+		int i;
+		for (i = 0; i < tree->keys_num && tree->keys[i] < val; i++)
+            ;
+		if (i == tree->keys_num) /*找到本节点的最后，说明在本节点找不到，*/
+		{
+			if (!tree->is_leaf) /*如果在本节点找不到，且不是叶子，就找下一层*/
+			{
+				doDelete(tree->pointers[tree->keys_num], val);
+			}
+			else
+			{	//如果在本节点找不到，且是leaf.说明没找到。
+                printf("Not find the key.\n");
+            }
+		}
+		else
+        { 
+            if (!tree->is_leaf)  // The inner node.
+            {
+                if ( tree->keys[i] == val)
+                {
+                    doDelete(tree->pointers[i+1], val);
+                }
+                else /* tree->keys[i] > val*/
+                {
+                    doDelete(tree->pointers[i], val);
+                }
+            }
+            else //In the leaf, Tree->key[i] > val or Tree->key[i]== val
+            {
+                if (tree->keys[i] > val)
+                {
+                    printf("Not find the key.\n");
+                }
+                else // "Tree->key[i] == val", find the key and deleting it.
+                {
+                    // Release the memory.
+                    free(tree->leaf[i]);
+                    printf("The Key %d is deleted with the memory is released.\n", tree->keys[i]);
+
+                    for (int j = i; j < tree->keys_num - 1; j++)
+                    {
+                        tree->keys[j] = tree->keys[j+1];
+                        tree->leaf[j] = tree->leaf[j+1];
+                    }
+                    tree->keys_num--;			
+                    // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
+                    //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
+                    if (i == 0 && tree->parent != NULL) // 如果是第一个值
+                    {
+                        int nextSmallest = 0;
+                        BPT_NODE *parentNode = tree->parent;
+                        int parentIndex;
+                        for (parentIndex = 0; parentNode->pointers[parentIndex] != tree; parentIndex++)
+                            ;
+                        if (tree->keys_num == 0)
+                        {
+                            if (parentIndex == parentNode->keys_num)
+                            {
+                                //nextSmallest = -999;
+                                nextSmallest = val;
+                            }
+                            else
+                            {
+                                nextSmallest = parentNode->pointers[parentIndex+1]->keys[0];			
+                            }
+                        }
+                        else
+                        {
+                            nextSmallest = tree->keys[0];
+                        }
+                        while (parentNode != NULL)
+                        {
+                            if (parentIndex > 0 && parentNode->keys[parentIndex - 1] == val)
+                            {
+                                parentNode->keys[parentIndex - 1] = nextSmallest;
+                                //debug_bptree("go up to parent.");
+                           }
+                            BPT_NODE *grandParent = parentNode->parent;
+                            for (parentIndex = 0; grandParent != NULL && grandParent->pointers[parentIndex] != parentNode; parentIndex++)
+                                ;
+                            parentNode = grandParent;                                
+                        }                            
+                    }
+                    repairAfterDelete(tree);
+                }
+            }
+        }            
+    }
+}
+
+static BPT_NODE *mergeRight (BPT_NODE *tree) 
+{
+
+	BPT_NODE *parentNode = tree->parent;
+	int parentIndex = 0;
+    int i;
+    int fromParentIndex;
+
+	for (parentIndex = 0; parentNode->pointers[parentIndex] != tree; parentIndex++)
+        ;
+	BPT_NODE *rightSib = parentNode->pointers[parentIndex+1];
+
+	if (tree->is_leaf)
+	{
+	}
+	else
+	{
+        tree->keys[tree->keys_num] = parentNode->keys[parentIndex];
+        tree->leaf[tree->keys_num] = parentNode->leaf[parentIndex];
+	}
+	
+	fromParentIndex = tree->keys_num;
+
+	for (i = 0; i < rightSib->keys_num; i++)
+	{
+		int insertIndex =  tree->keys_num + 1 + i;
+		if (tree->is_leaf)
+		{
+			insertIndex -= 1;
+		}
+		tree->keys[insertIndex] = rightSib->keys[i];
+        tree->leaf[insertIndex] = rightSib->leaf[i];
+	}
+	if (!tree->is_leaf)
+	{
+		for (i = 0; i <= rightSib->keys_num; i++)
+		{
+			tree->pointers[tree->keys_num + 1 + i] = rightSib->pointers[i];
+			tree->pointers[tree->keys_num + 1 + i]->parent = tree;
+		}
+		tree->keys_num = tree->keys_num + rightSib->keys_num + 1;
+	}
+	else
+	{
+		tree->keys_num = tree->keys_num + rightSib->keys_num;
+		tree->next = rightSib->next;
+		if (rightSib->next != NULL)
+		{        
+            //debug_bptree("BPT-D003: Merge Right(Right Sib next != NULL).");
+		}
+	}
+	for (i = parentIndex+1; i < parentNode->keys_num; i++)
+	{
+		parentNode->pointers[i] = parentNode->pointers[i+1];
+		parentNode->keys[i-1] = parentNode->keys[i];
+		parentNode->leaf[i-1] = parentNode->leaf[i];
+	}
+	parentNode->keys_num--;
+    free(rightSib);
+
+	if (!tree->is_leaf)
+	{
+        //debug_bptree("BPT-D004: Merge Right( node is not leaf).");
+	}
+
+	return tree;
+}
+
+static BPT_NODE *stealFromRight (BPT_NODE *tree, int parentIndex) 
+{
+	// Steal from right sibling
+	BPT_NODE *parentNode = tree->parent;
+	BPT_NODE *rightSib = parentNode->pointers[parentIndex + 1];
+    int i;
+	tree->keys_num++;	
+	if (tree->is_leaf)
+ 	{
+		tree->keys[tree->keys_num - 1] = rightSib->keys[0];
+		tree->leaf[tree->keys_num - 1] = rightSib->leaf[0];
+		parentNode->keys[parentIndex] = rightSib->keys[1];
+        parentNode->leaf[parentIndex] = rightSib->leaf[1];
+	}
+	else
+	{
+		tree->keys[tree->keys_num - 1] = parentNode->keys[parentIndex];
+		tree->leaf[tree->keys_num - 1] = parentNode->leaf[parentIndex];
+		parentNode->keys[parentIndex] = rightSib->keys[0];
+        parentNode->leaf[parentIndex] = rightSib->leaf[0];
+	}
+	if (!tree->is_leaf)
+	{
+		tree->pointers[tree->keys_num] = rightSib->pointers[0];
+		tree->pointers[tree->keys_num]->parent = tree;
+		
+		for ( i = 1; i < rightSib->keys_num + 1; i++)
+		{
+			rightSib->pointers[i-1] = rightSib->pointers[i];								
+		}
+	}
+	for (i = 1; i < rightSib->keys_num; i++)
+	{
+		rightSib->keys[i-1] = rightSib->keys[i];
+        rightSib->leaf[i-1] = rightSib->leaf[i];
+	}
+
+	rightSib->keys_num--;
+
+	if (tree->is_leaf)
+	{
+		if (rightSib->next != NULL)
+		{
+            //debug_bptree("BPT-D006: stealFromRight( leaf and rightSib->next != NULL).");
+		}		
+	}
+	return tree;
+}
+
+static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex) 
+{
+	BPT_NODE * parentNode = tree->parent;
+	int i;
+
+    tree->keys_num++;
+	if (tree->is_leaf && tree->next != NULL)
+	{	}
+	
+	for (i = tree->keys_num - 1; i > 0; i--)
+	{
+		tree->keys[i] = tree->keys[i-1];
+		tree->leaf[i] = tree->leaf[i-1];
+
+	}
+	BPT_NODE *leftSib = parentNode->pointers[parentIndex -1];
+	
+	if (tree->is_leaf)
+	{
+		tree->keys[0] = leftSib->keys[leftSib->keys_num - 1];
+		tree->leaf[0] = leftSib->leaf[leftSib->keys_num - 1];
+		parentNode->keys[parentIndex-1] = leftSib->keys[leftSib->keys_num - 1];
+		parentNode->leaf[parentIndex-1] = leftSib->leaf[leftSib->keys_num - 1];
+	}
+	else
+	{
+		tree->keys[0] = parentNode->keys[parentIndex - 1];
+		tree->leaf[0] = parentNode->leaf[parentIndex - 1];
+		parentNode->keys[parentIndex-1] = leftSib->keys[leftSib->keys_num - 1];				
+		parentNode->leaf[parentIndex-1] = leftSib->leaf[leftSib->keys_num - 1];				
+	}
+	
+	if (!tree->is_leaf)
+	{
+		for ( i = tree->keys_num; i > 0; i--)
+		{
+			tree->pointers[i] =tree->pointers[i-1];
+		}
+		tree->pointers[0] = leftSib->pointers[leftSib->keys_num];
+		leftSib->pointers[leftSib->keys_num] = NULL;
+		tree->pointers[0]->parent = tree;
+	}
+	
+	leftSib->keys_num--;
+	
+	if (tree->is_leaf)
+	{
+        //debug_bptree("BPT-D007: stealFromLeft( leaf ).");
+    }
+
+	return tree;
+}
+
+
+static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
+{
+	if (tree->keys_num < bptree.min_key_num)
+	{
+		if (tree->parent == NULL) /* Root */
+		{
+			if (tree->keys_num == 0) /* The root is empty.*/
+			{
+                BPT_NODE * tmp = bptree.root;
+			    bptree.root = tree->pointers[0];
+				if (bptree.root != NULL)
+                {   
+                    free(tmp);
+					bptree.root->parent = NULL;
+                }
+			}
+		}
+		else 
+		{
+			BPT_NODE *parentNode = tree->parent;
+            BPT_NODE *nextNode;
+            int parentIndex = 0;
+			for (parentIndex = 0; parentNode->pointers[parentIndex] != tree; parentIndex++)
+                ;
+			if (parentIndex > 0 && parentNode->pointers[parentIndex - 1]->keys_num > bptree.min_key_num)
+			{
+				stealFromLeft(tree, parentIndex);				
+			}
+			else 
+            {
+                if (parentIndex < parentNode->keys_num && parentNode->pointers[parentIndex + 1]->keys_num > bptree.min_key_num)
+                {
+                    stealFromRight(tree,parentIndex);
+                }
+                else 
+                {    if (parentIndex == 0)
+                    {
+                        // Merge with right sibling
+                        nextNode = mergeRight(tree);
+                        repairAfterDelete(nextNode->parent);			
+                    }
+                    else
+                    {
+                        // Merge with left sibling
+                        nextNode = mergeRight(parentNode->pointers[parentIndex-1]);
+                        repairAfterDelete(nextNode->parent);
+                    }
+                }
+            }
+		}
+	}
+	else 
+        if (tree->parent != NULL)
+        {	
+        }
+}
+
+
+
+static int deleteElement (int deletedValue)
+{
+
+	doDelete(bptree.root, deletedValue);
+    if (bptree.root)
+        if (bptree.root->keys_num == 0)
+        {
+            bptree.root = bptree.root->pointers[0];
+            bptree.root->parent = NULL;
+        }
+	return 0;				
+}
 
 /*=================The functions to show the main manual.=====================
 */
@@ -704,7 +1119,7 @@ static void show_bpt_manual(void)
            "\t? -- Print this help message.\n");
 }
 
-/* ===================================================================================
+/* ================Main Manual================================================
 *  功能：主操作界面
 *  返回值：0
 */
@@ -729,8 +1144,8 @@ static int bpt_manual()
             if (count ==1)
             {
                 show_msg("Delete one key.");
-                //deleteElement(input_key);
-                //print_bptree(bptree.root);;
+                deleteElement(input_key);
+                print_bptree(bptree.root);;
            }
             else
             {
@@ -756,8 +1171,7 @@ static int bpt_manual()
         case 'f':
             count = scanf("%d", &dr.key);
             if (count == 1)
-            {
-                //show_msg("Find one key.");
+            {   //show_msg("Find one key.");
                 get_current_time(dr.create_time);
                 find_and_print_record(bptree.root, &dr);
             }
@@ -767,7 +1181,7 @@ static int bpt_manual()
             }
             break;
         case 'l':
-            show_msg("\nList the bplus tree.");
+            //show_msg("\nList the bplus tree.");
             list_bptree_leaves(bptree.root);
             print_bptree(bptree.root);
             break;
@@ -788,7 +1202,7 @@ static int bpt_manual()
                 printf("The tree is empty.\n");
             break;
         case 'R':
-            //show_msg("ReCreate the bplus tree.");
+            //show_msg("Recreate the bplus tree.");
             bptree.root = destroy_bptree(&bptree);            
             make_tree_from_file();
             break;
@@ -827,7 +1241,7 @@ static int bpt_manual()
                     input_key_2 = input_key;
                     input_key = tmp;
                 }
-                //get_and_print_range(bptree.root, input_key, input_key_2);
+                get_and_print_range(bptree.root, input_key, input_key_2);
             }
             else
             {
