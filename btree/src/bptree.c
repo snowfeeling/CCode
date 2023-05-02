@@ -24,6 +24,7 @@ static BPT_DATA_RECORD dr;
 */
 static void usage();
 static size_t get_current_time( char * time_info);
+static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
 
 /*=============================================================================
 * Fundation functions
@@ -512,14 +513,27 @@ static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp)
 */
 static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 {
+
     if (tree->root == NULL)
     {   // If the tree is empty，make a new tree.
         tree->root = create_new_tree(drp);
         return tree->root;
     }
     else
-    {   // Insert the record to the tree.
-        return insert_into_bptree_node(tree->root, drp);
+    {   
+        BPT_NODE *fNode = NULL;
+        int fIndex = 0;
+        BPT_DATA_RECORD *r;
+        r = find_leaf_data_in_bptree(tree->root, drp, &fNode, &fIndex);
+        if (r != NULL)
+        {    
+            printf("This is the duplicated key.\n");
+        }
+        else
+        {
+            // Insert the record to the tree.
+            return insert_into_bptree_node(tree->root, drp);
+        }
     }
 }
 
@@ -655,6 +669,7 @@ static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
         int i, iStop =0;
         BPT_DATA_RECORD * nr;
         BPT_NODE * c = fNode;
+        //考虑的是如果满足重复的key情况下，需要输出所有的值；
         while (!iStop)
         {
             for (i = fIndex; i< c->keys_num; i++)
@@ -741,7 +756,7 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
     void *returned_pointers[array_size];
     int num_found = get_range(root, key_start, key_end, returned_keys, returned_pointers);
     if (!num_found)
-        printf("None found.\n");
+        printf("%d record found.\n", 0);
     else
     {
         for (i = 0; i < num_found; i++)
@@ -755,13 +770,12 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
 
 /* ==================Delete functions =========================
 */
+/* Declartion of Deletion funtions.
+*/
 static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
 
 /* Function： Delete one record with the key.
 */
-
-
-
 static int doDelete (BPT_NODE *root, int val)
 {
     BPT_NODE *tree;
@@ -1087,7 +1101,8 @@ static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
 }
 
 
-
+/* The Main Deletion Function.
+*/
 static int deleteElement (int deletedValue)
 {
 
@@ -1102,10 +1117,10 @@ static int deleteElement (int deletedValue)
 }
 
 /*=================Tree functions=========================
-*
+* 
 */
-static int get_tree_info(BPLUS_TREE *bpt);
-static int show_tree_info(BPLUS_TREE *bpt);
+static void get_tree_info(BPLUS_TREE *bpt);
+static void show_tree_info(BPLUS_TREE *bpt);
 static int get_tree_hight(BPLUS_TREE *bpt);
 static int get_tree_leaf_num(BPLUS_TREE *bpt);
 
@@ -1139,46 +1154,30 @@ static int get_tree_leaf_num(BPLUS_TREE *bpt)
         } while (!r->is_leaf );
         while (r != NULL)
         {
-            
             c = c +r->keys_num;
             r = r->next;
         } ;
-
     }
     bpt->leaf_num = c; 
     return c;
-
 }
 
-static int get_tree_info(BPLUS_TREE *bpt)
+static void get_tree_info(BPLUS_TREE *bpt)
 {
     get_tree_hight(bpt);
     get_tree_leaf_num(bpt);
 }
 
-/*{
-    int max_degreee;
-    int min_key_num;
-    int max_key_num;
-    int split_index;
-    int next_index;
-    int leaf_num;
-    int tree_height;
-    BPT_NODE *root;
-};
-*/
-
-static int show_tree_info(BPLUS_TREE *bpt)
+static void show_tree_info(BPLUS_TREE *bpt)
 {
     printf("\n************ The tree information ***************\n");
-
-    printf("\tDEGREE     :%d\n", bpt->max_degreee);
-    printf("\tMin Key Num:%d\n", bpt->min_key_num);
-    printf("\tMax Key Num:%d\n", bpt->max_key_num);
-    printf("\tSplit Index:%d\n", bpt->split_index);
-    printf("\tLeaf Number:%d\n", bpt->leaf_num);
-    printf("\tTree Hight :%d\n", bpt->tree_height);
-
+    printf("*  DEGREE      : %d\n", bpt->max_degreee);
+    printf("*  Min Key Num : %d\n", bpt->min_key_num);
+    printf("*  Max Key Num : %d\n", bpt->max_key_num);
+    printf("*  Split Index : %d\n", bpt->split_index);
+    printf("*  Leaf Number : %d\n", bpt->leaf_num);
+    printf("*  Tree Hight  : %d\n", bpt->tree_height);
+    printf("**************************************************\n");
 }
 
 /*=================The functions to show the main manual.=====================
@@ -1186,14 +1185,14 @@ static int show_tree_info(BPLUS_TREE *bpt)
 static void show_bpt_manual(void)
 {
     printf("Enter any of the following commands after the prompt > :\n"
-           "\ti <key> <ID> <Name> -- Insert the value <Key> (an integer), ID (String) , Name (String).\n"
-           "\tf <k>  -- Find the value under key <k>.\n"
-           "\tp <k> -- Print the path from the root to key k and its associated value.\n"
-           "\tr <k1> <k2> -- Print the keys and values found in the range [<k1>, <k2>\n"
-           "\td <k>  -- Delete key <k> and its associated value.\n"
-           "\tx -- Destroy the whole tree.  \n"
            "\tt -- Show the tree information and Print the B+ tree.\n"
            "\tl -- Print the keys of the leaves (bottom row of the tree).\n"
+           "\tp <k> -- Print the path from the root to key k and its associated value.\n"
+           "\tf <k>  -- Find the value under key <k>.\n"
+           "\tr <k1> <k2> -- Print the keys and values found in the range [<k1>, <k2>\n"
+           "\ti <key> <ID> <Name> -- Insert the value <Key> (an integer), ID (String) , Name (String).\n"
+           "\td <k>  -- Delete key <k> and its associated value.\n"
+           "\tx -- Destroy the whole tree.  \n"
            "\tR -- Destory and recreate the tree.\n"
            "\tq -- Quit. (Or use Ctl-D or Ctl-C.)\n"
            "\t? -- Print this help message.\n");
@@ -1273,7 +1272,7 @@ static int bpt_manual()
         case 't':
             if (bptree.root)
             {
-                show_msg("Show the tree.");
+                //show_msg("Show the tree.");
                 get_tree_info(&bptree);
                 show_tree_info(&bptree);
                 print_bptree(bptree.root);
@@ -1296,7 +1295,8 @@ static int bpt_manual()
                 int input_order;
                 count = scanf("%d", &input_order);
                 if (count == 1)
-                    bptree.max_degreee = input_order;
+                    ;
+                    // bptree.max_degreee = input_order;
                 else
                     printf("Input error. Please press ? to get help.\n");
             }
