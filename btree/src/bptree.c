@@ -579,7 +579,7 @@ static BPT_NODE *make_tree_from_file()
         fclose(fp);
         print_bptree(bptree.root);
         printf("\n");
-        printf("\n%d records are created.\n", count);
+        printf("\n%d record(s) are created.\n", count);
 
         return bptree.root;
     }
@@ -763,7 +763,7 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
         {
             print_one_bpt_data_record((BPT_DATA_RECORD *)returned_pointers[i]);
         }
-        printf("\n%d records found.\n", num_found);
+        printf("\n%d record(s) found.\n", num_found);
     }
     
 }
