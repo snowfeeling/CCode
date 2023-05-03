@@ -524,10 +524,13 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
         BPT_NODE *fNode = NULL;
         int fIndex = 0;
         BPT_DATA_RECORD *r;
+        // 找到这个key。
         r = find_leaf_data_in_bptree(tree->root, drp, &fNode, &fIndex);
+
         if (r != NULL)
-        {    
+        {    //如果找到了，说明是重复的key
             printf("This is the duplicated key.\n");
+            return NULL;
         }
         else
         {
@@ -536,6 +539,41 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
         }
     }
 }
+
+/*============Update record function =========================
+*/
+static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
+
+static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
+{
+
+    if (tree->root == NULL)
+    {          
+        return NULL;
+    }
+    else
+    {   
+        BPT_NODE *fNode = NULL;
+        int fIndex = 0;
+        BPT_DATA_RECORD *r;
+        r = find_leaf_data_in_bptree(tree->root, drp, &fNode, &fIndex);
+        if (r == NULL)
+        {    
+            printf("Not find the key in tree.\n");
+            return NULL;
+        }
+        else
+        {
+            // update the record in the tree.
+            strcpy(r->id, drp->id);
+            strcpy(r->name, drp->name);
+            strcpy(r->create_time, drp->create_time);
+            show_msg("\n1 record udpated.\n");
+            return fNode;
+        }
+    }
+}
+
 
 /* Make the BPlus Tree from the designated Data file, and print the leaves.
 * Input: <void>
@@ -1247,6 +1285,23 @@ static int bpt_manual()
                 printf("Input error. Please press ? to get help.\n");
             }
             break;
+        case 'u':
+            fgets(buffer, BUFFER_SIZE, stdin);
+            input_consumed = true;
+            count = sscanf(buffer, "%d %s %s", &dr.key, dr.id, dr.name);;
+            if (count ==3)
+            {
+                //show_msg(" Update one key.");
+                get_current_time(dr.create_time);
+                update_record_in_tree(&bptree, &dr);
+                print_bptree(bptree.root);;
+            }
+            else
+            {                
+                printf("Input error. Please press ? to get help.\n");
+            }
+            break;
+            
         case 'f':
             count = scanf("%d", &dr.key);
             if (count == 1)
