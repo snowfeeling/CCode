@@ -700,7 +700,7 @@ static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
 
     if (r == NULL)
     {    
-        printf("Not found the key %d.\n", drp->key);
+        printf("Not find the key %d.\n", drp->key);
     }
     else
     {
@@ -1232,7 +1232,7 @@ static void show_bpt_manual(void)
            "\td <k>  -- Delete key <k> and its associated value.\n"
            "\tx -- Destroy the whole tree.  \n"
            "\tR -- Destory and recreate the tree.\n"
-           "\tq -- Quit. (Or use Ctl-D or Ctl-C.)\n"
+           "\tq -- Quit. (Or use Ctl-C.)\n"
            "\t? -- Print this help message.\n");
 }
 
