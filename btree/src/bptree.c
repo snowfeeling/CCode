@@ -517,6 +517,8 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
     if (tree->root == NULL)
     {   // If the tree is empty，make a new tree.
         tree->root = create_new_tree(drp);
+        print_one_bpt_data_record(drp);
+        printf("1 record was inserted.\n");
         return tree->root;
     }
     else
@@ -529,14 +531,20 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 
         if (r != NULL)
         {    //如果找到了，说明是重复的key
-            printf("This is the duplicated key.\n");
+            printf("The key is not inserted because of the duplication.\n");
+            print_one_bpt_data_record(r);
             return NULL;
         }
         else
         {
             // Insert the record to the tree.
-            return insert_into_bptree_node(tree->root, drp);
+            BPT_NODE *bpt = insert_into_bptree_node(tree->root, drp);
+            print_one_bpt_data_record(drp);
+            printf("1 record was inserted.\n");
+            return bpt;
+
         }
+
     }
 }
 
@@ -565,10 +573,13 @@ static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
         else
         {
             // update the record in the tree.
+            print_one_bpt_data_record(r);
+            printf("The record was udpated to:\n");
             strcpy(r->id, drp->id);
             strcpy(r->name, drp->name);
             strcpy(r->create_time, drp->create_time);
-            show_msg("\n1 record udpated.\n");
+            print_one_bpt_data_record(r);
+            printf("\n1 record udpated.\n");
             return fNode;
         }
     }
@@ -602,7 +613,7 @@ static BPT_NODE *make_tree_from_file()
             {
                 char str1[BUFFER_SIZE];
                 get_current_time(dr.create_time);
-                print_one_bpt_data_record(&dr);
+                //print_one_bpt_data_record(&dr);
                 insert_record_to_tree(&bptree, &dr);
                 //print_bptree(bptree.root);
                 //printf("\n");
@@ -1168,12 +1179,11 @@ static int get_tree_hight(BPLUS_TREE *bpt)
     int h = 0;
     if (r != NULL)
     {
-        do
+        while (!r->is_leaf )
         {
-            h++;            
+            h++;
             r = r->pointers[0];
-        }
-        while (!r->is_leaf );
+        };
         h++;
     }
     bpt->tree_height = h; 
@@ -1186,10 +1196,10 @@ static int get_tree_leaf_num(BPLUS_TREE *bpt)
     int c = 0;
     if (r != NULL)
     {
-        do
+        while (!r->is_leaf )
         {
             r = r->pointers[0];
-        } while (!r->is_leaf );
+        };
         while (r != NULL)
         {
             c = c +r->keys_num;
@@ -1278,7 +1288,7 @@ static int bpt_manual()
                 //show_msg(" Insert one key.");
                 get_current_time(dr.create_time);
                 insert_record_to_tree(&bptree, &dr);
-                print_bptree(bptree.root);;
+                //print_bptree(bptree.root);;
             }
             else
             {                
@@ -1294,7 +1304,7 @@ static int bpt_manual()
                 //show_msg(" Update one key.");
                 get_current_time(dr.create_time);
                 update_record_in_tree(&bptree, &dr);
-                print_bptree(bptree.root);;
+                //print_bptree(bptree.root);;
             }
             else
             {                
