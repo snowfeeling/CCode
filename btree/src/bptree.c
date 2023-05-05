@@ -813,9 +813,58 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
             print_one_bpt_data_record((BPT_DATA_RECORD *)returned_pointers[i]);
         }
         printf("\n%d record(s) found.\n", num_found);
-    }
-    
+    }    
 }
+
+/*===========Function Path to key =============================
+*
+*/
+static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
+
+static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
+{
+    BPT_NODE * r = root;
+    BPT_NODE * c;
+    int i;
+    int rank = 1;
+    while (! r->is_leaf)
+    {
+        printf("Level=%d [", rank);
+        for (i=0; i< r->keys_num; i++)
+        {
+            printf("%d ", r->keys[i]);
+        }
+        for (i=0; i< r->keys_num; i++)
+        {
+            if (drp->key < r->keys[i] )
+                break;
+        }
+        r = r->pointers[i];
+        printf("] (Next Level Pointer:%d)\n", i);
+        rank ++;
+        
+    }
+    if (r->is_leaf)
+    {
+        int nFound = 0, FoundIndex =0;
+        printf("Level=%d [", rank);
+        for (i=0; i< r->keys_num; i++)
+        {
+            printf("%d ", r->keys[i]);
+            if (r->keys[i] == drp->key)
+            {    
+                nFound = 1;
+                FoundIndex = i;
+            }
+        }
+        if (nFound)
+            printf("] The key found at index %d.\n", FoundIndex+1);
+        else
+            printf("] The key NOT found.\n");
+    }
+
+}
+
 
 /* ==================Delete functions =========================
 */
@@ -868,7 +917,7 @@ static int doDelete (BPT_NODE *root, int val)
                 {
                     // Release the memory.
                     free(tree->leaf[i]);
-                    printf("The Key %d is deleted with the memory is released.\n", tree->keys[i]);
+                    printf("The Key %d is deleted with the memory released.\n", tree->keys[i]);
 
                     for (int j = i; j < tree->keys_num - 1; j++)
                     {
@@ -1270,9 +1319,9 @@ static int bpt_manual()
             count = scanf("%d", &input_key);
             if (count ==1)
             {
-                show_msg("Delete one key.");
+                //show_msg("Delete one key.");
                 deleteElement(input_key);
-                print_bptree(bptree.root);;
+                //print_bptree(bptree.root);;
            }
             else
             {
@@ -1324,6 +1373,18 @@ static int bpt_manual()
                 printf("Input error. Please press ? to get help.\n");
             }
             break;
+        case 'p':
+            count = scanf("%d", &dr.key);
+            if (count == 1)
+            {   //show_msg("Show one key.");
+                get_current_time(dr.create_time);
+                get_path_to_key(bptree.root, &dr);
+            }
+            else
+            {
+                printf("Input error. Please press ? to get help.\n");
+            }
+            break;            
         case 'l':
             //show_msg("\nList the bplus tree.");
             list_bptree_leaves(bptree.root);
