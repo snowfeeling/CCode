@@ -224,7 +224,7 @@ static void print_bptree(BPT_NODE *const root)
         printf("[");
         for (i = 0; i < n->keys_num; i++)
         {
-            printf("%d ", n->keys[i]);
+            printf(" %d", n->keys[i]);
         }
         if (!n->is_leaf)
             for (i = 0; i <= n->keys_num; i++)
@@ -614,10 +614,10 @@ static BPT_NODE *make_tree_from_file()
                 char str1[BUFFER_SIZE];
                 get_current_time(dr.create_time);
                 //print_one_bpt_data_record(&dr);
-                insert_record_to_tree(&bptree, &dr);
+                if (insert_record_to_tree(&bptree, &dr))
+                    count ++;
                 //print_bptree(bptree.root);
                 //printf("\n");
-                count ++;
             }
             else
             {   //输入值有问题。废弃掉。
@@ -626,9 +626,10 @@ static BPT_NODE *make_tree_from_file()
             }
         }
         fclose(fp);
+        printf("\n%d record(s) are created.\n", count);
+
         print_bptree(bptree.root);
         printf("\n");
-        printf("\n%d record(s) are created.\n", count);
 
         return bptree.root;
     }
@@ -800,7 +801,7 @@ static int get_range(BPT_NODE *const root, int key_start, int key_end, int retur
 static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end)
 {
     int i;
-    int array_size = 100; // key_end - key_start + 1;
+    int array_size = key_end - key_start + 1;
     int returned_keys[array_size];
     void *returned_pointers[array_size];
     int num_found = get_range(root, key_start, key_end, returned_keys, returned_pointers);
@@ -857,7 +858,7 @@ static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
             }
         }
         if (nFound)
-            printf("] The key found at index %d.\n", FoundIndex+1);
+            printf("] The key found at NO. %d.\n", FoundIndex+1);
         else
             printf("] The key NOT found.\n");
     }
