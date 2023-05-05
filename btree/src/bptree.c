@@ -824,13 +824,12 @@ static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
 static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 {
     BPT_NODE * r = root;
-    BPT_NODE * c;
     int i;
     int rank = 1;
     while (! r->is_leaf)
     {
         printf("Level=%d [", rank);
-        for (i=0; i< r->keys_num; i++)
+        for (i=0; i < r->keys_num; i++)
         {
             printf("%d ", r->keys[i]);
         }
