@@ -304,17 +304,6 @@ static BPT_NODE *create_empty_node()
     if (new_node == NULL)
         ERROR_EXIT("Node creation.");
     
-    /*new_node->keys = malloc((tree_degree - 1) * sizeof(int)); // （阶数-1） 个key
-    if (new_node->keys == NULL)
-    {
-        ERROR_EXIT("New node keys array.");
-    }
-    new_node->pointers = malloc((tree_degree) * sizeof(void *)); // （阶数） 个key
-    if (new_node->pointers == NULL)
-    {
-        ERROR_EXIT("New node pointers array.");
-    }
-    */
     new_node->is_leaf = false;
     new_node->keys_num = 0;
     new_node->parent = NULL;
@@ -354,7 +343,8 @@ static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp)
     return root;
 }
 
-/* 拆分一个节点
+/* ======================拆分一个节点=====================
+* 如果节点中的key数量大于Max_key_num，就做拆分
 */
 BPT_NODE *split_bptree(BPT_NODE *np)
 {
@@ -374,7 +364,7 @@ BPT_NODE *split_bptree(BPT_NODE *np)
         //找到在父节点中，本节点的位置 parentIndex；
 		for (parentIndex = 0; parentIndex < currentParent->keys_num + 1 && currentParent->pointers[parentIndex] != np; parentIndex++);
 		if (parentIndex == currentParent->keys_num + 1)
-		{   //如果没有找到，就是肯定时出错了
+		{   //如果没有找到，就是肯定是出错了
 			ERROR_EXIT("Couldn't find which child we were!");
 		}
 		for (i = currentParent->keys_num; i > parentIndex; i--)
@@ -463,11 +453,16 @@ BPT_NODE *insert_repair(BPT_NODE *np)
 }
 
 
-/* insert one record to one node.
+/*===================insert one record to one node.=====================
+* 本Function是递归调用。
+* 如果是叶子节点，就插入到合适的位置，然后修补该节点。
+* 如果不是叶子节点，就寻找到不小于该key的节点，做插入动作。
+* 返回：插入并验证节点有效性后的叶子节点；
 */
 static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp)
 {
     BPT_NODE * c = np;
+    //
     if(c->is_leaf)
     {   // If the node is leaf, insert it into the node.
         c->keys_num ++;
@@ -505,6 +500,7 @@ static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp)
             else
                 break;
         }
+        //递归调用，插入到下个节点去。
         return insert_into_bptree_node(c->pointers[find_index], drp);
     }
 }
@@ -871,6 +867,7 @@ static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 /* Declartion of Deletion funtions.
 */
 static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
+static int doDelete (BPT_NODE *root, int val);
 
 /* Function： Delete one record with the key.
 */
@@ -891,7 +888,7 @@ static int doDelete (BPT_NODE *root, int val)
 			}
 			else
 			{	//如果在本节点找不到，且是leaf.说明没找到。
-                printf("Not find the key.\n");
+                printf("Not find the key %d.\n", val);
             }
 		}
 		else
@@ -911,7 +908,7 @@ static int doDelete (BPT_NODE *root, int val)
             {
                 if (tree->keys[i] > val)
                 {
-                    printf("Not find the key.\n");
+                    printf("Not find the key %d.\n", val);
                 }
                 else // "Tree->key[i] == val", find the key and deleting it.
                 {
@@ -970,6 +967,8 @@ static int doDelete (BPT_NODE *root, int val)
     }
 }
 
+/*==========合并右边节点====================================
+*/
 static BPT_NODE *mergeRight (BPT_NODE *tree) 
 {
 
@@ -1143,6 +1142,7 @@ static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex)
 
 static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
 {
+    // 当节点中的key值少于最小值时，需要做修复；
 	if (tree->keys_num < bptree.min_key_num)
 	{
 		if (tree->parent == NULL) /* Root */
@@ -1199,7 +1199,7 @@ static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
 }
 
 
-/* The Main Deletion Function.
+/*==================== The Main Deletion Function.==========================
 */
 static int deleteElement (int deletedValue)
 {

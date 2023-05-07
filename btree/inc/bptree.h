@@ -28,7 +28,7 @@ const definition.
 struct bpt_data_record
 {
     int key;
-    char id[BUFFER_SIZE];
+    char id[ID_LENGTH];
     char name[NAME_LENGTH];
     char create_time[TIME_LENGTH];
 };
