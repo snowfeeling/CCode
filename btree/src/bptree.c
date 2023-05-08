@@ -345,12 +345,13 @@ static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp)
 
 /* ======================拆分一个节点=====================
 * 如果节点中的key数量大于Max_key_num，就做拆分
+* 返回: 返回拆分后的父node；
 */
 BPT_NODE *split_bptree(BPT_NODE *np)
 {
     if (np->keys_num <= bptree.max_key_num)
     {
-        printf("The node is not need to repair.");
+        printf("The node does not need to be repaired.");
         return np;
     }
     
@@ -432,21 +433,21 @@ BPT_NODE *split_bptree(BPT_NODE *np)
 }
 
 
-/* To check the node, if the node is overfow, need to repair it.
+/* =====To valid the node, if the node is overfow, need to repair it.=======
 */
 BPT_NODE *insert_repair(BPT_NODE *np)
 {
 	if (np->keys_num <= bptree.max_key_num) 
-	{
+	{//不需要拆分这个节点
 		return np;
 	}
 	else if (np->parent == NULL)
-	{
+	{   //说明是root节点；
 		bptree.root = split_bptree(np);
 		return (BPT_NODE *) (bptree.root);
 	}
 	else
-	{
+	{   //拆分这个节点，之后对新产生的父节点做验证。
 		BPT_NODE *newNode  = split_bptree(np);
 		return insert_repair(newNode);
 	}			    
