@@ -19,7 +19,7 @@ static BPLUS_TREE bptree;
 static BPT_NODE *queue = NULL;
 static BPT_DATA_RECORD dr;
 
-/*
+/*======= Function declartion ========================
 * Global Functions.
 */
 static void usage();
@@ -43,8 +43,8 @@ static BPT_DATA_RECORD *create_data_record(BPT_DATA_RECORD *drp);
 static BPT_NODE *create_empty_node();
 static BPT_NODE *create_empty_leaf();
 static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp);
-BPT_NODE *split_bptree(BPT_NODE *np);
-BPT_NODE *insert_repair(BPT_NODE *np);
+static BPT_NODE *split_bptree(BPT_NODE *np);
+static BPT_NODE *insert_repair(BPT_NODE *np);
 static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp);
 static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
 static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
@@ -95,7 +95,8 @@ static size_t get_current_time( char * time_info)
     return result_num;
 }
 
-
+/*========push one node to queue===================
+*/
 static void enqueue(BPT_NODE *new_node)
 {
     BPT_NODE *c;
@@ -114,8 +115,7 @@ static void enqueue(BPT_NODE *new_node)
     }
 }
 
-/* Get one node from queue.
-*  
+/*============== Get one node from queue.============
  */
 static BPT_NODE *dequeue(void)
 {
@@ -149,20 +149,19 @@ int init_tree(BPLUS_TREE *tree)
 
 }
 
-/*
-* print the data of one BPT record. 
+/*========Print the data of one BPT record.================= 
 */
 static void print_one_bpt_data_record(BPT_DATA_RECORD *drp)
 {
     printf("[Key:%4d] [ID:%8s] [Name:%20s] [Create_Time:%20s]\n", drp->key, drp->id, drp->name, drp->create_time);
 
 }
-/* Function: To list the detail information of all leaves. 
+
+/*========Function: To list the detail information of all leaves.========== 
 *  Input    : The root of tree.
 *  Output   : <None>
 *  Return   : <void>
 */
-
 static void list_bptree_leaves(BPT_NODE * const root)
 {
     if (root == NULL)
@@ -191,8 +190,7 @@ static void list_bptree_leaves(BPT_NODE * const root)
     printf("\n");
 }
 
-/* 
-* Print the all keys of leaves.
+/*=======Print the all keys of leaves.=======================
 */
 static int print_key_of_bptree_leaves(BPLUS_TREE bptree)
 {
@@ -221,8 +219,7 @@ static int print_key_of_bptree_leaves(BPLUS_TREE bptree)
     return EXIT_SUCCESS;
 }
 
-/*
-* Get the hight from chilf to root;
+/*=======Get the hight from child to root;===================
 */
 static int hight_to_root(BPT_NODE *const root, BPT_NODE *child)
 {
@@ -237,8 +234,7 @@ static int hight_to_root(BPT_NODE *const root, BPT_NODE *child)
 }
 
 
-/* 
-* Print the tree from the root to leaves.
+/* ======= Print the tree from the root to leaves.===========
 */
 static void print_bptree(BPT_NODE *const root)
 {
@@ -281,7 +277,7 @@ static void print_bptree(BPT_NODE *const root)
     printf("\n");
 }
 
-/* ======= Destory Tree functions. =========
+/* ======= Destory Tree functions. ================
 */
 /* Destory the BPlus noedes of BPlus tree.
 *  Input    : root
@@ -308,7 +304,7 @@ static BPT_NODE *destroy_bptree(BPLUS_TREE *bptree)
     return NULL;
 }
 
-/* Exit the program after listing and destorying the BP Tree;
+/*======= Exit the program after listing and destorying the BP Tree========
 */
 static void ERROR_EXIT(char* str)
 {
@@ -322,7 +318,7 @@ static void ERROR_EXIT(char* str)
     exit(EXIT_FAILURE);
 }
 
-/* 功能：根据传入的记录，创建一个数据块。
+/*====== 功能：根据传入的记录，创建一个数据块。===============
 * 输入： 数据指针
 * 输出： 返回生成记录的指针。
  */
@@ -365,7 +361,7 @@ static BPT_NODE *create_empty_node()
     return new_node;
 }
 
-/* 创建一个叶子节点。先创立一个Node，然后设置成叶子节点的标识 */
+/*====== 创建一个叶子节点。先创立一个Node，然后设置成叶子节点的标识 ========*/
 static BPT_NODE *create_empty_leaf()
 {
     BPT_NODE *leaf = create_empty_node();
@@ -374,7 +370,7 @@ static BPT_NODE *create_empty_leaf()
 }
 
 
-/* 如果是第一次插入，就建立一个新树root  */
+/*====== 如果是第一次插入，就建立一个新树root  =========*/
 static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp)
 {
     BPT_NODE *root = create_empty_leaf();
@@ -389,11 +385,11 @@ static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp)
     return root;
 }
 
-/* ======================拆分一个节点=====================
+/*====== 在插入过程中，拆分一个节点=====================
 * 如果节点中的key数量大于Max_key_num，就做拆分
 * 返回: 返回拆分后的父node；
 */
-BPT_NODE *split_bptree(BPT_NODE *np)
+static BPT_NODE *split_bptree(BPT_NODE *np)
 {
     if (np->keys_num <= bptree.max_key_num)
     {
@@ -479,9 +475,9 @@ BPT_NODE *split_bptree(BPT_NODE *np)
 }
 
 
-/* =====To valid the node, if the node is overfow, need to repair it.=======
+/*=====To valid the node, if the node is overfow, need to repair it.=======
 */
-BPT_NODE *insert_repair(BPT_NODE *np)
+static BPT_NODE *insert_repair(BPT_NODE *np)
 {
 	if (np->keys_num <= bptree.max_key_num) 
 	{//不需要拆分这个节点
@@ -623,8 +619,7 @@ static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
     }
 }
 
-
-/* Make the BPlus Tree from the designated Data file, and print the leaves.
+/*====== Make the BPlus Tree from the designated Data file, and print the leaves.======
 * Input: <void>
 * Return: the root pointer (BPT_NODE*). 
 */
@@ -669,8 +664,8 @@ static BPT_NODE *make_tree_from_file()
     }
 }
 
-/*=======================Functions of Finding key in tree==============================*/
-/* 功能：找到key可能所在的叶子节点
+/*====== Functions of Finding key in tree==============================*/
+/*====== 功能：找到key可能所在的叶子节点 =========
 *  输入：root, key所在的记录
 *  返回：叶子节点的指针。
  * 从root开始，找key，直到到叶子。
@@ -699,7 +694,7 @@ static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD 
     }
 }
 
-/* 功能：在Tree里面，找是否有有这个Key
+/*====== 功能：在Tree里面，找是否有有这个Key =========
 *  输入参数： root 和 drp 传入的数据指针。Leaf_out: 找到的可以所在叶子节点的位置指针
 *  输出参数："找到的叶子节点" 和 "key所在的index"
 *  返回参数：在叶子节点上的数据指针
@@ -733,8 +728,8 @@ static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECOR
         return (BPT_DATA_RECORD *)leaf->leaf[i];
 }
 
-/* 功能：从tree中找到一个key所在的记录，并打印出来
-*  输入：root，要查找的值，显示标识
+/*======= 功能：从tree中找到一个key所在的记录，并打印出来 =======
+*  输入：root，要查找的数据指针
 *  返回：无
  */
 static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
@@ -785,7 +780,7 @@ static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp)
 /*============Find the range between two keys =============================================================
 */
 
-/* 功能：找到起止key之间的叶子
+/*====== 功能：找到起止key之间的叶子 =======
 *  输入：root，起止key，输出标识。找到的key数组、找到的叶子数组
 *  返回：找到的数量。
  */
@@ -828,7 +823,7 @@ static int get_range(BPT_NODE *const root, int key_start, int key_end, int retur
     }
 }
 
-/* 功能：从tree中找一定范围的值。并显示出来
+/*====== 功能：从tree中找一定范围的值。并显示出来 =======
 * 输入：root，开始值，结束值，显示标志
 * 返回：无
 */
@@ -852,7 +847,7 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
 }
 
 /*===========Function Path to key =============================
-*
+* 
 */
 
 static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
