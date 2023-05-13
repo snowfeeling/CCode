@@ -539,9 +539,7 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
             print_one_bpt_data_record(drp);
             printf("1 record was inserted.\n");
             return bpt;
-
         }
-
     }
 }
 
@@ -551,7 +549,6 @@ static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
 
 static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 {
-
     if (tree->root == NULL)
     {          
         return NULL;
@@ -563,13 +560,12 @@ static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
         BPT_DATA_RECORD *r;
         r = find_leaf_data_in_bptree(tree->root, drp, &fNode, &fIndex);
         if (r == NULL)
-        {    
+        {   //未找到key 
             printf("Not find the key in tree.\n");
             return NULL;
         }
         else
-        {
-            // update the record in the tree.
+        {   // update the record in the tree.
             print_one_bpt_data_record(r);
             printf("The record was udpated to:\n");
             strcpy(r->id, drp->id);
@@ -608,13 +604,9 @@ static BPT_NODE *make_tree_from_file()
             i = fscanf(fp, "%d %s %s\n", &dr.key, dr.id, dr.name);
             if (i == 3)
             {
-                char str1[BUFFER_SIZE];
                 get_current_time(dr.create_time);
-                //print_one_bpt_data_record(&dr);
                 if (insert_record_to_tree(&bptree, &dr))
                     count ++;
-                //print_bptree(bptree.root);
-                //printf("\n");
             }
             else
             {   //输入值有问题。废弃掉。
@@ -821,6 +813,11 @@ static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
 
 static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 {
+    if (root == NULL)
+    {
+        printf("The tree is empty.\n");
+        return;
+    }
     BPT_NODE * r = root;
     int i;
     int rank = 1;
@@ -838,8 +835,7 @@ static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
         }
         r = r->pointers[i];
         printf("] (Next Level Pointer:%d)\n", i);
-        rank ++;
-        
+        rank ++;   
     }
     if (r->is_leaf)
     {
@@ -855,11 +851,13 @@ static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
             }
         }
         if (nFound)
+        {    
             printf("] The key found at NO. %d.\n", FoundIndex+1);
+            print_one_bpt_data_record(r->leaf[FoundIndex]);
+        }
         else
             printf("] The key NOT found.\n");
     }
-
 }
 
 
@@ -879,6 +877,7 @@ static int doDelete (BPT_NODE *root, int val)
 	if (tree != NULL)
 	{
 		int i;
+        //跳过比val小的key；因为要删除的值都在大于它的节点内；
 		for (i = 0; i < tree->keys_num && tree->keys[i] < val; i++)
             ;
 		if (i == tree->keys_num) /*找到本节点的最后，说明在本节点找不到，*/
@@ -893,15 +892,15 @@ static int doDelete (BPT_NODE *root, int val)
             }
 		}
 		else
-        { 
+        {   //在本节点内找到>= Val的点；
             if (!tree->is_leaf)  // The inner node.
             {
                 if ( tree->keys[i] == val)
-                {
+                {   //如果key的值=要删除的值，就删除右节点
                     doDelete(tree->pointers[i+1], val);
                 }
                 else /* tree->keys[i] > val*/
-                {
+                {   //如果key的值 > 要删除的val，就删除左节点；
                     doDelete(tree->pointers[i], val);
                 }
             }
@@ -914,9 +913,16 @@ static int doDelete (BPT_NODE *root, int val)
                 else // "Tree->key[i] == val", find the key and deleting it.
                 {
                     // Release the memory.
-                    free(tree->leaf[i]);
-                    printf("The Key %d is deleted with the memory released.\n", tree->keys[i]);
-
+                    if (tree->leaf[i] != NULL)
+                    {
+                        free(tree->leaf[i]);
+                        printf("The Key %d is deleted with the memory released.\n", tree->keys[i]);
+                    }
+                    else
+                    {
+                        printf("Error: It's wrong when deleting leaf.\n");
+                    }
+                    //把后面的key和叶子节点都移到前面；
                     for (int j = i; j < tree->keys_num - 1; j++)
                     {
                         tree->keys[j] = tree->keys[j+1];
@@ -925,7 +931,9 @@ static int doDelete (BPT_NODE *root, int val)
                     tree->keys_num--;			
                     // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
                     //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
-                    if (i == 0 && tree->parent != NULL) // 如果是第一个值
+                    // 如果要删除的key叶子节点中的第一个值，要找到 下一个最小的key；
+                    // 如果现在叶子节点空了，往上找父节点，然后修复
+                    if (i == 0 && tree->parent != NULL) 
                     {
                         int nextSmallest = 0;
                         BPT_NODE *parentNode = tree->parent;
@@ -936,7 +944,6 @@ static int doDelete (BPT_NODE *root, int val)
                         {
                             if (parentIndex == parentNode->keys_num)
                             {
-                                //nextSmallest = -999;
                                 nextSmallest = val;
                             }
                             else
@@ -982,10 +989,7 @@ static BPT_NODE *mergeRight (BPT_NODE *tree)
         ;
 	BPT_NODE *rightSib = parentNode->pointers[parentIndex+1];
 
-	if (tree->is_leaf)
-	{
-	}
-	else
+	if (!tree->is_leaf)
 	{
         tree->keys[tree->keys_num] = parentNode->keys[parentIndex];
         tree->leaf[tree->keys_num] = parentNode->leaf[parentIndex];
@@ -1016,10 +1020,6 @@ static BPT_NODE *mergeRight (BPT_NODE *tree)
 	{
 		tree->keys_num = tree->keys_num + rightSib->keys_num;
 		tree->next = rightSib->next;
-		if (rightSib->next != NULL)
-		{        
-            //debug_bptree("BPT-D003: Merge Right(Right Sib next != NULL).");
-		}
 	}
 	for (i = parentIndex+1; i < parentNode->keys_num; i++)
 	{
@@ -1029,11 +1029,6 @@ static BPT_NODE *mergeRight (BPT_NODE *tree)
 	}
 	parentNode->keys_num--;
     free(rightSib);
-
-	if (!tree->is_leaf)
-	{
-        //debug_bptree("BPT-D004: Merge Right( node is not leaf).");
-	}
 
 	return tree;
 }
