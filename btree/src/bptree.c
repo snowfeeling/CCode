@@ -25,6 +25,52 @@ static BPT_DATA_RECORD dr;
 static void usage();
 static size_t get_current_time( char * time_info);
 static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
+static void enqueue(BPT_NODE *new_node);
+static BPT_NODE *dequeue(void);
+static void show_msg(char *msg);
+static void ERROR_EXIT(char* str);
+
+
+int init_tree(BPLUS_TREE *tree);
+static void print_one_bpt_data_record(BPT_DATA_RECORD *drp);
+static void list_bptree_leaves(BPT_NODE * const root);
+static int print_key_of_bptree_leaves(BPLUS_TREE bptree);
+static int hight_to_root(BPT_NODE *const root, BPT_NODE *child);
+static void print_bptree(BPT_NODE *const root);
+static void destroy_bptree_nodes(BPT_NODE *root);
+static BPT_NODE *destroy_bptree(BPLUS_TREE *bptree);
+static BPT_DATA_RECORD *create_data_record(BPT_DATA_RECORD *drp);
+static BPT_NODE *create_empty_node();
+static BPT_NODE *create_empty_leaf();
+static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp);
+BPT_NODE *split_bptree(BPT_NODE *np);
+BPT_NODE *insert_repair(BPT_NODE *np);
+static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp);
+static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
+static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
+static BPT_NODE *make_tree_from_file();
+static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD * drp);
+static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
+static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp);
+static int get_range(BPT_NODE *const root, int key_start, int key_end, int returned_keys[], void *returned_pointers[]);
+static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end);
+static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
+static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
+static int doDelete (BPT_NODE *root, int val);
+static BPT_NODE *mergeRight (BPT_NODE *tree) ;
+static BPT_NODE *stealFromRight (BPT_NODE *tree, int parentIndex) ;
+static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex) ;
+static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
+static int deleteElement (int deletedValue);
+
+static void get_tree_info(BPLUS_TREE *bpt);
+static void show_tree_info(BPLUS_TREE *bpt);
+static int get_tree_hight(BPLUS_TREE *bpt);
+static int get_tree_leaf_num(BPLUS_TREE *bpt);
+
+static void show_bpt_manual(void);
+static int bpt_manual();
+
 
 /*=============================================================================
 * Fundation functions
@@ -506,7 +552,7 @@ static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp)
     }
 }
 
-/* Insert one record to tree(from root);
+/*=============Insert one record to tree(from root);==================
 */
 static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 {
@@ -545,7 +591,6 @@ static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 
 /*============Update record function =========================
 */
-static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
 
 static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 {
@@ -809,7 +854,6 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
 /*===========Function Path to key =============================
 *
 */
-static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
 
 static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 {
@@ -865,8 +909,6 @@ static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 */
 /* Declartion of Deletion funtions.
 */
-static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
-static int doDelete (BPT_NODE *root, int val);
 
 /* Function： Delete one record with the key.
 */
@@ -1213,10 +1255,6 @@ static int deleteElement (int deletedValue)
 /*=================Tree functions=========================
 * 
 */
-static void get_tree_info(BPLUS_TREE *bpt);
-static void show_tree_info(BPLUS_TREE *bpt);
-static int get_tree_hight(BPLUS_TREE *bpt);
-static int get_tree_leaf_num(BPLUS_TREE *bpt);
 
 static int get_tree_hight(BPLUS_TREE *bpt)
 {
