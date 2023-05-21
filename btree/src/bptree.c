@@ -22,7 +22,7 @@ static BPT_DATA_RECORD dr;
 /*======= Function declartion ========================
 * Global Functions.
 */
-static void usage();
+static void bpt_usage();
 static size_t get_current_time( char * time_info);
 static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
 static void enqueue(BPT_NODE *new_node);
@@ -43,25 +43,30 @@ static BPT_DATA_RECORD *create_data_record(BPT_DATA_RECORD *drp);
 static BPT_NODE *create_empty_node();
 static BPT_NODE *create_empty_leaf();
 static BPT_NODE *create_new_tree(BPT_DATA_RECORD *drp);
+/* Insert functions*/
 static BPT_NODE *split_bptree(BPT_NODE *np);
 static BPT_NODE *insert_repair(BPT_NODE *np);
 static BPT_NODE *insert_into_bptree_node(BPT_NODE *np, BPT_DATA_RECORD *drp);
 static BPT_NODE *insert_record_to_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
+/*Update function*/
 static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp);
+/*SELECT functions*/
 static BPT_NODE *make_tree_from_file();
 static BPT_NODE *find_leaf_node_in_bptree(BPT_NODE *const root, BPT_DATA_RECORD * drp);
 static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
 static void find_and_print_record(BPT_NODE *const root, BPT_DATA_RECORD *drp);
 static int get_range(BPT_NODE *const root, int key_start, int key_end, int returned_keys[], void *returned_pointers[]);
 static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end);
-static void get_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
+static void print_path_to_key(BPT_NODE *tree, BPT_DATA_RECORD *drp);
+
+/*Deletion functions*/
 static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
 static int doDelete (BPT_NODE *root, int val);
 static BPT_NODE *mergeRight (BPT_NODE *tree) ;
 static BPT_NODE *stealFromRight (BPT_NODE *tree, int parentIndex) ;
 static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex) ;
 static BPT_NODE *repairAfterDelete (BPT_NODE *tree);
-static int deleteElement (int deletedValue);
+static int deleteElement (BPLUS_TREE *bpt, int deletedValue);
 
 static void get_tree_info(BPLUS_TREE *bpt);
 static void show_tree_info(BPLUS_TREE *bpt);
@@ -850,7 +855,7 @@ static void get_and_print_range(BPT_NODE *const root, int key_start, int key_end
 * 
 */
 
-static void get_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
+static void print_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 {
     if (root == NULL)
     {
@@ -1234,15 +1239,15 @@ static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
 
 /*==================== The Main Deletion Function.==========================
 */
-static int deleteElement (int deletedValue)
+static int deleteElement (BPLUS_TREE *bpt, int deletedValue)
 {
-
-	doDelete(bptree.root, deletedValue);
-    if (bptree.root)
-        if (bptree.root->keys_num == 0)
+    BPLUS_TREE *tree = bpt;
+	doDelete(tree->root, deletedValue);
+    if (tree->root)
+        if (tree->root->keys_num == 0)
         {
-            bptree.root = bptree.root->pointers[0];
-            bptree.root->parent = NULL;
+            tree->root = tree->root->pointers[0];
+            tree->root->parent = NULL;
         }
 	return 0;				
 }
@@ -1297,12 +1302,12 @@ static void get_tree_info(BPLUS_TREE *bpt)
 static void show_tree_info(BPLUS_TREE *bpt)
 {
     printf("\n************ The tree information ***************\n");
-    printf("*  DEGREE      : %d\n", bpt->max_degreee);
-    printf("*  Min Key Num : %d\n", bpt->min_key_num);
-    printf("*  Max Key Num : %d\n", bpt->max_key_num);
-    printf("*  Split Index : %d\n", bpt->split_index);
-    printf("*  Leaf Number : %d\n", bpt->leaf_num);
-    printf("*  Tree Hight  : %d\n", bpt->tree_height);
+    printf("*  DEGREE      : %5d\n", bpt->max_degreee);
+    printf("*  Min Key Num : %5d\n", bpt->min_key_num);
+    printf("*  Max Key Num : %5d\n", bpt->max_key_num);
+    printf("*  Split Index : %5d\n", bpt->split_index);
+    printf("*  Leaf Number : %5d\n", bpt->leaf_num);
+    printf("*  Tree Hight  : %5d\n", bpt->tree_height);
     printf("**************************************************\n");
 }
 
@@ -1349,7 +1354,8 @@ static int bpt_manual()
             if (count ==1)
             {
                 //show_msg("Delete one key.");
-                deleteElement(input_key);
+                deleteElement(&bptree, input_key);
+                //deleteElement(input_key);
                 //print_bptree(bptree.root);;
            }
             else
@@ -1407,7 +1413,7 @@ static int bpt_manual()
             if (count == 1)
             {   //show_msg("Show one key.");
                 get_current_time(dr.create_time);
-                get_path_to_key(bptree.root, &dr);
+                print_path_to_key(bptree.root, &dr);
             }
             else
             {
