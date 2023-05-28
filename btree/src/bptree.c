@@ -7,6 +7,7 @@
  * To study the BPlus Tree.
  * 
  */
+#include "../inc/mylog.h"
 #include "../inc/bptree.h"
 
 /*=============================================================================
@@ -23,7 +24,6 @@ static BPT_DATA_RECORD dr;
 * Global Functions.
 */
 static void bpt_usage();
-static size_t get_current_time( char * time_info);
 static BPT_DATA_RECORD * find_leaf_data_in_bptree(BPT_NODE *root, BPT_DATA_RECORD *drp, BPT_NODE ** leaf_out, int *fIndex);
 static void enqueue(BPT_NODE *new_node);
 static BPT_NODE *dequeue(void);
@@ -88,16 +88,6 @@ static void bpt_usage()
     printf("*\tPlease see the README for your usage.\n");
     printf("**********************************************\n");
     printf("\n");
-}
-static size_t get_current_time( char * time_info)
-{
-    time_t current_time;
-    struct tm *ptime;
-
-    time(&current_time);
-    ptime = localtime(&current_time);
-    size_t result_num = strftime (time_info, 20,"%Y-%m-%d %H:%M:%S",ptime);
-    return result_num;
 }
 
 /*========push one node to queue===================
@@ -1095,9 +1085,7 @@ static BPT_NODE *stealFromRight (BPT_NODE *tree, int parentIndex)
 		tree->leaf[tree->keys_num - 1] = parentNode->leaf[parentIndex];
 		parentNode->keys[parentIndex] = rightSib->keys[0];
         parentNode->leaf[parentIndex] = rightSib->leaf[0];
-	}
-	if (!tree->is_leaf)
-	{
+
 		tree->pointers[tree->keys_num] = rightSib->pointers[0];
 		tree->pointers[tree->keys_num]->parent = tree;
 		
@@ -1114,13 +1102,6 @@ static BPT_NODE *stealFromRight (BPT_NODE *tree, int parentIndex)
 
 	rightSib->keys_num--;
 
-	if (tree->is_leaf)
-	{
-		if (rightSib->next != NULL)
-		{
-            //debug_bptree("BPT-D006: stealFromRight( leaf and rightSib->next != NULL).");
-		}		
-	}
 	return tree;
 }
 
@@ -1154,10 +1135,7 @@ static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex)
 		tree->leaf[0] = parentNode->leaf[parentIndex - 1];
 		parentNode->keys[parentIndex-1] = leftSib->keys[leftSib->keys_num - 1];				
 		parentNode->leaf[parentIndex-1] = leftSib->leaf[leftSib->keys_num - 1];				
-	}
-	
-	if (!tree->is_leaf)
-	{
+
 		for ( i = tree->keys_num; i > 0; i--)
 		{
 			tree->pointers[i] =tree->pointers[i-1];
@@ -1166,13 +1144,7 @@ static BPT_NODE *stealFromLeft (BPT_NODE *tree, int parentIndex)
 		leftSib->pointers[leftSib->keys_num] = NULL;
 		tree->pointers[0]->parent = tree;
 	}
-	
 	leftSib->keys_num--;
-	
-	if (tree->is_leaf)
-	{
-        //debug_bptree("BPT-D007: stealFromLeft( leaf ).");
-    }
 
 	return tree;
 }
@@ -1488,6 +1460,9 @@ static int bpt_manual()
             {
                 printf("Input error. Please press ? to get help.\n");
             }
+            break;
+        case 'c':
+            system("cls");
             break;
         case '\n':
             input_consumed = true;
