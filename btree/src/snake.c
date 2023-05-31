@@ -8,17 +8,16 @@
 
 bool gameOver;
 bool stop = false;
-bool hit = false;
 /*游戏的边框大小*/
 #define width 50
-#define height 20
+#define height 30
 
 /*蛇的坐标，食物的坐标还有分数*/
 int x,y,fruitX,fruitY,score;
 /*蛇每个点的坐标*/
 int tailX[200],tailY[200];
 /*蛇的默认长度*/
-int ntail=3;
+int ntail=1;
 /*控制台屏幕缓冲区句柄*/
 HANDLE hOutput, hOutBuf;
 COORD coord = { 0,0 };
@@ -36,10 +35,9 @@ typedef enum
 	UP,
 	DOWN
 }Direction;
-
-
 Direction Dir;
-
+bool switchover = false;
+#define BORDER_SHOWS (0)
 
 /*====Init the  program====*/
 static int init_snake_program()
@@ -56,26 +54,15 @@ static int close_snake_program()
     close_log_file(flog_handle);
 }
 
-/*开始菜单*/
-void menu()
-{
-    int a;
-    printf("+--------------------------------------------------------------------+\n");
-    printf("|                              Snake Game                            |\n");
-    printf("|                              1) New Game                           |\n");
-    printf("|                              2) Setting                            |\n");
-    printf("|                              3) Quit                               |\n");
-    printf("+--------------------------------------------------------------------+\n");
-    printf("---->Please select: ");
-    scanf("%d", &a);
-}
+
 /*初始化状态*/
-void setup()
+static void setup()
 {
     gameOver = false;
     /*根据当前时间设置“随机数种子”*/
     srand(time(NULL));
     Dir = STOP;
+    Dir = RIGHT;
     
     /*贪吃蛇头的位置,固定在中间*/
     x= width/2;
@@ -86,8 +73,6 @@ void setup()
     score = 0;
 }
 
-bool switchover = false;
-#define BORDER_SHOWS (1)
 
 /*===========================================*/
 static void set_status_bar()
@@ -95,13 +80,13 @@ static void set_status_bar()
     if (!gameOver)
     {
         char str1[width+2];
-        sprintf(str1, "[Cord:%d,%d] [$(%d : %d)] [Score: %d]", x,y, fruitX, fruitY, score);
+        sprintf(str1, "[Cord:%2d,%2d] [$(%2d : %2d)] [Score: %3d] [Length:%3d]", x,y, fruitX, fruitY, score, ntail);
         strcpy(data[height+2], str1);
     }
     else
     {
         char str1[width+2];
-        sprintf(str1, "[Cord:%d,%d] [$(%d : %d)] [Score: %d] Game Over!", x,y, fruitX, fruitY, score);
+        sprintf(str1, "[Cord:%d,%d] [$(%d : %d)] [Score: %d]  [Length:%3d] Game Over!", x,y, fruitX, fruitY, score, ntail);
         strcpy(data[height+2], str1);
     }
 }
@@ -134,20 +119,16 @@ static void switch_buffer()
 	switchover = !switchover;
 }
 
-
 /*绘制界面*/
-void draw()
+static void draw()
 {
 	if(stop == true)
 	{
 		return;
 	}
-
-    //send_to_log(flog_handle, "Starting draw in draw()\n");
 	int i;
 	int j;
 
-#if BORDER_SHOWS    
 	/*第一行*/
     data[0][0] ='+';
     for(i= 1 ;i<width+1;i++)
@@ -155,22 +136,19 @@ void draw()
         data[0][i] = '=';
     }
     data[0][width+1] = '+';
-#endif    
+
     /*画中间的画面*/ 
     int p;
     char a = 'a';
     for(p= 1 ;p<height+1;p++)/*高度*/
 	{
         int q;
-        for(q= 0 ;q<width+2;q++)/*宽度*/
+        for(q= 0 ; q<width+2; q++)/*宽度*/
 		{
-			/*第一行最后已给字符*/
+			/*第一列和最后一列显示墙符*/
             if(q==0 || q==width+1)
 			{ 
-				if (p<10) 
-                    a = '0'+p;
-                else
-                    a = '0'+p-10;
+                    a = '|';
             }
             else
 			{
@@ -182,7 +160,7 @@ void draw()
 				{
                     int k=0;
                     bool print = false;
-                    /*贪吃蛇的长度 默认长度是 3*/
+                    /*显示贪吃蛇的形状 */
                     for( k = 0; k < ntail; k++)
                     {
                         if(tailX[k]==q && tailY[k]==p)
@@ -195,14 +173,14 @@ void draw()
                     /*如果这个位置打印了 * 就不要打印空格了*/
                     if(!print)
                     {
-                        a = '_';
+                        a = '-';
                     }
 	            }
         	}
-            data[p][q] = a;
+           data[p][q] = a;
         }
     }
-#if BORDER_SHOWS
+
 	/*最后一行*/
     data[height+1][0]='+';
     for(j= 1 ;j<width+1;j++)
@@ -210,12 +188,16 @@ void draw()
         data[height+1][j] = '=';
     }
     data[height+1][width+1]='+';
-    /*状态行*/
-    set_status_bar();
-#endif
 
+    /*设置状态行信息*/
+    set_status_bar();
+
+    /*刷新屏幕*/
     switch_buffer();
-	Sleep(300);
+    if (gameOver)
+        Sleep(4200);
+    else 
+	    Sleep(300);
 }
 
 /*按键输入控制*/
@@ -238,22 +220,18 @@ void input()
 		{
             case 75:/*左键*/
                 Dir = LEFT;
-                hit= true;
                 strcpy(in_keys, "LEFT\n");
                 break;
             case 72:/*上键*/
                 Dir = UP;
-                hit= true;
                 strcpy(in_keys, "UP\n");
                 break;
             case 77:/*右键*/
                 Dir = RIGHT;
-                hit= true;
                 strcpy(in_keys, "RIGHT\n");
                 break;
             case 80:/*向下键盘键 */
                 Dir = DOWN;
-                hit= true;                
                 strcpy(in_keys, "DOWN\n");
                 break;
             case 27:/*ESC*/
@@ -270,11 +248,6 @@ void input()
         }
         send_to_log(flog_handle, in_keys);
     }
-	else 
-        if(!hit && stop == false)/*如果刚开始没有改变方向的话*/
-        {
-            x++;
-        }
 }
 
 /*判断贪吃蛇的长度*/ 
@@ -284,7 +257,6 @@ void logic()
 	{
 		return;
 	}
-    //send_to_log(flog_handle, "Starting the logics in logic()\n");
 	
 	/*把上一个位置记下*/
     int lastX = tailX[0];
@@ -322,28 +294,22 @@ void logic()
             break;
     }
 
-    if(x<1 || x> width+1 || y<1 || y > height+1)
+    if(x<1 || x> width || y<1 || y > height)
 	{
-        send_to_log(flog_handle, "Come to the boarder in logic()\n");
-
+        send_to_log(flog_handle, "Come to the border.\n");
         gameOver = true;
-        set_status_bar();
-        draw();
-        switch_buffer();
-        Sleep(4200);
     }
 
         if(x==fruitX && y==fruitY)
         {
             /*吃了一个食物，蛇的长度增加1*/
-            ntail++;
-            score+=10;
-            send_to_log(flog_handle, "Bingo!\n");
+            ntail ++;
+            score += 10;
+            send_to_log(flog_handle, "<Bingo!>\n");
             /*更新下一个食物的位置*/
             fruitX = rand()%width+1;
             fruitY = rand()%height+1;
         }
-
 }
 
 /*双缓冲技术解决闪屏问题*/
@@ -376,9 +342,7 @@ void double_buff_init(void)
 int snake()
 {
     init_snake_program();
-
 	double_buff_init();
-    //menu();
     setup();
     logic();
     draw();
@@ -387,8 +351,8 @@ int snake()
 	while(!gameOver)
 	{
         input();
-        draw();
         logic(); 
+        draw();
     }
 
     close_snake_program();
