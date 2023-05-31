@@ -85,7 +85,7 @@ static void bpt_usage()
 {
     printf("\n**********************************************");
     printf("\n* Welcoming to BPlus Tree Demo.\n");
-    printf("*\tPlease see the README for your usage.\n");
+    printf("*\t Please see the README for your usage.\n");
     printf("**********************************************\n");
     printf("\n");
 }
@@ -325,7 +325,7 @@ static BPT_DATA_RECORD *create_data_record(BPT_DATA_RECORD *drp)
         ERROR_EXIT("Record creation.");
     }
     else
-    {
+    {   //set the values of the data record.
         new_record->key = drp->key;
         strcpy(new_record->id, drp->id);
         strcpy (new_record->name , drp->name);
@@ -644,7 +644,7 @@ static BPT_NODE *make_tree_from_file()
                     count ++;
             }
             else
-            {   //输入值有问题。废弃掉。
+            {   //输入文件中的值有问题。停止处理，退出。
                 fclose(fp);
                 ERROR_EXIT("Input data error.");
             }
@@ -1297,6 +1297,7 @@ static void show_bpt_manual(void)
            "\td <k>  -- Delete key <k> and its associated value.\n"
            "\tx -- Destroy the whole tree.  \n"
            "\tR -- Destory and recreate the tree.\n"
+           "\tc -- Clean the screen.\n"
            "\tq -- Quit. (Or use Ctl-C.)\n"
            "\t? -- Print this help message.\n");
 }
@@ -1340,14 +1341,12 @@ static int bpt_manual()
             input_consumed = true;
             count = sscanf(buffer, "%d %s %s", &dr.key, dr.id, dr.name);;
             if (count ==3)
-            {
-                //show_msg(" Insert one key.");
+            {   //show_msg(" Insert one key.");
                 get_current_time(dr.create_time);
                 insert_record_to_tree(&bptree, &dr);
-                //print_bptree(bptree.root);;
             }
             else
-            {                
+            {
                 printf("Input error. Please press ? to get help.\n");
             }
             break;
@@ -1356,11 +1355,9 @@ static int bpt_manual()
             input_consumed = true;
             count = sscanf(buffer, "%d %s %s", &dr.key, dr.id, dr.name);;
             if (count ==3)
-            {
-                //show_msg(" Update one key.");
+            {   //show_msg(" Update one key.");
                 get_current_time(dr.create_time);
                 update_record_in_tree(&bptree, &dr);
-                //print_bptree(bptree.root);;
             }
             else
             {                
@@ -1393,7 +1390,6 @@ static int bpt_manual()
             }
             break;            
         case 'l':
-            //show_msg("\nList the bplus tree.");
             list_bptree_leaves(bptree.root);
             print_bptree(bptree.root);
             break;
@@ -1404,8 +1400,7 @@ static int bpt_manual()
             break;
         case 't':
             if (bptree.root)
-            {
-                //show_msg("Show the tree.");
+            {   // "Show the tree infroamtion."
                 get_tree_info(&bptree);
                 show_tree_info(&bptree);
                 print_bptree(bptree.root);
@@ -1434,17 +1429,6 @@ static int bpt_manual()
                     printf("Input error. Please press ? to get help.\n");
             }
             break;
-        case 'q':           
-            if (bptree.root)
-            {
-                destroy_bptree(&bptree);
-                printf("The tree is not empty and is cleaned. Quit safely.\n");
-            }
-            else
-            {
-                printf("The tree is empty. Quit safely.\n");
-            }
-            return EXIT_SUCCESS;
         case 'r':
             if (scanf("%d %d", &input_key, &input_key_2) == 2)
             {
@@ -1461,6 +1445,17 @@ static int bpt_manual()
                 printf("Input error. Please press ? to get help.\n");
             }
             break;
+        case 'q':           
+            if (bptree.root)
+            {
+                destroy_bptree(&bptree);
+                printf("The tree is not empty and is cleaned. Quit safely.\n");
+            }
+            else
+            {
+                printf("The tree is empty. Quit safely.\n");
+            }
+            return EXIT_SUCCESS;
         case 'c':
             system("cls");
             break;

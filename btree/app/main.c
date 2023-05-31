@@ -6,13 +6,11 @@
 
 #include "../inc/mylog.h"
 #include "../inc/bptree.h"
-#include "../inc/snake.h"
 
 int main ()
 {
 
-    //test_bplus_tree();
-    snake();
+    test_bplus_tree();
     return 0;
 
 }
