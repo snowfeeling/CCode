@@ -127,15 +127,15 @@ static void draw()
 	int i;
 	int j;
 
-	/*第一行*/
-    data[0][0] ='+';
+	/*设置第一行*/
+    data[0][0] = '+';
     for(i= 1 ;i<width+1;i++)
 	{ 
         data[0][i] = '=';
     }
     data[0][width+1] = '+';
 
-    /*画中间的画面*/ 
+    /*设置中间的画面数据*/ 
     int p;
     char a = 'a';
     for(p= 1 ;p<height+1;p++)/*高度*/
@@ -159,7 +159,26 @@ static void draw()
                     int k=0;
                     bool print = false;
                     /*显示贪吃蛇的形状 */
-                    for( k = 0; k < ntail; k++)
+                    if(tailX[0]==q && tailY[0]==p)
+                        {
+                            switch (Dir)
+                            {
+                            case UP:
+                                a = 'A';
+                                break;
+                            case LEFT:
+                                a = '<';
+                                break;
+                            case RIGHT:
+                                a = '>';
+                                break;
+                            case DOWN:
+                                a = 'V';
+                                break;    
+                            }
+                            print = true;
+                        }         
+                    for( k = 1; k < ntail; k++)
                     {
                         if(tailX[k]==q && tailY[k]==p)
                         {
@@ -168,7 +187,8 @@ static void draw()
                             break;
                         }
                     }
-                    /*如果这个位置打印了 * 就不要打印空格了*/
+                   
+                     /*如果这个位置没有打印 "*", 就打印空字符*/
                     if(!print)
                     {
                         a = '-';
@@ -179,13 +199,13 @@ static void draw()
         }
     }
 
-	/*最后一行*/
-    data[height+1][0]='+';
+	/*设置最后一行数据*/
+    data[height+1][0]= '+';
     for(j= 1 ;j<width+1;j++)
 	{
         data[height+1][j] = '=';
     }
-    data[height+1][width+1]='+';
+    data[height+1][width+1]= '+';
 
     /*设置状态行信息*/
     set_status_bar();
@@ -195,7 +215,7 @@ static void draw()
     if (gameOver)
         Sleep(4200);
     else 
-	    Sleep(300);
+	    Sleep(200);
 }
 
 /*按键输入控制*/

@@ -10,7 +10,6 @@
 int main ()
 {
 
-    //test_bplus_tree();
     snake();
     return 0;
 

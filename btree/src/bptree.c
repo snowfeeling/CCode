@@ -896,12 +896,10 @@ static void print_path_to_key(BPT_NODE *root, BPT_DATA_RECORD *drp)
 
 
 /* ==================Delete functions =========================
-*/
-/* Declartion of Deletion funtions.
+* Declartion of Deletion funtions.
 */
 
-/* Function： Delete one record with the key.
-*/
+/* Function： Delete one record with the key.*/
 static int doDelete (BPT_NODE *root, int val)
 {
     BPT_NODE *tree;
