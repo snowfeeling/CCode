@@ -45,19 +45,23 @@ int testQuickSort()
     init_double_buffer();
     put_data_to_buffer(&p);
     refresh_screen();
-    Sleep(2400);
+    Sleep(800);
         
     QuickSort(&p, 0, p.qnum - 1);
 
-    printf("The sorted data is :\n");
-    ShowData(&p);
+    put_data_to_buffer(&p);
+    refresh_screen();
 
-    close_log_file(flog);
     do
     {
         Sleep(1200);
         /* code */
     } while (!_kbhit());
+
+    printf("The sorted data is :\n");
+    ShowData(&p);
+
+    close_log_file(flog);
 
     
     return 0;
@@ -153,6 +157,8 @@ void QuickSort(Squeue *p, int low, int high)
     sprintf(str, "[TMP  :P=%6d %3d -%3d]\n", tmp, i, j);
     LogMeg(str);
     LogQueueData(p);
+    put_data_to_buffer(p);
+    refresh_screen();
 
     QuickSort(p, low, i - 1);  // 比较左边的
     QuickSort(p, i + 1, high); // 比较右边的
@@ -209,10 +215,14 @@ static void refresh_screen()
         if (first_show)
         {
             coord.X = 0;
+            WriteConsoleOutputCharacterA(hOutBuffer, scr_data[i], scr_width, coord, &scr_bytes);
+            WriteConsoleOutputCharacterA(hOutput,    scr_data[i], scr_width, coord, &scr_bytes);
         }
         else
-            coord.X = 12;
-        WriteConsoleOutputCharacterA(hOut, scr_data[i], scr_width, coord, &scr_bytes);
+        {
+            coord.X = 18;
+            WriteConsoleOutputCharacterA(hOut, scr_data[i], scr_width-18, coord, &scr_bytes);
+        }
     }
     first_show = false;
     //设置新的缓冲区为活动显示缓冲
