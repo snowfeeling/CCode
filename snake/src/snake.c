@@ -154,7 +154,17 @@ static void draw()
                     int k=0;
                     bool print = false;
                     /*显示贪吃蛇的形状 */
-                    /*设置蛇头的形状*/    
+                    /*设置蛇身*/
+                    for( k = 1; k < ntail; k++)
+                    {
+                        if(tailX[k]==q && tailY[k]==p)
+                        {
+                            a = '*';
+                            print = true;
+                            break;
+                        }
+                    }
+                    /*最后设置蛇头的形状*/    
                     if(tailX[0]==q && tailY[0]==p)
                     {
                         switch (Dir)
@@ -174,16 +184,6 @@ static void draw()
                         }
                         print = true;
                     }         
-                    /*设置蛇身*/
-                    for( k = 1; k < ntail; k++)
-                    {
-                        if(tailX[k]==q && tailY[k]==p)
-                        {
-                            a = '*';
-                            print = true;
-                            break;
-                        }
-                    }
                      /*如果这个位置没有打印 "*", 就打印空字符*/
                     if(!print)
                     {
