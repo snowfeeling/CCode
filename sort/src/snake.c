@@ -75,29 +75,30 @@ static void init_snake_setting()
 /*===========================================*/
 static void set_status_bar()
 {
-    char str1[width+2];
     if (!gameOver)
     {
+        char str1[width+2];
         sprintf(str1, "[Pos:%2d,%2d][$%2d:%2d][Score:%3d][Length:%2d]", x,y, fruitX, fruitY, score, ntail);
         strcpy(data[height+2], str1);
     }
     else
     {
+        char str1[width+2];
         sprintf(str1, "[Pos:%2d,%2d][$%2d:%2d][Score:%3d][Length:%2d] Game Over!", x,y, fruitX, fruitY, score, ntail);
         strcpy(data[height+2], str1);
     }
 }
 
 /*============================================*/
-static void refresh_screen()
+static void switch_buffer()
 {
-    /*双buff切换显示*/
 	int i;
     HANDLE hOut;
+    /*双buff切换显示*/
 	if(switchover == true)
 	{
         hOut = hOutBuf;
-    }
+	}
 	else
 	{
         hOut = hOutput;
@@ -109,6 +110,7 @@ static void refresh_screen()
     }
     //设置新的缓冲区为活动显示缓冲
     SetConsoleActiveScreenBuffer(hOut);	
+
 	switchover = !switchover;
 }
 
@@ -154,27 +156,25 @@ static void draw()
                     int k=0;
                     bool print = false;
                     /*显示贪吃蛇的形状 */
-                    /*设置蛇头的形状*/    
                     if(tailX[0]==q && tailY[0]==p)
-                    {
-                        switch (Dir)
                         {
-                        case UP:
-                            a = 'A';
-                            break;
-                        case LEFT:
-                            a = '<';
-                            break;
-                        case RIGHT:
-                            a = '>';
-                            break;
-                        case DOWN:
-                            a = 'V';
-                            break;    
-                        }
-                        print = true;
-                    }         
-                    /*设置蛇身*/
+                            switch (Dir)
+                            {
+                            case UP:
+                                a = 'A';
+                                break;
+                            case LEFT:
+                                a = '<';
+                                break;
+                            case RIGHT:
+                                a = '>';
+                                break;
+                            case DOWN:
+                                a = 'V';
+                                break;    
+                            }
+                            print = true;
+                        }         
                     for( k = 1; k < ntail; k++)
                     {
                         if(tailX[k]==q && tailY[k]==p)
@@ -184,6 +184,7 @@ static void draw()
                             break;
                         }
                     }
+                   
                      /*如果这个位置没有打印 "*", 就打印空字符*/
                     if(!print)
                     {
@@ -207,7 +208,7 @@ static void draw()
     set_status_bar();
 
     /*刷新屏幕*/
-    refresh_screen();
+    switch_buffer();
     if (gameOver)
         Sleep(4200);
     else 
@@ -217,6 +218,8 @@ static void draw()
 /*按键输入控制*/
 void input()
 {
+    //send_to_log(flog_handle, "Starting checking key_input in input()\n");
+
 	/*如果有按键按下*/
     if(_kbhit())
 	{
@@ -256,6 +259,7 @@ void input()
 				break; 
             default:
                 sprintf(in_keys, "OTHERS:%c\n", ch);
+
         }
         send_to_log(flog_handle, in_keys);
     }
@@ -325,7 +329,7 @@ void logic()
 }
 
 /*双缓冲技术解决闪屏问题*/
-void init_double_buffer(void)
+void double_buff_init(void)
 {
    	/*创建新的控制台缓冲区*/
     hOutBuf = CreateConsoleScreenBuffer(
@@ -354,7 +358,7 @@ void init_double_buffer(void)
 int snake()
 {
     init_snake_program();
-	init_double_buffer();
+	double_buff_init();
     init_snake_setting();
     //logic();
     //draw();
