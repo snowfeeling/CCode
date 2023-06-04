@@ -10,7 +10,7 @@
 #include "../inc/mylog.h"
 #include "../inc/quicksort.h"
 
-#define SQFNAME "../log/quicklog.txt"
+#define SQFNAME "../log/quicksort.log"
 
 FILE *flog;
 HANDLE hOutput, hOutBuffer;
@@ -23,7 +23,8 @@ char scr_data[30][50];
 
 void init_double_buffer(void);
 static void refresh_screen();
-static int put_data_to_buffer(Squeue *p);
+static int put_original_data_to_buffer(Squeue *p);
+static int put_sorting_data_to_buffer(Squeue *p, int j, int tmp);
 
 bool InitializeSource(Squeue *p);
 int ShowData(const Squeue *p);
@@ -43,13 +44,16 @@ int testQuickSort()
     ShowData(&p);
 
     init_double_buffer();
-    put_data_to_buffer(&p);
+    put_original_data_to_buffer(&p);
     refresh_screen();
     Sleep(800);
-        
+
+    put_sorting_data_to_buffer(&p, -1, -1);
+    refresh_screen();
+
     QuickSort(&p, 0, p.qnum - 1);
 
-    put_data_to_buffer(&p);
+    put_sorting_data_to_buffer(&p, -1, -1);
     refresh_screen();
 
     do
@@ -108,62 +112,6 @@ int ShowData(const Squeue *p)
 
     return 0;
 }
-
-/*
-*  Quick Sort
-*/
-void QuickSort(Squeue *p, int low, int high)
-{
-    if (low >= high)
-        return;
-    int tmp, i, j;
-    char str[30];
-    i = low;
-    j = high;
-    tmp = p->value[i]; // 取第一个值，为比较值
-    sprintf(str, "[Begin:P=%6d %3d -%3d]\n", tmp, i, j);
-    LogMeg(str);
-    LogQueueData(p);
-    do
-    {
-        while (p->value[j] > tmp && i < j) 
-            j--;  // 如果从右的数字大于比较值，就向左走，直到等于或者小于比较值。
-        if (i < j)
-        {
-            p->value[i] = p->value[j]; // 把右边的较小值，放到左边
-            sprintf(str, "[R->L :P=%6d %3d -%3d]\n", tmp, j, i);
-            LogMeg(str);
-            LogQueueData(p);
-            i++;  //往右走一个
-            put_data_to_buffer(p);
-            refresh_screen();
-
-        }
-        while (p->value[i] < tmp && i < j) 
-            i++;   // 如果从左的数字小于比较值，就向右走，直到等于或者大于比较值。
-        if (i < j)
-        {
-            p->value[j] = p->value[i]; //把左边较大的值，放到右边
-            // 记录
-            sprintf(str, "[L->R :P=%6d %3d -%3d]\n", tmp, i, j);
-            LogMeg(str);
-            LogQueueData(p);
-            j--; // 往左走一步
-            put_data_to_buffer(p);
-            refresh_screen();
-        }
-    } while (i != j);
-    p->value[i] = tmp; // 把比较值，放到中间的的位置。
-    sprintf(str, "[TMP  :P=%6d %3d -%3d]\n", tmp, i, j);
-    LogMeg(str);
-    LogQueueData(p);
-    put_data_to_buffer(p);
-    refresh_screen();
-
-    QuickSort(p, low, i - 1);  // 比较左边的
-    QuickSort(p, i + 1, high); // 比较右边的
-}
-
 int LogQueueData(Squeue *p)
 {
     int j = 0;
@@ -183,13 +131,90 @@ int LogMeg(char *str)
     return 0;
 }
 
-/* write buffer*/
-static int put_data_to_buffer(Squeue *p)
+/* write original data to buffer*/
+static int put_original_data_to_buffer(Squeue *p)
 {
     char str[200];
     for (int i = 0; i < p->qnum; i++)
     {
-        sprintf(scr_data[i], "%6d", p->value[i]);
+        sprintf(scr_data[i], "[%3d]%5d", i, p->value[i]);
+    }
+    return 0;
+} 
+
+/*====Quick Sort=========
+*/
+void QuickSort(Squeue *p, int low, int high)
+{
+    if (low >= high)
+        return;
+    int tmp, i, j;
+    char str[30];
+    i = low;
+    j = high;
+    tmp = p->value[i]; // 取第一个值，为比较值
+    sprintf(str, "[Begin:P=%6d %3d -%3d]\n", tmp, i, j);
+    LogMeg(str);
+    LogQueueData(p);
+    do
+    {
+        while (p->value[j] > tmp && i < j)
+        {
+            put_sorting_data_to_buffer(p,j, tmp);
+            refresh_screen();
+            j--;  // 如果从右的数字大于比较值，就向左走，直到等于或者小于比较值。
+        }
+        if (i < j)
+        {
+            p->value[i] = p->value[j]; // 把右边的较小值，放到左边
+            sprintf(str, "[R->L :P=%6d %3d -%3d]\n", tmp, j, i);
+            LogMeg(str);
+            LogQueueData(p);
+            put_sorting_data_to_buffer(p, i, tmp);
+            refresh_screen();
+            i++;  //往右走一个
+        }
+        while (p->value[i] < tmp && i < j) 
+        {
+            put_sorting_data_to_buffer(p,i, tmp);
+            refresh_screen();
+            i++;   // 如果从左的数字小于比较值，就向右走，直到等于或者大于比较值。
+        }
+        if (i < j)
+        {
+            p->value[j] = p->value[i]; //把左边较大的值，放到右边
+            // 记录
+            sprintf(str, "[L->R :P=%6d %3d -%3d]\n", tmp, i, j);
+            LogMeg(str);
+            LogQueueData(p);
+            put_sorting_data_to_buffer(p, j, tmp);
+            refresh_screen();
+            j--; // 往左走一步
+        }
+    } while (i != j);
+    p->value[i] = tmp; // 把比较值，放到中间的的位置。
+    sprintf(str, "[TMP  :P=%6d %3d -%3d]\n", tmp, i, j);
+    LogMeg(str);
+    LogQueueData(p);
+    put_sorting_data_to_buffer(p, i, tmp);
+    refresh_screen();
+
+    QuickSort(p, low, i - 1);  // 比较左边的
+    QuickSort(p, i + 1, high); // 比较右边的
+}
+
+
+/* write sorting data to buffer*/
+static int put_sorting_data_to_buffer(Squeue *p, int j, int tmp)
+{
+    char str[200];
+    for (int i = 0; i < p->qnum; i++)
+    {
+        if (i!= j || j < 0)
+            sprintf(scr_data[i], "%14d", p->value[i]);
+        else
+            sprintf(scr_data[i], "[%5d]->%5d", tmp , p->value[i]);
+            
     }
     return 0;
 } 
@@ -215,13 +240,13 @@ static void refresh_screen()
         if (first_show)
         {
             coord.X = 0;
-            WriteConsoleOutputCharacterA(hOutBuffer, scr_data[i], scr_width, coord, &scr_bytes);
-            WriteConsoleOutputCharacterA(hOutput,    scr_data[i], scr_width, coord, &scr_bytes);
+            WriteConsoleOutputCharacterA(hOutBuffer,    scr_data[i], scr_width, coord, &scr_bytes);
+            WriteConsoleOutputCharacterA(hOutput,       scr_data[i], scr_width, coord, &scr_bytes);
         }
         else
         {
-            coord.X = 18;
-            WriteConsoleOutputCharacterA(hOut, scr_data[i], scr_width-18, coord, &scr_bytes);
+            coord.X = 15;
+            WriteConsoleOutputCharacterA(hOut,          scr_data[i], scr_width, coord, &scr_bytes);
         }
     }
     first_show = false;
