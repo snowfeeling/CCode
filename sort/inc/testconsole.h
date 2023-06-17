@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <stdio.h>
 
+
 int test_console( void );
 
 #endif

@@ -7,12 +7,14 @@
 
 #include "../inc/mylog.h"
 #include "../inc/testconsole.h"
+#include "../inc/testesc.h"
 #include "../inc/quicksort.h"
 
 int main ()
 {
     //test_console();
-    testQuickSort();
+    //testQuickSort();
+    testesc();
     return 0;
 
 }

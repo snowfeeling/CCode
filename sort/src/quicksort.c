@@ -47,7 +47,6 @@ int testQuickSort()
     init_double_buffer();
     put_original_data_to_buffer(&p);
     refresh_screen();
-    Sleep(800);
 
     put_sorting_data_to_buffer(&p, 0, p.qnum-1, -1, -1, 0, p.qnum-1);
     refresh_screen();
