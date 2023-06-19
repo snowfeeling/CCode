@@ -16,23 +16,18 @@ bool EnableVTMode()
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
     {
-        printf("\nError: GetStdHandle() error. \n");
-       return false;
+        return false;
     }
 
     DWORD dwMode = 0;
     if (!GetConsoleMode(hOut, &dwMode))
     {
-        printf("\nError: GetConsoleMode() error. \n");
         return false;
     }
 
-    //dwMode |= ENABLE_PROCESSED_OUTPUT;
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
- 
     if (!SetConsoleMode(hOut, dwMode))
     {
-        printf("\nError: SetConsoleMode() error, %d. \n", dwMode);
         return false;
     }
     return true;
@@ -63,17 +58,15 @@ void PrintHorizontalBorder(COORD const Size, bool fIsTop)
 
 void PrintStatusLine(const char* const pszMessage, COORD const Size)
 {
-    //printf(CSI "%d;1H", Size.Y);
-    //printf(CSI "K"); // clear the line
-    //printf(pszMessage);
-    char str[200];
-    sprintf(str, CSI "%d;1H" CSI "K" "%s", Size.Y, pszMessage);
-    printf(str);
+    printf(CSI "%d;1H", Size.Y);
+    printf(CSI "K"); // clear the line
+    printf(pszMessage);
 }
 
-int __cdecl testesc()
+int __cdecl testesc(int argc, WCHAR* argv[])
 {
-
+    argc; // unused
+    argv; // unused
     //First, enable VT mode
     bool fSuccess = EnableVTMode();
     if (!fSuccess)
@@ -150,7 +143,7 @@ int __cdecl testesc()
         for (tab = 0; tab < iNumTabStops - 1; tab++)
         {
             PrintVerticalBorder();
-            printf("line=%d", line*(tab+1));
+            printf("line=%d", line);
             printf("\t"); // advance to next tab stop
         }
         PrintVerticalBorder();// print border at right side
@@ -172,14 +165,12 @@ int __cdecl testesc()
             printf("line=%d", line);
             printf("\t"); // advance to next tab stop
         }
-        
         PrintVerticalBorder(); // print border at right side
         if (line + 1 != iNumLines * 2)
         {
             printf("\n"); //Advance to next line. If we're at the bottom of the margins, the text will scroll.
             printf("\r"); //return to first col in buffer
         }
-        Sleep(300);
     }
 
     PrintStatusLine("Press any key to exit", Size);

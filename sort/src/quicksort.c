@@ -312,12 +312,7 @@ static void refresh_screen()
     SetConsoleActiveScreenBuffer(hOut);	
 	switch_over = !switch_over;
     Sleep(1200);
-/*    do
-    {
 
-    } while (!_kbhit());
-    getch();
- */   
 }
 
 
