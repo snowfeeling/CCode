@@ -12,10 +12,10 @@
 
 int main ()
 {
+//    tetris();
 
-
-    //tetris();
     testrb();
+
     return 0;
 
 }

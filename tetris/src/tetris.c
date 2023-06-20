@@ -198,6 +198,12 @@ int tetris()
         c.Y ++;
         show_V_block( c, 4 );
     }
+   
+    printf(ESC "(0"); // Enter Line drawing mode
+
+    printf("■");
+    printf(CSI "0m");
+    printf(ESC "(B"); // exit line drawing mode
 
     char wch =  _getwch();
 

@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <conio.h>
+#include <stdbool.h>
+#include <locale.h>
 #include "../inc/rb.h"
 
 #define ROW 29 //游戏区行数
@@ -17,6 +19,8 @@
 
 #define ESC "\x1b"
 #define CSI "\x1b["
+#define FANGK "■"
+#define BLANK " "
 
 
 struct Face
@@ -31,38 +35,43 @@ struct Block
 }block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
 
 //隐藏光标
-void HideCursor();
+static void HideCursor();
 //光标跳转
-void CursorJump(int x, int y);
+//static void CursorJump(int x, int y);
 //初始化界面
-void InitInterface();
+static void InitInterface();
 //初始化方块信息
-void InitBlockInfo();
+static void InitBlockInfo();
 //颜色设置
-void color(int num);
+static void color(int num);
 //画出方块
-void DrawBlock(int shape, int form, int x, int y);
+static void DrawBlock(int shape, int form, int x, int y);
 //空格覆盖
-void DrawSpace(int shape, int form, int x, int y);
+static void DrawSpace(int shape, int form, int x, int y);
 //合法性判断
-int IsLegal(int shape, int form, int x, int y);
+static int IsLegal(int shape, int form, int x, int y);
 //判断得分与结束
-int JudeFunc();
+static int JudeFunc();
 //游戏主体逻辑函数
-void StartGame();
+static void StartGame();
 //从文件读取最高分
-void ReadGrade();
+static void ReadGrade();
 //更新最高分到文件
-void WriteGrade();
+static void WriteGrade();
+//初始化屏幕
+static int init_screen();
 
 int max, grade; //全局变量
+
 int testrb()
 {
 #pragma warning (disable:4996) //消除警告
 	max = 0, grade = 0; //初始化变量
-	system("title 俄罗斯方块"); //设置cmd窗口的名字
-	system("mode con lines=29 cols=60"); //设置cmd窗口的大小
-	HideCursor(); //隐藏光标
+	//system("title 俄罗斯方块"); //设置cmd窗口的名字
+	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
+
+	init_screen();
+
 	ReadGrade(); //从文件读取最高分到max变量	
 	InitInterface(); //初始化界面
 	InitBlockInfo(); //初始化方块信息
@@ -71,33 +80,88 @@ int testrb()
 	return 0;
 }
 
-//隐藏光标
-void HideCursor()
+// ENTER the master screen buffer
+#define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
+// Enter the alternate screen buffer
+#define SWITCH_ALTERNATE_SCREEN()  { printf(CSI "?1049h"); }
+
+// Clear screen 
+#define CLEAR_SCREEN() { printf(CSI "1;1H" CSI "2J"); }
+
+// 关闭/打开光标
+#define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
+#define TURNON_CURSOR()   { printf(CSI "?25h"); }
+
+static bool enable_VT_Mode()
 {
-	/*
-    CONSOLE_CURSOR_INFO curInfo; //定义光标信息的结构体变量
-	curInfo.dwSize = 1;  //如果没赋值的话，隐藏光标无效
-	curInfo.bVisible = FALSE; //将光标设置为不可见
-	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE); //获取控制台句柄
-	SetConsoleCursorInfo(handle, &curInfo); //设置光标信息
-    */
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
 
-    printf(CSI "?25l"); // 关闭光标
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+		printf("Error: GetConsoleMode!");
+        return false;
+    }
 
+    //dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	dwMode |= ENABLE_PROCESSED_OUTPUT;
+    if (!SetConsoleMode(hOut, dwMode))
+    {
+        return false;
+    }
+    return true;
 }
+
+static int init_screen()
+{
+    /*
+	bool fSuccess = enable_VT_Mode();
+    if (!fSuccess)
+    {
+        return -1;
+    }
+	*/
+
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        printf("Couldn't get the console handle. Quitting.\n");
+        return -1;
+    }
+
+    CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
+    GetConsoleScreenBufferInfo(hOut, &ScreenBufferInfo);
+    COORD Size;
+    Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
+    Size.Y = ScreenBufferInfo.srWindow.Bottom - ScreenBufferInfo.srWindow.Top + 1;
+
+    // Enter the alternate buffer
+	SWITCH_ALTERNATE_SCREEN();
+
+	// Set UTF8 Code Page
+	//system ("chcp 65001");	
+	//setlocale(LC_ALL, ".UTF8");
+	SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+
+    // Clear screen
+	CLEAR_SCREEN();
+	// 关闭光标
+	TURNOFF_CURSOR();
+    
+    return 0;
+}
+
 //光标跳转
-void CursorJump(int x, int y)
-{
-    /*COORD pos; //定义光标位置的结构体变量
-    pos.X = x; //横坐标设置
-    pos.Y = y; //纵坐标设置
-    HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE); //获取控制台句柄
-    SetConsoleCursorPosition(handle, pos); //设置光标位置
-    */
-    printf(CSI "%d;%dH", y, x);
-}
+#define CursorJump(x, y) {    printf(CSI "%d;%dH", y, x); }
+
 //初始化界面
-void InitInterface()
+static void InitInterface()
 {
 	color(7); //颜色设置为白色
 	for (int i = 0; i < ROW; i++)
@@ -108,12 +172,13 @@ void InitInterface()
 			{
 				face.data[i][j] = 1; //标记该位置有方块
 				CursorJump(2 * j, i);
-				printf("■");
+				printf(FANGK);
 			}
 			else if (i == ROW - 1)
 			{
 				face.data[i][j] = 1; //标记该位置有方块
-				printf("■");
+				CursorJump(2 * j, i);
+				printf(FANGK);
 			}
 			else
 				face.data[i][j] = 0; //标记该位置无方块
@@ -123,7 +188,7 @@ void InitInterface()
 	{
 		face.data[8][i] = 1; //标记该位置有方块
 		CursorJump(2 * i, 8);
-		printf("■");
+		printf(FANGK);
 	}
 
 	CursorJump(2 * COL, 1);
@@ -157,7 +222,7 @@ void InitInterface()
 	printf("当前分数：%d", grade);
 }
 //初始化方块信息
-void InitBlockInfo()
+static void InitBlockInfo()
 {
 	//“T”形
 	for (int i = 0; i <= 2; i++)
@@ -216,37 +281,39 @@ void InitBlockInfo()
 	}
 }
 //颜色设置
-void color(int c)
+static void color(int c)
 {
+
 	switch (c)
 	{
 	case 0:
-		c = 13; //“T”形方块设置为紫色
+		c = 35; //“T”形方块设置为紫色
 		break;
 	case 1:
 	case 2:
-		c = 12; //“L”形和“J”形方块设置为红色
+		c = 31; //“L”形和“J”形方块设置为红色
 		break;
 	case 3:
 	case 4:
-		c = 10; //“Z”形和“S”形方块设置为绿色
+		c = 32; //“Z”形和“S”形方块设置为绿色
 		break;
 	case 5:
-		c = 14; //“O”形方块设置为黄色
+		c = 33; //“O”形方块设置为黄色
 		break;
 	case 6:
-		c = 11; //“I”形方块设置为浅蓝色
+		c = 36; //“I”形方块设置为浅蓝色
 		break;
 	default:
-		c = 7; //其他默认设置为白色
+		c = 0; //其他默认设置为白色
 		break;
 	}
 	//SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c); //颜色设置
 	//注：SetConsoleTextAttribute是一个API（应用程序编程接口）
-    printf(CSI "104;93m");
+    printf(CSI ";%dm",c);
 }
+
 //画出方块
-void DrawBlock(int shape, int form, int x, int y)
+static void DrawBlock(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -255,13 +322,13 @@ void DrawBlock(int shape, int form, int x, int y)
 			if (block[shape][form].space[i][j] == 1) //如果该位置有方块
 			{
 				CursorJump(2 * (x + j), y + i); //光标跳转到指定位置
-				printf("■"); //输出方块
+				printf(FANGK); //输出方块
 			}
 		}
 	}
 }
 //空格覆盖
-void DrawSpace(int shape, int form, int x, int y)
+static void DrawSpace(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -270,13 +337,13 @@ void DrawSpace(int shape, int form, int x, int y)
 			if (block[shape][form].space[i][j] == 1) //如果该位置有方块
 			{
 				CursorJump(2 * (x + j), y + i); //光标跳转到指定位置
-				printf("  "); //打印空格覆盖（两个空格）
+				printf(BLANK BLANK); //打印空格覆盖（两个空格）
 			}
 		}
 	}
 }
 //合法性判断
-int IsLegal(int shape, int form, int x, int y)
+static int IsLegal(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -290,7 +357,7 @@ int IsLegal(int shape, int form, int x, int y)
 	return 1; //合法
 }
 //判断得分与结束
-int JudeFunc()
+static int JudeFunc()
 {
 	//判断是否得分
 	for (int i = ROW - 2; i > 4; i--)
@@ -312,7 +379,7 @@ int JudeFunc()
 			{
 				face.data[i][j] = 0; //该位置得分后被清除，标记为无方块
 				CursorJump(2 * j, i); //光标跳转到该位置
-				printf("  "); //打印空格覆盖（两个空格）
+				printf(BLANK BLANK); //打印空格覆盖（两个空格）
 			}
 			//把被清除行上面的行整体向下挪一格
 			for (int m = i; m >1; m--)
@@ -327,12 +394,12 @@ int JudeFunc()
 					{
 						CursorJump(2 * n, m); //光标跳转到该位置
 						color(face.color[m][n]); //颜色设置为还方块的颜色
-						printf("■"); //打印方块
+						printf(FANGK); //打印方块
 					}
 					else //上一行移下来的是空格，打印空格
 					{
 						CursorJump(2 * n, m); //光标跳转到该位置
-						printf("  "); //打印空格（两个空格）
+						printf(BLANK BLANK); //打印空格（两个空格）
 					}
 				}
 				if (sum == 0) //上一行移下来的全是空格，无需再将上层的方块向下移动（移动结束）
@@ -346,7 +413,8 @@ int JudeFunc()
 		if (face.data[1][j] == 1) //顶层有方块存在（以第1行为顶层，不是第0行）
 		{
 			Sleep(1000); //留给玩家反应时间
-			system("cls"); //清空屏幕
+			//system("cls"); //清空屏幕
+			CLEAR_SCREEN();
 			color(7); //颜色设置为白色
 			CursorJump(2 * (COL / 3), ROW / 2 - 3);
 			if (grade>max)
@@ -378,6 +446,9 @@ int JudeFunc()
 				else if (ch == 'n' || ch == 'N')
 				{
 					CursorJump(2 * (COL / 3), ROW / 2 + 5);
+					printf(CSI "?1049l"); //恢复主屏幕
+					TURNON_CURSOR();
+
 					exit(0);
 				}
 				else
@@ -391,7 +462,7 @@ int JudeFunc()
 	return 0; //判断结束，无需再调用该函数进行判断
 }
 //游戏主体逻辑函数
-void StartGame()
+static void StartGame()
 {
 	int shape = rand() % 7, form = rand() % 4; //随机获取方块的形状和形态
 	while (1)
@@ -479,11 +550,13 @@ void StartGame()
 					}
 					break;
 				case ESCKEY: //Esc键
-					system("cls"); //清空屏幕
+					//清空屏幕
+					CLEAR_SCREEN();
 					color(7);
 					CursorJump(COL, ROW / 2);
 					printf("  游戏结束  ");
 					CursorJump(COL, ROW / 2 + 2);
+					TURNON_CURSOR();
 					exit(0); //结束程序
 				case 's':
 				case 'S':  //暂停
@@ -501,7 +574,7 @@ void StartGame()
 	}
 }
 //从文件读取最高分
-void ReadGrade()
+static void ReadGrade()
 {
 	FILE* pf = fopen("tetris.txt", "r"); //以只读方式打开文件
 	if (pf == NULL) //打开文件失败
@@ -515,7 +588,7 @@ void ReadGrade()
 	pf = NULL; //文件指针及时置空
 }
 //更新最高分到文件
-void WriteGrade()
+static void WriteGrade()
 {
 	FILE* pf = fopen("tetris.txt", "w"); //以只写方式打开文件
 	if (pf == NULL) //打开文件失败
