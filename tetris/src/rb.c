@@ -34,6 +34,15 @@ struct Block
 	int space[4][4];
 }block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
 
+const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
+/*
+[0]  -35 “T”形方块设置为紫色
+[1,2]-31 “L”形和“J”形方块设置为红色
+[3,4]-32 “Z”形和“S”形方块设置为绿色
+[5]  -33 “O”形方块设置为黄色
+[6]  -36 “I”形方块设置为浅蓝色
+[7]  - 0 其他默认设置为白色
+*/
 
 // ENTER the main screen buffer
 #define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
@@ -56,7 +65,7 @@ static void InitInterface();
 //初始化方块信息
 static void InitBlockInfo();
 //颜色设置
-static void color(int num);
+static void set_color(int num);
 //画出方块
 static void DrawBlock(int shape, int form, int x, int y);
 //空格覆盖
@@ -196,7 +205,7 @@ static int init_screen()
 //初始化界面
 static void InitInterface()
 {
-	color(7); //颜色设置为白色
+	set_color(7); //颜色设置为白色
 	for (int i = 0; i < ROW; i++)
 	{
 		for (int j = 0; j < COL + 10; j++)
@@ -314,35 +323,9 @@ static void InitBlockInfo()
 	}
 }
 //颜色设置
-static void color(int c)
+static void set_color(int c)
 {
-
-	switch (c)
-	{
-	case 0:
-		c = 35; //“T”形方块设置为紫色
-		break;
-	case 1:
-	case 2:
-		c = 31; //“L”形和“J”形方块设置为红色
-		break;
-	case 3:
-	case 4:
-		c = 32; //“Z”形和“S”形方块设置为绿色
-		break;
-	case 5:
-		c = 33; //“O”形方块设置为黄色
-		break;
-	case 6:
-		c = 36; //“I”形方块设置为浅蓝色
-		break;
-	default:
-		c = 0; //其他默认设置为白色
-		break;
-	}
-	//SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c); //颜色设置
-	//注：SetConsoleTextAttribute是一个API（应用程序编程接口）
-    printf(CSI ";%dm",c);
+    printf(CSI "%dm", (c>=0 && c <= 7) ? (block_color[c]) : (block_color[7]));
 }
 
 //画出方块
@@ -392,11 +375,12 @@ static int IsLegal(int shape, int form, int x, int y)
 //判断得分与结束
 static int JudeFunc()
 {
+	int i, j, m, n, sum;
 	//判断是否得分
-	for (int i = ROW - 2; i > 4; i--)
+	for (i = ROW - 2; i > 4; i--)
 	{
-		int sum = 0; //记录第i行的方块个数
-		for (int j = 1; j < COL - 1; j++)
+		sum = 0; //记录第i行的方块个数
+		for (j = 1; j < COL - 1; j++)
 		{
 			sum += face.data[i][j]; //统计第i行的方块个数
 		}
@@ -405,20 +389,20 @@ static int JudeFunc()
 		if (sum == COL - 2) //该行全是方块，可得分
 		{
 			grade += 10; //满一行加10分
-			color(7); //颜色设置为白色
+			set_color(7); //颜色设置为白色
 			CursorJump(2 * COL + 4, ROW - 3); //光标跳转到显示当前分数的位置
 			printf("当前分数：%d", grade); //更新当前分数
-			for (int j = 1; j < COL - 1; j++) //清除得分行的方块信息
+			for (j = 1; j < COL - 1; j++) //清除得分行的方块信息
 			{
 				face.data[i][j] = 0; //该位置得分后被清除，标记为无方块
 				CursorJump(2 * j, i); //光标跳转到该位置
 				printf(BLANK BLANK); //打印空格覆盖（两个空格）
 			}
 			//把被清除行上面的行整体向下挪一格
-			for (int m = i; m >1; m--)
+			for (m = i; m >1; m--)
 			{
 				sum = 0; //记录上一行的方块个数
-				for (int n = 1; n < COL - 1; n++)
+				for (n = 1; n < COL - 1; n++)
 				{
 					sum += face.data[m - 1][n]; //统计上一行的方块个数
 					face.data[m][n] = face.data[m - 1][n]; //将上一行方块的标识移到下一行
@@ -426,7 +410,7 @@ static int JudeFunc()
 					if (face.data[m][n] == 1) //上一行移下来的是方块，打印方块
 					{
 						CursorJump(2 * n, m); //光标跳转到该位置
-						color(face.color[m][n]); //颜色设置为还方块的颜色
+						set_color(face.color[m][n]); //颜色设置为还方块的颜色
 						printf(FANGK); //打印方块
 					}
 					else //上一行移下来的是空格，打印空格
@@ -441,7 +425,7 @@ static int JudeFunc()
 		}
 	}
 	//判断游戏是否结束
-	for (int j = 1; j < COL - 1; j++)
+	for (j = 1; j < COL - 1; j++)
 	{
 		if (face.data[1][j] == 1) //顶层有方块存在（以第1行为顶层，不是第0行）
 		{
@@ -459,31 +443,32 @@ static int handle_game_over()
 	Sleep(1000); //留给玩家反应时间
 	//清空屏幕
 	CLEAR_SCREEN();
-	color(7); //颜色设置为白色
+	set_color(7); //颜色设置为白色
 	CursorJump(2 * (COL / 3), ROW / 2 - 3);
 	if (grade>max)
 	{
 		printf("恭喜你打破最高记录，最高记录更新为%d", grade);
 		WriteGrade();
 	}
-	else if (grade == max)
-	{
-		printf("与最高记录持平，加油再创佳绩", grade);
-	}
-	else
-	{
-		printf("请继续加油，当前与最高记录相差%d", max - grade);
-	}
+	else 
+		if (grade == max)
+		{
+			printf("与最高记录持平，加油再创佳绩", grade);
+		}
+		else
+		{
+			printf("请继续加油，当前与最高记录相差%d", max - grade);
+		}
 	CursorJump(2 * (COL / 3), ROW / 2);
 	printf("GAME OVER");
 
 	CursorJump(2 * (COL / 3), ROW / 2 + 5);
-	//printf(CSI "?1049l"); //恢复主屏幕
+	//恢复主屏幕
 	SWITCH_MAIN_SCREEN();
+	//打开光标
 	TURNON_CURSOR();
 
 	return 0;
-
 }
 
 //游戏主体逻辑函数
@@ -495,11 +480,11 @@ static void StartGame()
 		int t = 0;
 		int nextShape = rand() % 7, nextForm = rand() % 4; //随机获取下一个方块的形状和形态
 		int x = COL / 2 - 2, y = 0; //方块初始下落位置的横纵坐标
-		color(nextShape); //颜色设置为下一个方块的颜色
+		set_color(nextShape); //颜色设置为下一个方块的颜色
 		DrawBlock(nextShape, nextForm, COL + 3, 3); //将下一个方块显示在右上角
 		while (!bGameOver)
 		{
-			color(shape); //颜色设置为当前正在下落的方块
+			set_color(shape); //颜色设置为当前正在下落的方块
 			DrawBlock(shape, form, x, y); //将该方块显示在初始下落位置
 			if (t == 0)
 			{
