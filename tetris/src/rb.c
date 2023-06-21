@@ -34,6 +34,19 @@ struct Block
 	int space[4][4];
 }block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
 
+
+// ENTER the main screen buffer
+#define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
+// Enter the alternate screen buffer
+#define SWITCH_ALTERNATE_SCREEN()  { printf(CSI "?1049h"); }
+// Clear screen 
+#define CLEAR_SCREEN() { printf(CSI "1;1H" CSI "2J"); }
+// 关闭/打开光标
+#define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
+#define TURNON_CURSOR()   { printf(CSI "?25h"); }
+//光标跳转
+#define CursorJump(x, y) { printf(CSI "%d;%dH", y, x); }
+
 //隐藏光标
 static void HideCursor();
 //光标跳转
@@ -58,39 +71,14 @@ static void StartGame();
 static void ReadGrade();
 //更新最高分到文件
 static void WriteGrade();
+// 处理游戏结束
+static int handle_game_over();
+
 //初始化屏幕
 static int init_screen();
 
-int max, grade; //全局变量
+static bool enable_VT_Mode();
 
-int testrb()
-{
-#pragma warning (disable:4996) //消除警告
-	max = 0, grade = 0; //初始化变量
-	//system("title 俄罗斯方块"); //设置cmd窗口的名字
-	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
-
-	init_screen();
-
-	ReadGrade(); //从文件读取最高分到max变量	
-	InitInterface(); //初始化界面
-	InitBlockInfo(); //初始化方块信息
-	srand((unsigned int)time(NULL)); //设置随机数生成的起点
-	StartGame(); //开始游戏
-	return 0;
-}
-
-// ENTER the master screen buffer
-#define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
-// Enter the alternate screen buffer
-#define SWITCH_ALTERNATE_SCREEN()  { printf(CSI "?1049h"); }
-
-// Clear screen 
-#define CLEAR_SCREEN() { printf(CSI "1;1H" CSI "2J"); }
-
-// 关闭/打开光标
-#define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
-#define TURNON_CURSOR()   { printf(CSI "?25h"); }
 
 static bool enable_VT_Mode()
 {
@@ -104,28 +92,76 @@ static bool enable_VT_Mode()
     DWORD dwMode = 0;
     if (!GetConsoleMode(hOut, &dwMode))
     {
-		printf("Error: GetConsoleMode!");
+		printf("Error:GetConsoleMode.\n");
         return false;
     }
 
-    //dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	dwMode |= ENABLE_PROCESSED_OUTPUT;
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
     if (!SetConsoleMode(hOut, dwMode))
-    {
+    {		
+		printf("Error:SetConsoleMode.\n");
         return false;
     }
+
     return true;
+}
+
+
+//全局变量
+int max, grade; 
+bool bGameOver = false, bRestart =false;
+
+int test1()
+{	
+	//system("chcp 936");
+	enable_VT_Mode();
+
+	SetConsoleCP(CP_UTF8);
+	SetConsoleOutputCP(CP_UTF8);
+	printf("Main Screen\n");
+	Sleep(3000);
+
+	SWITCH_ALTERNATE_SCREEN();
+	//CLEAR_SCREEN();
+	TURNOFF_CURSOR();
+	printf("ALternate screen.\n");
+	Sleep(3000);
+
+    // Exit the alternate buffer
+	SWITCH_MAIN_SCREEN();
+    TURNON_CURSOR();
+	printf("Main Screen.\n");
+	Sleep(3000);
+	return 0;
+}
+
+int testrb()
+{
+//#pragma warning (disable:4996) //消除警告
+	max = 0, grade = 0; //初始化变量
+	//system("title 俄罗斯方块"); //设置cmd窗口的名字
+	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
+
+	//enable_VT_Mode();
+	init_screen();
+
+	ReadGrade(); //从文件读取最高分到max变量	
+	InitInterface(); //初始化界面
+	InitBlockInfo(); //初始化方块信息
+	srand((unsigned int)time(NULL)); //设置随机数生成的起点
+	StartGame(); //开始游戏
+	SWITCH_MAIN_SCREEN();
+	return 0;
 }
 
 static int init_screen()
 {
-    /*
 	bool fSuccess = enable_VT_Mode();
-    if (!fSuccess)
+    /*if (!fSuccess)
     {
         return -1;
-    }
-	*/
+    }*/
 
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
@@ -156,9 +192,6 @@ static int init_screen()
     
     return 0;
 }
-
-//光标跳转
-#define CursorJump(x, y) {    printf(CSI "%d;%dH", y, x); }
 
 //初始化界面
 static void InitInterface()
@@ -412,67 +445,59 @@ static int JudeFunc()
 	{
 		if (face.data[1][j] == 1) //顶层有方块存在（以第1行为顶层，不是第0行）
 		{
-			Sleep(1000); //留给玩家反应时间
-			//system("cls"); //清空屏幕
-			CLEAR_SCREEN();
-			color(7); //颜色设置为白色
-			CursorJump(2 * (COL / 3), ROW / 2 - 3);
-			if (grade>max)
-			{
-				printf("恭喜你打破最高记录，最高记录更新为%d", grade);
-				WriteGrade();
-			}
-			else if (grade == max)
-			{
-				printf("与最高记录持平，加油再创佳绩", grade);
-			}
-			else
-			{
-				printf("请继续加油，当前与最高记录相差%d", max - grade);
-			}
-			CursorJump(2 * (COL / 3), ROW / 2);
-			printf("GAME OVER");
-			while (1)
-			{
-				char ch;
-				CursorJump(2 * (COL / 3), ROW / 2 + 3);
-				printf("再来一局?(y/n):");
-				scanf("%c", &ch);
-				if (ch == 'y' || ch == 'Y')
-				{
-					system("cls");
-					testrb();
-				}
-				else if (ch == 'n' || ch == 'N')
-				{
-					CursorJump(2 * (COL / 3), ROW / 2 + 5);
-					printf(CSI "?1049l"); //恢复主屏幕
-					TURNON_CURSOR();
-
-					exit(0);
-				}
-				else
-				{
-					CursorJump(2 * (COL / 3), ROW / 2 + 4);
-					printf("选择错误，请再次选择");
-				}
-			}
+			bGameOver = true;
+			handle_game_over();
+			return 0;
 		}
 	}
 	return 0; //判断结束，无需再调用该函数进行判断
 }
+
+//处理游戏结束
+static int handle_game_over()
+{
+	Sleep(1000); //留给玩家反应时间
+	//清空屏幕
+	CLEAR_SCREEN();
+	color(7); //颜色设置为白色
+	CursorJump(2 * (COL / 3), ROW / 2 - 3);
+	if (grade>max)
+	{
+		printf("恭喜你打破最高记录，最高记录更新为%d", grade);
+		WriteGrade();
+	}
+	else if (grade == max)
+	{
+		printf("与最高记录持平，加油再创佳绩", grade);
+	}
+	else
+	{
+		printf("请继续加油，当前与最高记录相差%d", max - grade);
+	}
+	CursorJump(2 * (COL / 3), ROW / 2);
+	printf("GAME OVER");
+
+	CursorJump(2 * (COL / 3), ROW / 2 + 5);
+	//printf(CSI "?1049l"); //恢复主屏幕
+	SWITCH_MAIN_SCREEN();
+	TURNON_CURSOR();
+
+	return 0;
+
+}
+
 //游戏主体逻辑函数
 static void StartGame()
 {
 	int shape = rand() % 7, form = rand() % 4; //随机获取方块的形状和形态
-	while (1)
+	while (!bGameOver)
 	{
 		int t = 0;
 		int nextShape = rand() % 7, nextForm = rand() % 4; //随机获取下一个方块的形状和形态
 		int x = COL / 2 - 2, y = 0; //方块初始下落位置的横纵坐标
 		color(nextShape); //颜色设置为下一个方块的颜色
 		DrawBlock(nextShape, nextForm, COL + 3, 3); //将下一个方块显示在右上角
-		while (1)
+		while (!bGameOver)
 		{
 			color(shape); //颜色设置为当前正在下落的方块
 			DrawBlock(shape, form, x, y); //将该方块显示在初始下落位置
@@ -551,21 +576,19 @@ static void StartGame()
 					break;
 				case ESCKEY: //Esc键
 					//清空屏幕
-					CLEAR_SCREEN();
-					color(7);
-					CursorJump(COL, ROW / 2);
-					printf("  游戏结束  ");
-					CursorJump(COL, ROW / 2 + 2);
-					TURNON_CURSOR();
-					exit(0); //结束程序
+					bGameOver = true;
+					handle_game_over();
+
+					break;
 				case 's':
 				case 'S':  //暂停
 					system("pause>nul"); //暂停（按任意键继续）
 					break;
 				case 'r':
 				case 'R': //重新开始
-					system("cls"); //清空屏幕
-					testrb(); //重新执行主函数
+					//testrb(); //重新执行主函数
+					bRestart = true;
+					break;
 				}
 			}
 		}
