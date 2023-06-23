@@ -12,14 +12,16 @@ Created by Wangss on 2023-06-21.
 #include <locale.h>
 #include "../inc/rb.h"
 
+#define BUFFER_SIZE 100
 #define ROW 29 //游戏区行数
 #define COL 16 //游戏区列数
 
-#define DOWN 80 //方向键：下
-#define LEFT 75 //方向键：左
-#define RIGHT 77 //方向键：右
+#define UPKEY	72 //方向键：上
+#define DOWN 	80 //方向键：下
+#define LEFT 	75 //方向键：左
+#define RIGHT 	77 //方向键：右
 
-#define SPACE 32 //空格键
+#define SPACEKEY 32 //空格键
 #define ESCKEY 27 //Esc键
 
 #define ESC "\x1b"
@@ -40,15 +42,7 @@ typedef struct Block
 	int space[4][4];
 } BLOCK;
 
-/*
-[0]  -35 “T”形方块设置为紫色
-[1,2]-31 “L”形和“J”形方块设置为红色
-[3,4]-32 “Z”形和“S”形方块设置为绿色
-[5]  -33 “O”形方块设置为黄色
-[6]  -36 “I”形方块设置为浅蓝色
-[7]  - 0 其他默认设置为白色
-*/
-
+/*=======宏定义区域=======*/
 // 切换到主屏幕缓冲区
 #define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
 // 切换到备屏幕缓冲区
@@ -61,11 +55,12 @@ typedef struct Block
 #define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
 #define TURNON_CURSOR()   { printf(CSI "?25h"); }
 //光标跳转
-#define CursorJump(x, y) { printf(CSI "%d;%dH", y, x); }
+#define cursor_jump(x, y) { printf(CSI "%d;%dH", y, x); }
 //设置窗口title
 #define SET_CONSOLE_TITLE() { printf (ESC "]2;Trteris-2023\x07"); }
 
 
+/*======函数定义区域======*/
 //初始化界面
 static void init_interface();
 //初始化方块信息
@@ -92,35 +87,11 @@ static bool enable_VT_Mode();
 static int init_game_screen();
 // 处理游戏结束
 static int handle_game_over();
+//状态行显示
+static int show_status_line(char *str);
+
 
 /*=====Code Start Line================================================*/
-//设置屏幕为虚拟终端模式
-static bool enable_VT_Mode()
-{
-    // Set output mode to handle virtual terminal sequences
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        return false;
-    }
-
-    DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode))
-    {
-		printf("Error:GetConsoleMode.\n");
-        return false;
-    }
-
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
-    if (!SetConsoleMode(hOut, dwMode))
-    {		
-		printf("Error:SetConsoleMode.\n");
-        return false;
-    }
-
-    return true;
-}
 
 
 //全局变量
@@ -129,6 +100,96 @@ bool bGameOver = false;
 SCREEN scr;
 BLOCK block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
 const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
+/*
+[0]  -35 “T”形方块设置为紫色
+[1,2]-31 “L”形和“J”形方块设置为红色
+[3,4]-32 “Z”形和“S”形方块设置为绿色
+[5]  -33 “O”形方块设置为黄色
+[6]  -36 “I”形方块设置为浅蓝色
+[7]  - 0 其他默认设置为白色
+*/
+
+
+int testrb()
+{
+//#pragma warning (disable:4996) //消除警告
+	max_score = 0, grade = 0; //初始化变量
+
+	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
+
+	init_game_screen();
+	ReadGrade(); //从文件读取最高分到max变量	
+	init_interface(); //初始化界面
+	init_block_info(); //初始化方块信息
+	srand((unsigned int)time(NULL)); //设置随机数生成的起点
+	StartGame(); //开始游戏
+	SWITCH_MAIN_SCREEN();
+	return 0;
+}
+
+/*=================The functions to show the main manual.=====================
+*/
+static void show_command_manual(void)
+{
+    printf("Enter any of the following commands after the prompt > :\n"
+           "\tN -- New Game.\n"
+           "\tS -- Setting.\n"
+           "\tq -- Quit. (Or use Ctl-C.)\n"
+           "\t? -- Print this help message.\n");
+}
+
+static int main_manual()
+{
+{
+
+    char command;
+    bool input_consumed = false;
+    char buffer[BUFFER_SIZE];
+    int count = 0;
+    int input_key, input_key_2;
+
+    printf("> ");
+    while (scanf("%c", &command) != EOF)
+    {
+        input_consumed= false;
+        switch (command)
+        {
+        case 'd':
+        
+		
+            break;
+        case 'i':
+
+            break;
+        case 'u':
+
+            break;
+
+        case 'q':           
+
+            return EXIT_SUCCESS;
+        case 'c':
+            system("cls");
+            break;
+        case '\n':
+            input_consumed = true;
+            break;
+        default:
+            show_bpt_manual();
+            //input_consumed = true;
+        }
+        if (!input_consumed)
+        {
+            while ( getchar() != (int)'\n')
+                ;
+        }
+        printf("> ");
+    }
+    printf("\n");
+
+    return EXIT_SUCCESS;
+}
+}
 
 int test1()
 {	
@@ -153,21 +214,41 @@ int test1()
 	return 0;
 }
 
-int testrb()
+//显示状态行信息
+static int show_status_line(char * str)
 {
-//#pragma warning (disable:4996) //消除警告
-	max_score = 0, grade = 0; //初始化变量
+	cursor_jump(1, ROW+1);
+	printf(CSI "K");  //清除本行光标之后的信息
+	printf("%s", str);
 
-	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
+};
 
-	init_game_screen();
-	ReadGrade(); //从文件读取最高分到max变量	
-	init_interface(); //初始化界面
-	init_block_info(); //初始化方块信息
-	srand((unsigned int)time(NULL)); //设置随机数生成的起点
-	StartGame(); //开始游戏
-	SWITCH_MAIN_SCREEN();
-	return 0;
+//设置屏幕为虚拟终端模式
+static bool enable_VT_Mode()
+{
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+		printf("Error:GetConsoleMode.\n");
+        return false;
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
+    if (!SetConsoleMode(hOut, dwMode))
+    {		
+		show_status_line("Error:SetConsoleMode.");
+        return false;
+    }
+
+    return true;
 }
 
 static int init_game_screen()
@@ -211,6 +292,10 @@ static int init_game_screen()
 }
 
 /*初始化游戏开始界面
+游戏区（列 1~COL-1）
+信息区（列 COL+1~ COL+8）
+0,COL, COL+9为边界标识
+最后一行（行ROW）为边界标识
 */
 static void init_interface()
 {
@@ -219,62 +304,62 @@ static void init_interface()
 	{
 		for (int j = 0; j < COL + 10; j++) //从0列到COL+10列
 		{
-			if (j == 0 || j == COL - 1 || j == COL + 9) //第0列，游戏区COL列和信息区COL+9，显示方块
+			if (j == 0 || j == COL - 1 || j == COL + 9) //0,COL, COL+9为边界标识
 			{
 				scr.data[i][j] = 1; //标记该位置有方块
-				CursorJump(2 * j, i);
-				//printf(FANGK);
+				cursor_jump(2 * j, i);
 				printf(VBOARDER);
 			}
 			else 
-				if (i == ROW - 1)
+				if (i == ROW - 1) //最后一行（行ROW）为边界标识
 				{
 					scr.data[i][j] = 1; //标记该位置有方块
-					CursorJump(2 * j, i);
-					//printf(FANGK);
+					cursor_jump(2 * j, i);
 					printf(HBOARDER);
 				}
 				else
 					scr.data[i][j] = 0; //标记该位置无方块
 			}
 	}
-	for (int i = COL; i < COL + 9; i++)
+	for (int i = COL; i < COL + 9; i++) //信息区第8行为边界标识
 	{
 		scr.data[8][i] = 1; //标记该位置有方块
-		CursorJump(2 * i, 8);
-		//printf(FANGK);
+		cursor_jump(2 * i, 8);
 		printf(HBOARDER);
 	}
 
-	CursorJump(2 * COL, 1);
+	cursor_jump(2 * COL, 1);
 	printf("下一个方块：");
 
-	CursorJump(2 * COL + 4, ROW - 19);
+	cursor_jump(2 * COL + 3, ROW - 19);
 	printf("左移：←");
 
-	CursorJump(2 * COL + 4, ROW - 17);
+	cursor_jump(2 * COL + 3, ROW - 17);
 	printf("右移：→");
 
-	CursorJump(2 * COL + 4, ROW - 15);
+	cursor_jump(2 * COL + 3, ROW - 15);
 	printf("加速：↓");
 
-	CursorJump(2 * COL + 4, ROW - 13);
-	printf("旋转：空格");
+	cursor_jump(2 * COL + 3, ROW - 13);
+	printf("旋转：↑");
 
-	CursorJump(2 * COL + 4, ROW - 11);
-	printf("暂停: S");
+	cursor_jump(2 * COL + 3, ROW - 11);
+	printf("暂停: 空格");
 
-	CursorJump(2 * COL + 4, ROW - 9);
+	cursor_jump(2 * COL + 3, ROW - 9);
 	printf("退出: Esc");
 
-	CursorJump(2 * COL + 4, ROW - 7);
+	cursor_jump(2 * COL + 3, ROW - 7);
 	printf("重新开始:R");
 
-	CursorJump(2 * COL + 4, ROW - 5);
+	cursor_jump(2 * COL + 3, ROW - 5);
 	printf("最高纪录:%d", max_score);
 
-	CursorJump(2 * COL + 4, ROW - 3);
+	cursor_jump(2 * COL + 3, ROW - 3);
 	printf("当前分数：%d", grade);
+	
+	show_status_line("Initial completed.");
+
 }
 //初始化方块信息
 static void init_block_info()
@@ -334,6 +419,7 @@ static void init_block_info()
 			}
 		}
 	}
+	show_status_line("初始化block信息完成!");
 }
 //颜色设置
 static void set_color(int c)
@@ -350,7 +436,7 @@ static void draw_block(int shape, int form, int x, int y)
 		{
 			if (block[shape][form].space[i][j] == 1) //如果该位置有方块
 			{
-				CursorJump(2 * (x + j), y + i); //光标跳转到指定位置
+				cursor_jump(2 * (x + j), y + i); //光标跳转到指定位置
 				printf(FANGK); //输出方块
 			}
 		}
@@ -365,28 +451,34 @@ static void draw_space(int shape, int form, int x, int y)
 		{
 			if (block[shape][form].space[i][j] == 1) //如果该位置有方块
 			{
-				CursorJump(2 * (x + j), y + i); //光标跳转到指定位置
+				cursor_jump(2 * (x + j), y + i); //光标跳转到指定位置
 				printf(BLANK BLANK); //打印空格覆盖（两个空格）
 			}
 		}
 	}
 }
-//合法性判断
+
+/*判断在当前位置，是否可以放置block;
+	输入参数：block的形状 和 要放置的位置(x,y)
+	返回值：0-表示不可以放置；1-表示可以放置
+*/
 static int IsLegal(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			//如果方块落下的位置本来就已经有方块了，则不合法
+			//如果方块落下的位置本来就已经有方块了，则不可以放置block
 			if ((block[shape][form].space[i][j] == 1) && (scr.data[y + i][x + j] == 1))
-				return 0; //不合法
+				return 0; //0 表示不可以放置
 		}
 	}
-	return 1; //合法
+	return 1; //1表示可以放置
 }
 
-/* 判断游戏是否结束*/
+/* 判断游戏是否结束
+判断条件：在顶层（scr的第1层）是否有方块存在。
+*/
 static bool is_game_over()
 {
 	for (int j = 1; j < COL - 1; j++)
@@ -402,9 +494,13 @@ static bool is_game_over()
 //更新分数显示
 static int show_score(int grade)
 {
+	char str[100];
 	set_color(7); //颜色设置为白色
-	CursorJump(2 * COL + 4, ROW - 3); //光标跳转到显示当前分数的位置
+	cursor_jump(2 * COL + 3, ROW - 3); //光标跳转到显示当前分数的位置
 	printf("当前分数：%d", grade); //更新当前分数
+	sprintf(str, "当前分数：%d", grade);
+	show_status_line(str);
+	return 0;
 }
 
 
@@ -421,8 +517,8 @@ static int check_lines_status()
 
 	do
 	{
-		check_completed = false; //判断是否需要重新检查
-		istop = false; //判断一轮
+		check_completed = true; //判断是否需要重新检查
+		istop = false; //判断这一循环是否结束；
 		//判断是否得分
 		for (i = ROW - 2; i > 4  && !istop; i--)
 		{
@@ -449,7 +545,7 @@ static int check_lines_status()
 					for (j = 1; j < COL - 1; j++) 
 					{
 						scr.data[i][j] = 0; //该位置得分后被清除，标记为无方块
-						CursorJump(2 * j, i); //光标跳转
+						cursor_jump(2 * j, i); //光标跳转
 						printf(BLANK BLANK); //打印两个空格。
 					}*/
 					//把上面的行都向下挪一格；但是不判断是否满行；
@@ -461,7 +557,7 @@ static int check_lines_status()
 							sum += scr.data[m - 1][n]; //统计上一行的方块个数
 							scr.data[m][n] = scr.data[m - 1][n]; //将上一行方块的标识移到下一行
 							scr.color[m][n] = scr.color[m - 1][n]; //将上一行方块的颜色编号移到下一行
-							CursorJump(2 * n, m); //光标跳转到该位置
+							cursor_jump(2 * n, m); //光标跳转到该位置
 							if (scr.data[m][n] == 1) //上一行移下来的是方块，打印方块
 							{
 								set_color(scr.color[m][n]); //颜色设置为方块的颜色
@@ -480,10 +576,10 @@ static int check_lines_status()
 						}	
 					}
 				}
-				else //如本行不全是方块，不能消除，就继续检查上一行。
+				else //如本行不是满行方块，不能消除，就继续检查上一行。
 				{
 					istop =false;
-					check_completed = true;
+					//check_completed = true;
 				}
 			}	
 		}
@@ -498,17 +594,17 @@ static int check_lines_status()
 		}	
 	} while (!check_completed);
 
-	return 0; //判断结束，无需再调用该函数进行判断
+	return 0;
 }
 
 //处理游戏结束
 static int handle_game_over()
 {
-	Sleep(1000); //留给玩家反应时间
+	Sleep(1200); //暂停2秒。
 	//清空屏幕
 	CLEAR_SCREEN();
 	set_color(7); //颜色设置为白色
-	CursorJump(2 * (COL / 3), ROW / 2 - 3);
+	cursor_jump(2 * (COL / 3), ROW / 2 - 3);
 	if (grade>max_score)
 	{
 		printf("恭喜你打破最高记录，最高记录更新为%d", grade);
@@ -523,11 +619,12 @@ static int handle_game_over()
 		{
 			printf("请继续加油，当前与最高记录相差%d", max_score - grade);
 		}
-	CursorJump(2 * (COL / 3), ROW / 2);
-	printf("GAME OVER");
+	cursor_jump(2 * (COL / 3), ROW / 2);
+	set_color(2);
+	printf("GAME OVER!");
 	Sleep(1800);
 
-	CursorJump(2 * (COL / 3), ROW / 2 + 5);
+	cursor_jump(2 * (COL / 3), ROW / 2 + 5);
 	//恢复主屏幕
 	SWITCH_MAIN_SCREEN();
 	//打开光标
@@ -564,7 +661,6 @@ static void StartGame()
 			{
 				if (IsLegal(shape, form, x, y + 1) == 0) //方块再下落就不合法了（已经到达底部）
 				{
-					//将当前方块的信息录入scr当中
 					//scr:记录界面的每个位置是否有方块，若有方块还需记录该位置方块的颜色。
 					for (int i = 0; i < 4; i++)
 					{
@@ -589,7 +685,7 @@ static void StartGame()
 			}
 			else //键盘被敲击
 			{
-				char ch = getch(); //读取keycode
+				char ch = getch(); //读取键盘值
 				switch (ch)
 				{
 				case DOWN: //方向键：下
@@ -613,7 +709,7 @@ static void StartGame()
 						x++; //横坐标自增（下一次显示方块时就相当于右移了一格了）
 					}
 					break;
-				case SPACE: //空格键,在原地旋转
+				case UPKEY: //方向键：上,在原地旋转
 					if (IsLegal(shape, (form + 1) % 4, x, y ) == 1) //判断方块旋转后是否合法，原地旋转
 					{
 						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
@@ -624,8 +720,7 @@ static void StartGame()
 					bGameOver = true;
 					handle_game_over();
 					break;
-				case 's':
-				case 'S':  //暂停
+				case SPACEKEY: //空格键,暂停
 					system("pause>nul"); //暂停（按任意键继续）
 					break;
 				}
@@ -662,3 +757,5 @@ static void WriteGrade()
 	fclose(pf); //关闭文件
 	pf = NULL; //文件指针及时置空
 }
+
+

@@ -12,10 +12,8 @@
 
 int main ()
 {
-//    tetris();
 
     testrb();
 
     return 0;
-
 }
