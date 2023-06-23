@@ -1,3 +1,8 @@
+/* 俄罗斯方块
+Created by Wangss on 2023-06-21.
+
+*/
+
 #include <stdio.h>
 #include <Windows.h>
 #include <stdlib.h>
@@ -8,7 +13,7 @@
 #include "../inc/rb.h"
 
 #define ROW 29 //游戏区行数
-#define COL 20 //游戏区列数
+#define COL 16 //游戏区列数
 
 #define DOWN 80 //方向键：下
 #define LEFT 75 //方向键：左
@@ -21,20 +26,20 @@
 #define CSI "\x1b["
 #define FANGK "■"
 #define BLANK " "
+#define VBOARDER "|"
+#define HBOARDER "_"
 
-
-struct Face
+typedef struct  Screen
 {
 	int data[ROW][COL + 10]; //用于标记指定位置是否有方块（1为有，0为无）
 	int color[ROW][COL + 10]; //用于记录指定位置的方块颜色编码
-}face;
+} SCREEN;
 
-struct Block
+typedef struct Block
 {
 	int space[4][4];
-}block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
+} BLOCK;
 
-const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
 /*
 [0]  -35 “T”形方块设置为紫色
 [1,2]-31 “L”形和“J”形方块设置为红色
@@ -44,51 +49,52 @@ const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
 [7]  - 0 其他默认设置为白色
 */
 
-// ENTER the main screen buffer
+// 切换到主屏幕缓冲区
 #define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
-// Enter the alternate screen buffer
+// 切换到备屏幕缓冲区
 #define SWITCH_ALTERNATE_SCREEN()  { printf(CSI "?1049h"); }
-// Clear screen 
-#define CLEAR_SCREEN() { printf(CSI "1;1H" CSI "2J"); }
+// 跳转到屏幕起点
+#define GO_SCREEN_HOME() { printf(CSI "1;1H" ); }
+// 清屏 
+#define CLEAR_SCREEN() { printf(CSI "2J"); }
 // 关闭/打开光标
 #define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
 #define TURNON_CURSOR()   { printf(CSI "?25h"); }
 //光标跳转
 #define CursorJump(x, y) { printf(CSI "%d;%dH", y, x); }
+//设置窗口title
+#define SET_CONSOLE_TITLE() { printf (ESC "]2;Trteris-2023\x07"); }
 
-//隐藏光标
-static void HideCursor();
-//光标跳转
-//static void CursorJump(int x, int y);
+
 //初始化界面
-static void InitInterface();
+static void init_interface();
 //初始化方块信息
-static void InitBlockInfo();
+static void init_block_info();
 //颜色设置
 static void set_color(int num);
 //画出方块
-static void DrawBlock(int shape, int form, int x, int y);
+static void draw_block(int shape, int form, int x, int y);
 //空格覆盖
-static void DrawSpace(int shape, int form, int x, int y);
+static void draw_space(int shape, int form, int x, int y);
 //合法性判断
 static int IsLegal(int shape, int form, int x, int y);
 //判断得分与结束
-static int JudeFunc();
+static int check_lines_status();
 //游戏主体逻辑函数
 static void StartGame();
 //从文件读取最高分
 static void ReadGrade();
 //更新最高分到文件
 static void WriteGrade();
+//设置屏幕为虚拟终端模式
+static bool enable_VT_Mode();
+//初始化屏幕
+static int init_game_screen();
 // 处理游戏结束
 static int handle_game_over();
 
-//初始化屏幕
-static int init_screen();
-
-static bool enable_VT_Mode();
-
-
+/*=====Code Start Line================================================*/
+//设置屏幕为虚拟终端模式
 static bool enable_VT_Mode()
 {
     // Set output mode to handle virtual terminal sequences
@@ -118,12 +124,14 @@ static bool enable_VT_Mode()
 
 
 //全局变量
-int max, grade; 
-bool bGameOver = false, bRestart =false;
+int max_score, grade; 
+bool bGameOver = false;
+SCREEN scr;
+BLOCK block[7][4]; //用于存储7种基本形状方块的各自的4种形态的信息，共28种
+const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
 
 int test1()
 {	
-	//system("chcp 936");
 	enable_VT_Mode();
 
 	SetConsoleCP(CP_UTF8);
@@ -148,23 +156,21 @@ int test1()
 int testrb()
 {
 //#pragma warning (disable:4996) //消除警告
-	max = 0, grade = 0; //初始化变量
-	//system("title 俄罗斯方块"); //设置cmd窗口的名字
+	max_score = 0, grade = 0; //初始化变量
+
 	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
 
-	//enable_VT_Mode();
-	init_screen();
-
+	init_game_screen();
 	ReadGrade(); //从文件读取最高分到max变量	
-	InitInterface(); //初始化界面
-	InitBlockInfo(); //初始化方块信息
+	init_interface(); //初始化界面
+	init_block_info(); //初始化方块信息
 	srand((unsigned int)time(NULL)); //设置随机数生成的起点
 	StartGame(); //开始游戏
 	SWITCH_MAIN_SCREEN();
 	return 0;
 }
 
-static int init_screen()
+static int init_game_screen()
 {
 	bool fSuccess = enable_VT_Mode();
     /*if (!fSuccess)
@@ -185,52 +191,59 @@ static int init_screen()
     Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
     Size.Y = ScreenBufferInfo.srWindow.Bottom - ScreenBufferInfo.srWindow.Top + 1;
 
-    // Enter the alternate buffer
+	//设置title
+	SET_CONSOLE_TITLE();
+    // 切换备用屏幕
 	SWITCH_ALTERNATE_SCREEN();
 
-	// Set UTF8 Code Page
+	// 设置UTF8 Code Page
 	//system ("chcp 65001");	
 	//setlocale(LC_ALL, ".UTF8");
 	SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 
-    // Clear screen
+	//光标到起始点，清屏，关闭光标
+	GO_SCREEN_HOME();
 	CLEAR_SCREEN();
-	// 关闭光标
 	TURNOFF_CURSOR();
     
     return 0;
 }
 
-//初始化界面
-static void InitInterface()
+/*初始化游戏开始界面
+*/
+static void init_interface()
 {
 	set_color(7); //颜色设置为白色
-	for (int i = 0; i < ROW; i++)
+	for (int i = 0; i < ROW; i++) //从0行到ROW行
 	{
-		for (int j = 0; j < COL + 10; j++)
+		for (int j = 0; j < COL + 10; j++) //从0列到COL+10列
 		{
-			if (j == 0 || j == COL - 1 || j == COL + 9)
+			if (j == 0 || j == COL - 1 || j == COL + 9) //第0列，游戏区COL列和信息区COL+9，显示方块
 			{
-				face.data[i][j] = 1; //标记该位置有方块
+				scr.data[i][j] = 1; //标记该位置有方块
 				CursorJump(2 * j, i);
-				printf(FANGK);
+				//printf(FANGK);
+				printf(VBOARDER);
 			}
-			else if (i == ROW - 1)
-			{
-				face.data[i][j] = 1; //标记该位置有方块
-				CursorJump(2 * j, i);
-				printf(FANGK);
+			else 
+				if (i == ROW - 1)
+				{
+					scr.data[i][j] = 1; //标记该位置有方块
+					CursorJump(2 * j, i);
+					//printf(FANGK);
+					printf(HBOARDER);
+				}
+				else
+					scr.data[i][j] = 0; //标记该位置无方块
 			}
-			else
-				face.data[i][j] = 0; //标记该位置无方块
-		}
 	}
-	for (int i = COL; i < COL + 10; i++)
+	for (int i = COL; i < COL + 9; i++)
 	{
-		face.data[8][i] = 1; //标记该位置有方块
+		scr.data[8][i] = 1; //标记该位置有方块
 		CursorJump(2 * i, 8);
-		printf(FANGK);
+		//printf(FANGK);
+		printf(HBOARDER);
 	}
 
 	CursorJump(2 * COL, 1);
@@ -258,13 +271,13 @@ static void InitInterface()
 	printf("重新开始:R");
 
 	CursorJump(2 * COL + 4, ROW - 5);
-	printf("最高纪录:%d", max);
+	printf("最高纪录:%d", max_score);
 
 	CursorJump(2 * COL + 4, ROW - 3);
 	printf("当前分数：%d", grade);
 }
 //初始化方块信息
-static void InitBlockInfo()
+static void init_block_info()
 {
 	//“T”形
 	for (int i = 0; i <= 2; i++)
@@ -329,7 +342,7 @@ static void set_color(int c)
 }
 
 //画出方块
-static void DrawBlock(int shape, int form, int x, int y)
+static void draw_block(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -344,7 +357,7 @@ static void DrawBlock(int shape, int form, int x, int y)
 	}
 }
 //空格覆盖
-static void DrawSpace(int shape, int form, int x, int y)
+static void draw_space(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -366,74 +379,125 @@ static int IsLegal(int shape, int form, int x, int y)
 		for (int j = 0; j < 4; j++)
 		{
 			//如果方块落下的位置本来就已经有方块了，则不合法
-			if ((block[shape][form].space[i][j] == 1) && (face.data[y + i][x + j] == 1))
+			if ((block[shape][form].space[i][j] == 1) && (scr.data[y + i][x + j] == 1))
 				return 0; //不合法
 		}
 	}
 	return 1; //合法
 }
-//判断得分与结束
-static int JudeFunc()
+
+/* 判断游戏是否结束*/
+static bool is_game_over()
 {
-	int i, j, m, n, sum;
-	//判断是否得分
-	for (i = ROW - 2; i > 4; i--)
+	for (int j = 1; j < COL - 1; j++)
 	{
-		sum = 0; //记录第i行的方块个数
-		for (j = 1; j < COL - 1; j++)
+		if (scr.data[1][j] == 1) //顶层有方块存在（以第1行为顶层，不是第0行）
 		{
-			sum += face.data[i][j]; //统计第i行的方块个数
+			return true;
 		}
-		if (sum == 0) //该行没有方块，无需再判断其上的层次（无需再继续判断是否得分）
-			break; //跳出循环
-		if (sum == COL - 2) //该行全是方块，可得分
+	}
+	return false;
+}
+
+//更新分数显示
+static int show_score(int grade)
+{
+	set_color(7); //颜色设置为白色
+	CursorJump(2 * COL + 4, ROW - 3); //光标跳转到显示当前分数的位置
+	printf("当前分数：%d", grade); //更新当前分数
+}
+
+
+/*一个block下落期间的状态判断
+* 判断得分、是否结束
+* 先判断一轮：从最底部开始，判断每一行是否满行；
+	如果该行满行，就消除，并下移该满行之上的行数；然后从底部开始，继续判断；
+	如果该行不是满行，继续判断下一行；直至找到空白行；
+*/
+static int check_lines_status()
+{
+	int i, j, m, n, sum, nsum=0;
+	bool check_completed,  istop ;
+
+	do
+	{
+		check_completed = false; //判断是否需要重新检查
+		istop = false; //判断一轮
+		//判断是否得分
+		for (i = ROW - 2; i > 4  && !istop; i--)
 		{
-			grade += 10; //满一行加10分
-			set_color(7); //颜色设置为白色
-			CursorJump(2 * COL + 4, ROW - 3); //光标跳转到显示当前分数的位置
-			printf("当前分数：%d", grade); //更新当前分数
-			for (j = 1; j < COL - 1; j++) //清除得分行的方块信息
+			istop = false;
+			sum = 0; //记录第i行的方块个数
+			for (j = 1; j < COL - 1; j++)
 			{
-				face.data[i][j] = 0; //该位置得分后被清除，标记为无方块
-				CursorJump(2 * j, i); //光标跳转到该位置
-				printf(BLANK BLANK); //打印空格覆盖（两个空格）
+				sum += scr.data[i][j]; //统计第i行的方块个数
 			}
-			//把被清除行上面的行整体向下挪一格
-			for (m = i; m >1; m--)
+			if (sum == 0) //该行没有方块，无需再判断其上的层次（无需再继续判断是否得分）
 			{
-				sum = 0; //记录上一行的方块个数
-				for (n = 1; n < COL - 1; n++)
+				check_completed = true;
+				istop = true;
+				break; //跳出循环
+			}
+			else
+			{
+				if (sum == COL - 2) //该行全是方块，计算得分；然后把上面所有的行都挪下一行。但是不判断所挪动的行是否有满行
 				{
-					sum += face.data[m - 1][n]; //统计上一行的方块个数
-					face.data[m][n] = face.data[m - 1][n]; //将上一行方块的标识移到下一行
-					face.color[m][n] = face.color[m - 1][n]; //将上一行方块的颜色编号移到下一行
-					if (face.data[m][n] == 1) //上一行移下来的是方块，打印方块
+					nsum ++; //一个下落block期间，消除行数的计算。
+					grade += 10 * nsum; //加分规则：第一加10分；后面的行数*10；所以有连续行的话，消除两行=10+10*2=30；消除三行=10+10*2+10*3=60；消除四行=10+10*2+10*3+10*4=100
+					show_score(grade);  //显示得分
+					/*//清除得分行的方块信息；其实可以不用清除，因为后面会把上一行移动下来覆盖之；
+					for (j = 1; j < COL - 1; j++) 
 					{
-						CursorJump(2 * n, m); //光标跳转到该位置
-						set_color(face.color[m][n]); //颜色设置为还方块的颜色
-						printf(FANGK); //打印方块
-					}
-					else //上一行移下来的是空格，打印空格
+						scr.data[i][j] = 0; //该位置得分后被清除，标记为无方块
+						CursorJump(2 * j, i); //光标跳转
+						printf(BLANK BLANK); //打印两个空格。
+					}*/
+					//把上面的行都向下挪一格；但是不判断是否满行；
+					for (m = i; m >1; m--)
 					{
-						CursorJump(2 * n, m); //光标跳转到该位置
-						printf(BLANK BLANK); //打印空格（两个空格）
+						sum = 0; //记录上一行的方块个数
+						for (n = 1; n < COL - 1; n++)
+						{
+							sum += scr.data[m - 1][n]; //统计上一行的方块个数
+							scr.data[m][n] = scr.data[m - 1][n]; //将上一行方块的标识移到下一行
+							scr.color[m][n] = scr.color[m - 1][n]; //将上一行方块的颜色编号移到下一行
+							CursorJump(2 * n, m); //光标跳转到该位置
+							if (scr.data[m][n] == 1) //上一行移下来的是方块，打印方块
+							{
+								set_color(scr.color[m][n]); //颜色设置为方块的颜色
+								printf(FANGK); //打印方块
+							}
+							else //否则，上一行移下来的是空格，打印
+							{
+								printf(BLANK BLANK); //打印空格（两个空格）
+							}
+						}
+						if (sum == 0) //上一行全是空格，说明上面的行都是空，无需再将上层的方块向下移动（移动结束）；但是移动下来的可能还有满行，需要从底部再开始判断；
+						{
+							check_completed = false;
+							istop = true;
+							break;
+						}	
 					}
 				}
-				if (sum == 0) //上一行移下来的全是空格，无需再将上层的方块向下移动（移动结束）
-					return 1; //返回1，表示还需调用该函数进行判断（移动下来的可能还有满行）
-			}
+				else //如本行不全是方块，不能消除，就继续检查上一行。
+				{
+					istop =false;
+					check_completed = true;
+				}
+			}	
 		}
-	}
-	//判断游戏是否结束
-	for (j = 1; j < COL - 1; j++)
-	{
-		if (face.data[1][j] == 1) //顶层有方块存在（以第1行为顶层，不是第0行）
+
+		//判断游戏是否结束
+		bGameOver = is_game_over();
+		if (bGameOver)
 		{
-			bGameOver = true;
 			handle_game_over();
+			check_completed = true;
 			return 0;
-		}
-	}
+		}	
+	} while (!check_completed);
+
 	return 0; //判断结束，无需再调用该函数进行判断
 }
 
@@ -445,22 +509,23 @@ static int handle_game_over()
 	CLEAR_SCREEN();
 	set_color(7); //颜色设置为白色
 	CursorJump(2 * (COL / 3), ROW / 2 - 3);
-	if (grade>max)
+	if (grade>max_score)
 	{
 		printf("恭喜你打破最高记录，最高记录更新为%d", grade);
 		WriteGrade();
 	}
 	else 
-		if (grade == max)
+		if (grade == max_score)
 		{
 			printf("与最高记录持平，加油再创佳绩", grade);
 		}
 		else
 		{
-			printf("请继续加油，当前与最高记录相差%d", max - grade);
+			printf("请继续加油，当前与最高记录相差%d", max_score - grade);
 		}
 	CursorJump(2 * (COL / 3), ROW / 2);
 	printf("GAME OVER");
+	Sleep(1800);
 
 	CursorJump(2 * (COL / 3), ROW / 2 + 5);
 	//恢复主屏幕
@@ -481,11 +546,11 @@ static void StartGame()
 		int nextShape = rand() % 7, nextForm = rand() % 4; //随机获取下一个方块的形状和形态
 		int x = COL / 2 - 2, y = 0; //方块初始下落位置的横纵坐标
 		set_color(nextShape); //颜色设置为下一个方块的颜色
-		DrawBlock(nextShape, nextForm, COL + 3, 3); //将下一个方块显示在右上角
+		draw_block(nextShape, nextForm, COL + 3, 3); //将下一个方块显示在右上角
 		while (!bGameOver)
 		{
 			set_color(shape); //颜色设置为当前正在下落的方块
-			DrawBlock(shape, form, x, y); //将该方块显示在初始下落位置
+			draw_block(shape, form, x, y); //将该方块显示在初始下落位置
 			if (t == 0)
 			{
 				t = 15000; //这里t越小，方块下落越快（可以根据此设置游戏难度）
@@ -499,25 +564,26 @@ static void StartGame()
 			{
 				if (IsLegal(shape, form, x, y + 1) == 0) //方块再下落就不合法了（已经到达底部）
 				{
-					//将当前方块的信息录入face当中
-					//face:记录界面的每个位置是否有方块，若有方块还需记录该位置方块的颜色。
+					//将当前方块的信息录入scr当中
+					//scr:记录界面的每个位置是否有方块，若有方块还需记录该位置方块的颜色。
 					for (int i = 0; i < 4; i++)
 					{
 						for (int j = 0; j < 4; j++)
 						{
 							if (block[shape][form].space[i][j] == 1)
 							{
-								face.data[y + i][x + j] = 1; //将该位置标记为有方块
-								face.color[y + i][x + j] = shape; //记录该方块的颜色数值
+								scr.data[y + i][x + j] = 1; //将该位置标记为有方块
+								scr.color[y + i][x + j] = shape; //记录该方块的颜色数值
 							}
 						}
 					}
-					while (JudeFunc()); //判断此次方块下落是否得分以及游戏是否结束
+					//这是本程序最重要的判断；//判断此次方块下落是否得分以及游戏是否结束
+					check_lines_status();
 					break; //跳出当前死循环，准备进行下一个方块的下落
 				}
 				else //未到底部
 				{
-					DrawSpace(shape, form, x, y); //用空格覆盖当前方块所在位置
+					draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 					y++; //纵坐标自增（下一次显示方块时就相当于下落了一格了）
 				}
 			}
@@ -529,56 +595,44 @@ static void StartGame()
 				case DOWN: //方向键：下
 					if (IsLegal(shape, form, x, y + 1) == 1) //判断方块向下移动一位后是否合法
 					{
-						//方块下落后合法才进行以下操作
-						DrawSpace(shape, form, x, y); //用空格覆盖当前方块所在位置
+						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						y++; //纵坐标自增（下一次显示方块时就相当于下落了一格了）
 					}
 					break;
 				case LEFT: //方向键：左
 					if (IsLegal(shape, form, x - 1, y) == 1) //判断方块向左移动一位后是否合法
 					{
-						//方块左移后合法才进行以下操作
-						DrawSpace(shape, form, x, y); //用空格覆盖当前方块所在位置
+						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						x--; //横坐标自减（下一次显示方块时就相当于左移了一格了）
 					}
 					break;
 				case RIGHT: //方向键：右
 					if (IsLegal(shape, form, x + 1, y) == 1) //判断方块向右移动一位后是否合法
 					{
-						//方块右移后合法才进行以下操作
-						DrawSpace(shape, form, x, y); //用空格覆盖当前方块所在位置
+						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						x++; //横坐标自增（下一次显示方块时就相当于右移了一格了）
 					}
 					break;
-				case SPACE: //空格键
-					if (IsLegal(shape, (form + 1) % 4, x, y + 1) == 1) //判断方块旋转后是否合法
+				case SPACE: //空格键,在原地旋转
+					if (IsLegal(shape, (form + 1) % 4, x, y ) == 1) //判断方块旋转后是否合法，原地旋转
 					{
-						//方块旋转后合法才进行以下操作
-						DrawSpace(shape, form, x, y); //用空格覆盖当前方块所在位置
-						y++; //纵坐标自增（总不能原地旋转吧）
+						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						form = (form + 1) % 4; //方块的形态自增（下一次显示方块时就相当于旋转了）
 					}
 					break;
 				case ESCKEY: //Esc键
-					//清空屏幕
 					bGameOver = true;
 					handle_game_over();
-
 					break;
 				case 's':
 				case 'S':  //暂停
 					system("pause>nul"); //暂停（按任意键继续）
 					break;
-				case 'r':
-				case 'R': //重新开始
-					//testrb(); //重新执行主函数
-					bRestart = true;
-					break;
 				}
 			}
 		}
 		shape = nextShape, form = nextForm; //获取下一个方块的信息
-		DrawSpace(nextShape, nextForm, COL + 3, 3); //将右上角的方块信息用空格覆盖
+		draw_space(nextShape, nextForm, COL + 3, 3); //将右上角的方块信息用空格覆盖
 	}
 }
 //从文件读取最高分
@@ -591,7 +645,7 @@ static void ReadGrade()
 		fwrite(&grade, sizeof(int), 1, pf); //将max写入文件（此时max为0），即将最高历史得分初始化为0
 	}
 	fseek(pf, 0, SEEK_SET); //使文件指针pf指向文件开头
-	fread(&max, sizeof(int), 1, pf); //读取文件中的最高历史得分到max当中
+	fread(&max_score, sizeof(int), 1, pf); //读取文件中的最高历史得分到max当中
 	fclose(pf); //关闭文件
 	pf = NULL; //文件指针及时置空
 }
