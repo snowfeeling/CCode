@@ -13,7 +13,7 @@
 int main ()
 {
 
-    testrb();
+    mytetris();
 
     return 0;
 }

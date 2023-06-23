@@ -6,6 +6,6 @@
 
 #define CONSOLE_CLEAR "\33[H\033[2J"
 
-int testrb();
+int mytetris();
 
 #endif

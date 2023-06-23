@@ -22,7 +22,7 @@ Created by Wangss on 2023-06-21.
 #define RIGHT 	77 //方向键：右
 
 #define SPACEKEY 32 //空格键
-#define ESCKEY 27 //Esc键
+#define ESCKEY	27 //Esc键
 
 #define ESC "\x1b"
 #define CSI "\x1b["
@@ -33,7 +33,7 @@ Created by Wangss on 2023-06-21.
 
 typedef struct  Screen
 {
-	int data[ROW][COL + 10]; //用于标记指定位置是否有方块（1为有，0为无）
+	int data [ROW][COL + 10]; //用于标记指定位置是否有方块（1为有，0为无）
 	int color[ROW][COL + 10]; //用于记录指定位置的方块颜色编码
 } SCREEN;
 
@@ -88,11 +88,13 @@ static int init_game_screen();
 // 处理游戏结束
 static int handle_game_over();
 //状态行显示
-static int show_status_line(char *str);
+static void show_status_line(char *str);
 
+static int init_main_screen();
+static void show_command_manual(void);
+static int main_manual();
 
 /*=====Code Start Line================================================*/
-
 
 //全局变量
 int max_score, grade; 
@@ -109,10 +111,15 @@ const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
 [7]  - 0 其他默认设置为白色
 */
 
+int mytetris()
+{
+	init_main_screen();
+	main_manual();
+	return 0;
+}
 
 int testrb()
 {
-//#pragma warning (disable:4996) //消除警告
 	max_score = 0, grade = 0; //初始化变量
 
 	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
@@ -129,7 +136,7 @@ int testrb()
 
 /*=================The functions to show the main manual.=====================
 */
-static void show_command_manual(void)
+static void show_command_manual1(void)
 {
     printf("Enter any of the following commands after the prompt > :\n"
            "\tN -- New Game.\n"
@@ -138,45 +145,62 @@ static void show_command_manual(void)
            "\t? -- Print this help message.\n");
 }
 
+static void show_command_manual(void)
+{
+
+    printf("在提示符后输入命令 > :\n"
+           "\tN -- 开启游戏.\n"
+           "\tS -- 设置.\n"
+           "\tq -- 退出. \n"
+           "\t? -- 帮助信息.\n");
+}
+
+static int init_main_screen()
+{
+	bool fSuccess = enable_VT_Mode();
+    if (!fSuccess)
+    {
+        return -1;
+    }
+
+	SetConsoleCP(CP_UTF8);
+	SetConsoleOutputCP(CP_UTF8);
+	return 0;
+
+}
+
 static int main_manual()
 {
-{
-
     char command;
     bool input_consumed = false;
-    char buffer[BUFFER_SIZE];
-    int count = 0;
-    int input_key, input_key_2;
+
 
     printf("> ");
+	show_command_manual();
+    printf("> ");
+
     while (scanf("%c", &command) != EOF)
     {
         input_consumed= false;
         switch (command)
         {
-        case 'd':
-        
-		
+        case 'n':
+		case 'N':
+			printf("Start the new game.\n");
+			testrb();
             break;
-        case 'i':
-
+        case 's':
+			printf("Change the setting.\n");
+			Sleep(2000);
             break;
-        case 'u':
-
-            break;
-
         case 'q':           
-
+			printf("Quit the game.\n");
             return EXIT_SUCCESS;
-        case 'c':
-            system("cls");
-            break;
         case '\n':
             input_consumed = true;
             break;
         default:
-            show_bpt_manual();
-            //input_consumed = true;
+            show_command_manual();
         }
         if (!input_consumed)
         {
@@ -189,7 +213,6 @@ static int main_manual()
 
     return EXIT_SUCCESS;
 }
-}
 
 int test1()
 {	
@@ -198,6 +221,7 @@ int test1()
 	SetConsoleCP(CP_UTF8);
 	SetConsoleOutputCP(CP_UTF8);
 	printf("Main Screen\n");
+	printf("开始了。。。");
 	Sleep(3000);
 
 	SWITCH_ALTERNATE_SCREEN();
@@ -215,12 +239,11 @@ int test1()
 }
 
 //显示状态行信息
-static int show_status_line(char * str)
+static void show_status_line(char * str)
 {
 	cursor_jump(1, ROW+1);
 	printf(CSI "K");  //清除本行光标之后的信息
 	printf("%s", str);
-
 };
 
 //设置屏幕为虚拟终端模式
@@ -253,24 +276,6 @@ static bool enable_VT_Mode()
 
 static int init_game_screen()
 {
-	bool fSuccess = enable_VT_Mode();
-    /*if (!fSuccess)
-    {
-        return -1;
-    }*/
-
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        printf("Couldn't get the console handle. Quitting.\n");
-        return -1;
-    }
-
-    CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
-    GetConsoleScreenBufferInfo(hOut, &ScreenBufferInfo);
-    COORD Size;
-    Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
-    Size.Y = ScreenBufferInfo.srWindow.Bottom - ScreenBufferInfo.srWindow.Top + 1;
 
 	//设置title
 	SET_CONSOLE_TITLE();
@@ -278,7 +283,6 @@ static int init_game_screen()
 	SWITCH_ALTERNATE_SCREEN();
 
 	// 设置UTF8 Code Page
-	//system ("chcp 65001");	
 	//setlocale(LC_ALL, ".UTF8");
 	SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
@@ -427,7 +431,7 @@ static void set_color(int c)
     printf(CSI "%dm", (c>=0 && c <= 7) ? (block_color[c]) : (block_color[7]));
 }
 
-//画出方块
+//从(x,y)的位置画方块
 static void draw_block(int shape, int form, int x, int y)
 {
 	for (int i = 0; i < 4; i++)
@@ -600,31 +604,29 @@ static int check_lines_status()
 //处理游戏结束
 static int handle_game_over()
 {
-	Sleep(1200); //暂停2秒。
-	//清空屏幕
-	CLEAR_SCREEN();
-	set_color(7); //颜色设置为白色
-	cursor_jump(2 * (COL / 3), ROW / 2 - 3);
+	char str[BUFFER_SIZE];
+
 	if (grade>max_score)
 	{
-		printf("恭喜你打破最高记录，最高记录更新为%d", grade);
+		sprintf(str, "恭喜你打破最高记录，最高记录更新为%d", grade);
 		WriteGrade();
 	}
 	else 
 		if (grade == max_score)
 		{
-			printf("与最高记录持平，加油再创佳绩", grade);
+			sprintf(str, "你的得分%d与最高记录持平，加油再创佳绩", grade);
 		}
 		else
 		{
-			printf("请继续加油，当前与最高记录相差%d", max_score - grade);
+			sprintf(str, "请继续加油，你的得分%d当前与最高记录相差%d", grade, max_score - grade);
 		}
-	cursor_jump(2 * (COL / 3), ROW / 2);
 	set_color(2);
-	printf("GAME OVER!");
-	Sleep(1800);
+	printf(CSI "1m" CSI "5m" CSI "91m");
+	show_status_line(str);
+	Sleep(3200);
+	show_status_line("GAME OVER!");
+	Sleep(3200);
 
-	cursor_jump(2 * (COL / 3), ROW / 2 + 5);
 	//恢复主屏幕
 	SWITCH_MAIN_SCREEN();
 	//打开光标
@@ -636,6 +638,8 @@ static int handle_game_over()
 //游戏主体逻辑函数
 static void StartGame()
 {
+	bGameOver = false;
+
 	int shape = rand() % 7, form = rand() % 4; //随机获取方块的形状和形态
 	while (!bGameOver)
 	{
