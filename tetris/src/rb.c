@@ -94,6 +94,9 @@ static int init_main_screen();
 static void show_command_manual(void);
 static int main_manual();
 
+static int change_setting();
+
+
 /*=====Code Start Line================================================*/
 
 //全局变量
@@ -132,7 +135,6 @@ int testrb()
 	StartGame(); //开始游戏
 	handle_game_over();
 
-//	SWITCH_MAIN_SCREEN();
 	return 0;
 }
 
@@ -193,12 +195,13 @@ static int main_manual()
         {
         case 'n':
 		case 'N':
-			printf("Start the new game.\n");
+			printf("The new game is started.\n");
 			testrb();
             break;
         case 's':
 			printf("Change the setting.\n");
-			Sleep(2000);
+			Sleep(600);
+			change_setting();
             break;
         case 'q':           
 			printf("Quit the game.\n");
@@ -303,10 +306,11 @@ static int init_game_screen()
 */
 static void init_game_interface()
 {
+	int i,j;
 	set_color(7); //颜色设置为白色
-	for (int i = 0; i < ROW; i++) //从0行到ROW行
+	for (i = 0; i < ROW; i++) //从0行到ROW行
 	{
-		for (int j = 0; j < COL + 10; j++) //从0列到COL+10列
+		for (j = 0; j < COL + 10; j++) //从0列到COL+10列
 		{
 			if (j == 0 || j == COL - 1 || j == COL + 9) //0,COL, COL+9为边界标识
 			{
@@ -325,7 +329,7 @@ static void init_game_interface()
 					scr.data[i][j] = 0; //标记该位置无方块
 			}
 	}
-	for (int i = COL; i < COL + 9; i++) //信息区第8行为边界标识
+	for (i = COL; i < COL + 9; i++) //信息区第8行为边界标识
 	{
 		scr.data[8][i] = 1; //标记该位置有方块
 		cursor_jump(2 * i, 8);
@@ -353,17 +357,12 @@ static void init_game_interface()
 	cursor_jump(2 * COL + 3, ROW - 9);
 	printf("退出: Esc");
 
-	cursor_jump(2 * COL + 3, ROW - 7);
-	printf("重新开始:R");
-
 	cursor_jump(2 * COL + 3, ROW - 5);
 	printf("最高纪录:%d", max_score);
 
 	cursor_jump(2 * COL + 3, ROW - 3);
 	printf("当前分数：%d", grade);
 	
-	show_game_status_line("Initial completed.");
-
 }
 //初始化方块信息
 static void init_block_info()
@@ -449,9 +448,10 @@ static void draw_block(int shape, int form, int x, int y)
 //空格覆盖
 static void draw_space(int shape, int form, int x, int y)
 {
-	for (int i = 0; i < 4; i++)
+	int i,j;
+	for (i = 0; i < 4; i++)
 	{
-		for (int j = 0; j < 4; j++)
+		for (j = 0; j < 4; j++)
 		{
 			if (block[shape][form].space[i][j] == 1) //如果该位置有方块
 			{
@@ -514,16 +514,16 @@ static int show_score(int grade)
 	如果该行满行，就消除，并下移该满行之上的行数；然后从底部开始，继续判断；
 	如果该行不是满行，继续判断下一行；直至找到空白行；
 */
-static int check_lines_status()
+static bool check_lines_status()
 {
 	int i, j, m, n, sum, nsum=0;
 	bool check_completed,  istop ;
+	bool game_status = false;
 
 	do
 	{
-		check_completed = true; //判断是否需要重新检查
+		check_completed = true; //判断是否检查结束；
 		istop = false; //判断这一循环是否结束；
-		//判断是否得分
 		for (i = ROW - 2; i > 4  && !istop; i--)
 		{
 			istop = false;
@@ -589,16 +589,15 @@ static int check_lines_status()
 		}
 
 		//判断游戏是否结束
-		bGameOver = is_game_over();
-		if (bGameOver)
+		game_status = is_game_over();
+		if (game_status)
 		{
-			//handle_game_over();
-			check_completed = true;
-			//return 0;
+			check_completed = true; // 如果判断游戏结束，则检查标志就为true；
 		}	
 	} while (!check_completed);
 
-	return 0;
+	return game_status;
+
 }
 
 //处理游戏结束
@@ -677,7 +676,7 @@ static void StartGame()
 						}
 					}
 					//这是本程序最重要的判断；//判断此次方块下落是否得分以及游戏是否结束
-					check_lines_status();
+					bGameOver = check_lines_status();
 					break; //跳出当前死循环，准备进行下一个方块的下落
 				}
 				else //未到底部
@@ -721,7 +720,6 @@ static void StartGame()
 					break;
 				case ESCKEY: //Esc键
 					bGameOver = true;
-					//handle_game_over();
 					break;
 				case SPACEKEY: //空格键,暂停
 					system("pause>nul"); //暂停（按任意键继续）
@@ -761,4 +759,14 @@ static void WriteGrade()
 	pf = NULL; //文件指针及时置空
 }
 
+static int change_setting()
+{
+	SWITCH_ALTERNATE_SCREEN();
+	
+	show_game_status_line("Change the game setting.");
+	Sleep(3000);
+
+	SWITCH_MAIN_SCREEN();
+	return 0;
+}
 
