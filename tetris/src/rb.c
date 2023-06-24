@@ -31,6 +31,8 @@ Created by Wangss on 2023-06-21.
 #define VBOARDER "|"
 #define HBOARDER "_"
 
+#define DATAFNAME "../data/tetris.dat"
+
 typedef struct  Screen
 {
 	int data [ROW][COL + 10]; //用于标记指定位置是否有方块（1为有，0为无）
@@ -74,7 +76,7 @@ static void draw_space(int shape, int form, int x, int y);
 //合法性判断
 static int IsLegal(int shape, int form, int x, int y);
 //判断得分与结束
-static int check_lines_status();
+static bool check_lines_status();
 //游戏主体逻辑函数
 static void StartGame();
 //从文件读取最高分
@@ -607,17 +609,17 @@ static int handle_game_over()
 
 	if (grade>max_score)
 	{
-		sprintf(str, "恭喜你打破最高记录，最高记录更新为%d", grade);
+		sprintf(str, "恭喜!你以%d分打破最高记录。", grade);
 		WriteGrade();
 	}
 	else 
 		if (grade == max_score)
 		{
-			sprintf(str, "你的得分%d与最高记录持平,加油再创佳绩", grade);
+			sprintf(str, "恭喜你的得分%d与最高记录持平！", grade);
 		}
 		else
 		{
-			sprintf(str, "请继续加油，你的得分%d当前与最高记录相差%d", grade, max_score - grade);
+			sprintf(str, "本次得分%d当前与最高记录相差%d。请继续加油！", grade, max_score - grade);
 		}
 	printf(CSI "1m" CSI "5m" CSI "91m"); //1m增强、5m闪亮、91m亮红色
 	show_game_status_line(str);
@@ -722,7 +724,8 @@ static void StartGame()
 					bGameOver = true;
 					break;
 				case SPACEKEY: //空格键,暂停
-					system("pause>nul"); //暂停（按任意键继续）
+					getch();
+					//system("pause>nul"); //暂停（按任意键继续）
 					break;
 				}
 			}
@@ -734,10 +737,10 @@ static void StartGame()
 //从文件读取最高分
 static void ReadGrade()
 {
-	FILE* pf = fopen("tetris.txt", "r"); //以只读方式打开文件
+	FILE* pf = fopen(DATAFNAME, "r"); //以只读方式打开文件
 	if (pf == NULL) //打开文件失败
 	{
-		pf = fopen("tetris.txt", "w"); //以只写方式打开文件（文件不存在可以自动创建该文件）
+		pf = fopen(DATAFNAME, "w"); //以只写方式打开文件（文件不存在可以自动创建该文件）
 		fwrite(&grade, sizeof(int), 1, pf); //将max写入文件（此时max为0），即将最高历史得分初始化为0
 	}
 	fseek(pf, 0, SEEK_SET); //使文件指针pf指向文件开头
@@ -748,7 +751,7 @@ static void ReadGrade()
 //更新最高分到文件
 static void WriteGrade()
 {
-	FILE* pf = fopen("tetris.txt", "w"); //以只写方式打开文件
+	FILE* pf = fopen(DATAFNAME, "w"); //以只写方式打开文件
 	if (pf == NULL) //打开文件失败
 	{
 		printf("保存最高得分记录失败\n");
