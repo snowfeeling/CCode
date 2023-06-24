@@ -120,7 +120,7 @@ int mytetris()
 
 int testrb()
 {
-	max_score = 0, grade = 0; //初始化变量
+	max_score = 0, grade = 0, bGameOver = false; //初始化变量
 
 	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
 
@@ -130,7 +130,9 @@ int testrb()
 	init_block_info(); //初始化方块信息
 	srand((unsigned int)time(NULL)); //设置随机数生成的起点
 	StartGame(); //开始游戏
-	SWITCH_MAIN_SCREEN();
+	handle_game_over();
+
+//	SWITCH_MAIN_SCREEN();
 	return 0;
 }
 
@@ -590,9 +592,9 @@ static int check_lines_status()
 		bGameOver = is_game_over();
 		if (bGameOver)
 		{
-			handle_game_over();
+			//handle_game_over();
 			check_completed = true;
-			return 0;
+			//return 0;
 		}	
 	} while (!check_completed);
 
@@ -618,7 +620,7 @@ static int handle_game_over()
 		{
 			sprintf(str, "请继续加油，你的得分%d当前与最高记录相差%d", grade, max_score - grade);
 		}
-	printf(CSI "1m" CSI "5m" CSI "91m");
+	printf(CSI "1m" CSI "5m" CSI "91m"); //1m增强、5m闪亮、91m亮红色
 	show_game_status_line(str);
 	Sleep(3200);
 	show_game_status_line("GAME OVER!");
@@ -681,7 +683,7 @@ static void StartGame()
 				else //未到底部
 				{
 					draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
-					y++; //纵坐标自增（下一次显示方块时就相当于下落了一格了）
+					y++; //纵坐标+1（下一次显示方块时就相当于下落了一格了）
 				}
 			}
 			else //键盘被敲击
@@ -719,7 +721,7 @@ static void StartGame()
 					break;
 				case ESCKEY: //Esc键
 					bGameOver = true;
-					handle_game_over();
+					//handle_game_over();
 					break;
 				case SPACEKEY: //空格键,暂停
 					system("pause>nul"); //暂停（按任意键继续）
