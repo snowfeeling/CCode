@@ -62,7 +62,7 @@ typedef struct Block
 
 /*======函数定义区域======*/
 //初始化界面
-static void init_interface();
+static void init_game_interface();
 //初始化方块信息
 static void init_block_info();
 //颜色设置
@@ -88,7 +88,7 @@ static int init_game_screen();
 // 处理游戏结束
 static int handle_game_over();
 //状态行显示
-static void show_status_line(char *str);
+static void show_game_status_line(char *str);
 
 static int init_main_screen();
 static void show_command_manual(void);
@@ -126,7 +126,7 @@ int testrb()
 
 	init_game_screen();
 	ReadGrade(); //从文件读取最高分到max变量	
-	init_interface(); //初始化界面
+	init_game_interface(); //初始化界面
 	init_block_info(); //初始化方块信息
 	srand((unsigned int)time(NULL)); //设置随机数生成的起点
 	StartGame(); //开始游戏
@@ -162,9 +162,14 @@ static int init_main_screen()
     {
         return -1;
     }
+	//设置title
+	SET_CONSOLE_TITLE();
 
+	// 设置UTF8 Code Page
+	//setlocale(LC_ALL, ".UTF8");
 	SetConsoleCP(CP_UTF8);
-	SetConsoleOutputCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+
 	return 0;
 
 }
@@ -239,7 +244,7 @@ int test1()
 }
 
 //显示状态行信息
-static void show_status_line(char * str)
+static void show_game_status_line(char * str)
 {
 	cursor_jump(1, ROW+1);
 	printf(CSI "K");  //清除本行光标之后的信息
@@ -267,7 +272,7 @@ static bool enable_VT_Mode()
 	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
     if (!SetConsoleMode(hOut, dwMode))
     {		
-		show_status_line("Error:SetConsoleMode.");
+		show_game_status_line("Error:SetConsoleMode.");
         return false;
     }
 
@@ -277,15 +282,8 @@ static bool enable_VT_Mode()
 static int init_game_screen()
 {
 
-	//设置title
-	SET_CONSOLE_TITLE();
     // 切换备用屏幕
 	SWITCH_ALTERNATE_SCREEN();
-
-	// 设置UTF8 Code Page
-	//setlocale(LC_ALL, ".UTF8");
-	SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
 
 	//光标到起始点，清屏，关闭光标
 	GO_SCREEN_HOME();
@@ -301,7 +299,7 @@ static int init_game_screen()
 0,COL, COL+9为边界标识
 最后一行（行ROW）为边界标识
 */
-static void init_interface()
+static void init_game_interface()
 {
 	set_color(7); //颜色设置为白色
 	for (int i = 0; i < ROW; i++) //从0行到ROW行
@@ -362,7 +360,7 @@ static void init_interface()
 	cursor_jump(2 * COL + 3, ROW - 3);
 	printf("当前分数：%d", grade);
 	
-	show_status_line("Initial completed.");
+	show_game_status_line("Initial completed.");
 
 }
 //初始化方块信息
@@ -423,7 +421,7 @@ static void init_block_info()
 			}
 		}
 	}
-	show_status_line("初始化block信息完成!");
+	show_game_status_line("初始化block信息完成!");
 }
 //颜色设置
 static void set_color(int c)
@@ -503,7 +501,7 @@ static int show_score(int grade)
 	cursor_jump(2 * COL + 3, ROW - 3); //光标跳转到显示当前分数的位置
 	printf("当前分数：%d", grade); //更新当前分数
 	sprintf(str, "当前分数：%d", grade);
-	show_status_line(str);
+	show_game_status_line(str);
 	return 0;
 }
 
@@ -614,17 +612,16 @@ static int handle_game_over()
 	else 
 		if (grade == max_score)
 		{
-			sprintf(str, "你的得分%d与最高记录持平，加油再创佳绩", grade);
+			sprintf(str, "你的得分%d与最高记录持平,加油再创佳绩", grade);
 		}
 		else
 		{
 			sprintf(str, "请继续加油，你的得分%d当前与最高记录相差%d", grade, max_score - grade);
 		}
-	set_color(2);
 	printf(CSI "1m" CSI "5m" CSI "91m");
-	show_status_line(str);
+	show_game_status_line(str);
 	Sleep(3200);
-	show_status_line("GAME OVER!");
+	show_game_status_line("GAME OVER!");
 	Sleep(3200);
 
 	//恢复主屏幕
