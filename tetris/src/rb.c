@@ -28,9 +28,11 @@ Created by Wangss on 2023-06-21.
 #define CSI "\x1b["
 #define FANGK "■"
 #define BLANK " "
-#define VBOARDER "|"
-#define HBOARDER "_"
+//#define VBOARDER "|"
+#define VBOARDER "║"
+#define HBOARDER "═"
 
+//#define HBOARDER "_"
 
 #define DATAFNAME "../data/tetris.dat"
 
@@ -336,7 +338,7 @@ static void init_game_interface()
 				}
 				else
 					scr.data[i][j] = 0; //标记该位置无方块
-			}
+		}
 	}
 	for (i = COL; i < COL + 9; i++) //信息区第8行为边界标识
 	{
@@ -534,6 +536,7 @@ static bool check_lines_status()
 	{
 		check_completed = true; //判断是否检查结束；
 		istop = false; //判断这一循环是否结束；
+		//从ROW-2行，倒数第二行开始；最后一行（ROW行），是边界行
 		for (i = ROW - 2; i > 4  && !istop; i--)
 		{
 			istop = false;
@@ -719,6 +722,7 @@ static void StartGame()
 								scr.data[y + i][x + j] = 1; //将该位置标记为有方块
 								scr.color[y + i][x + j] = shape; //记录该方块的颜色数值
 							}
+							//其他部位可能已经有了方块，不可能置0
 						}
 					}
 					//这是本程序最重要的判断；//判断此次方块下落是否得分以及游戏是否结束
