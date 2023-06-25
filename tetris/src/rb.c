@@ -31,6 +31,7 @@ Created by Wangss on 2023-06-21.
 #define VBOARDER "|"
 #define HBOARDER "_"
 
+
 #define DATAFNAME "../data/tetris.dat"
 
 typedef struct  Screen
@@ -71,6 +72,9 @@ static void init_block_info();
 static void set_color(int num);
 //画出方块
 static void draw_block(int shape, int form, int x, int y);
+//在最后一行，显示block投影
+static int draw_block_shape(int shape, int form, int x, int y);
+
 //空格覆盖
 static void draw_space(int shape, int form, int x, int y);
 //合法性判断
@@ -154,11 +158,11 @@ static void show_command_manual1(void)
 static void show_command_manual(void)
 {
 
-    printf("在提示符后输入命令 > :\n"
-           "\tN -- 开启游戏.\n"
-           "\tS -- 设置.\n"
-           "\tq -- 退出. \n"
-           "\t? -- 帮助信息.\n");
+    printf("在提示符 > 后输入命令 :\n"
+           "\tN -- 开启游戏\n"
+           "\tS -- 设置\n"
+           "\t? -- 帮助信息\n"
+           "\tq -- 退出 \n");
 }
 
 static int init_main_screen()
@@ -186,7 +190,7 @@ static int main_manual()
     bool input_consumed = false;
 
 
-    printf("> ");
+//    printf("> ");
 	show_command_manual();
     printf("> ");
 
@@ -279,7 +283,7 @@ static bool enable_VT_Mode()
 	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
     if (!SetConsoleMode(hOut, dwMode))
     {		
-		show_game_status_line("Error:SetConsoleMode.");
+		printf("Error:SetConsoleMode.\n");
         return false;
     }
 
@@ -303,8 +307,9 @@ static int init_game_screen()
 /*初始化游戏开始界面
 游戏区（列 1~COL-1）
 信息区（列 COL+1~ COL+8）
-0,COL, COL+9为边界标识
+列（0,COL, COL+9）为边界标识
 最后一行（行ROW）为边界标识
+设置整个区域的数据值；
 */
 static void init_game_interface()
 {
@@ -314,9 +319,10 @@ static void init_game_interface()
 	{
 		for (j = 0; j < COL + 10; j++) //从0列到COL+10列
 		{
-			if (j == 0 || j == COL - 1 || j == COL + 9) //0,COL, COL+9为边界标识
+			if ((j == 0 ) || (j == COL - 1) || (j == COL + 9) ) //0,COL, COL+9为边界标识
 			{
 				scr.data[i][j] = 1; //标记该位置有方块
+				scr.color[i][j] = 0; //颜色为白色
 				cursor_jump(2 * j, i);
 				printf(VBOARDER);
 			}
@@ -324,6 +330,7 @@ static void init_game_interface()
 				if (i == ROW - 1) //最后一行（行ROW）为边界标识
 				{
 					scr.data[i][j] = 1; //标记该位置有方块
+					scr.color[i][j] = 0;
 					cursor_jump(2 * j, i);
 					printf(HBOARDER);
 				}
@@ -334,6 +341,7 @@ static void init_game_interface()
 	for (i = COL; i < COL + 9; i++) //信息区第8行为边界标识
 	{
 		scr.data[8][i] = 1; //标记该位置有方块
+		scr.color[8][j] = 0; 
 		cursor_jump(2 * i, 8);
 		printf(HBOARDER);
 	}
@@ -623,9 +631,9 @@ static int handle_game_over()
 		}
 	printf(CSI "1m" CSI "5m" CSI "91m"); //1m增强、5m闪亮、91m亮红色
 	show_game_status_line(str);
-	Sleep(3200);
+	Sleep(1800);
 	show_game_status_line("GAME OVER!");
-	Sleep(3200);
+	Sleep(1800);
 
 	//恢复主屏幕
 	SWITCH_MAIN_SCREEN();
@@ -635,6 +643,41 @@ static int handle_game_over()
 	return 0;
 }
 
+static int draw_block_shape(int shape, int form, int x, int y)
+{
+	int i, row, col, sum[4]={0,0,0,0};
+	int ix, ilen;
+	for ( col = 0; col < 4; col++)
+	{
+		for ( row = 0; row < 4; row++)
+		{
+			sum[col] += block[shape][form].space[row][col];			
+		}
+	}
+	ix = 0,  ilen = 0;
+	for (i = 0; i < 4; i++)
+	{
+		if (sum[i] >0)
+		{
+			if(ix==0) 
+				ix = i + x;
+			ilen ++ ;
+		} 
+	}
+	
+	for (i = 1; i < COL; i++)
+	{
+		cursor_jump(2*i, ROW-1);
+		if (i>=ix && i<ix+ilen)
+			printf(CSI "91m"); //91亮红色， 92亮绿色
+		else
+		{
+			printf(CSI "0;97m"); //亮白色
+		}
+		printf(HBOARDER ); 
+	}
+	return 0;
+}
 //游戏主体逻辑函数
 static void StartGame()
 {
@@ -651,7 +694,8 @@ static void StartGame()
 		while (!bGameOver)
 		{
 			set_color(shape); //颜色设置为当前正在下落的方块
-			draw_block(shape, form, x, y); //将该方块显示在初始下落位置
+			draw_block(shape, form, x, y); //将该block显示在初始下落位置
+			draw_block_shape(shape, form, x, y); //显示block投影位置
 			if (t == 0)
 			{
 				t = 15000; //这里t越小，方块下落越快（可以根据此设置游戏难度）
