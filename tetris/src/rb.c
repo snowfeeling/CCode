@@ -28,9 +28,8 @@ Created by Wangss on 2023-06-21.
 #define CSI "\x1b["
 #define FANGK "■"
 #define BLANK " "
-//#define VBOARDER "|"
-#define VBOARDER "║"
-#define HBOARDER "═"
+#define VBOARDER "|"
+#define HBOARDER "_"
 
 //#define HBOARDER "_"
 
@@ -97,9 +96,11 @@ static int init_game_screen();
 static int handle_game_over();
 //状态行显示
 static void show_game_status_line(char *str);
-
+//初始化主屏幕
 static int init_main_screen();
+//显示命令菜单
 static void show_command_manual(void);
+//主菜单
 static int main_manual();
 
 static int change_setting();
@@ -132,7 +133,6 @@ int mytetris()
 int testrb()
 {
 	max_score = 0, grade = 0, bGameOver = false; //初始化变量
-
 	//system("mode con lines=29 cols=60"); //设置cmd窗口的大小
 
 	init_game_screen();
@@ -191,8 +191,6 @@ static int main_manual()
     char command;
     bool input_consumed = false;
 
-
-//    printf("> ");
 	show_command_manual();
     printf("> ");
 
@@ -646,45 +644,49 @@ static int handle_game_over()
 	return 0;
 }
 
+/* 显示方块的投影
+	显示在最后一行（边界行）上，
+*/
 static int draw_block_shape(int shape, int form, int x, int y)
 {
-	int i, row, col, sum[4]={0,0,0,0};
+	int row, col, sum[4]={0,0,0,0};
 	int ix, ilen;
-	for ( col = 0; col < 4; col++)
+	for ( col = 0; col < 4; col++) 
 	{
 		for ( row = 0; row < 4; row++)
 		{
+			//投影计算：统计每列的方块数
 			sum[col] += block[shape][form].space[row][col];			
 		}
 	}
 	ix = 0,  ilen = 0;
-	for (i = 0; i < 4; i++)
+	for (col = 0; col < 4; col++)
 	{
-		if (sum[i] >0)
+		if (sum[col] >0) //如果该列有方块
 		{
-			if(ix==0) 
-				ix = i + x;
-			ilen ++ ;
+			if(ix==0) //如果该列有方块，就设为 有方块的首列。位置需要+x
+				ix = col + x;
+			ilen ++ ; //累加计算投影的长度
 		} 
 	}
 	
-	for (i = 1; i < COL; i++)
+	for (col = 1; col < COL; col++)
 	{
-		cursor_jump(2*i, ROW-1);
-		if (i>=ix && i<ix+ilen)
-			printf(CSI "91m"); //91亮红色， 92亮绿色
+		cursor_jump(2*col, ROW-1);  //跳到最后一行，是边界行
+		if (col>=ix && col<ix+ilen)
+			printf(CSI "91m"); //如果在投影范围内，显示（91亮红色，或者可以 92亮绿色）
 		else
 		{
-			printf(CSI "0;97m"); //亮白色
+			printf(CSI "0;97m"); //不在投影范围内，显示亮白色
 		}
-		printf(HBOARDER ); 
+		printf(HBOARDER );  //显示边界"_" 
 	}
 	return 0;
 }
 //游戏主体逻辑函数
 static void StartGame()
 {
-	bGameOver = false;
+	bGameOver = false; // 游戏结束标志
 
 	int shape = rand() % 7, form = rand() % 4; //随机获取方块的形状和形态
 	while (!bGameOver)
