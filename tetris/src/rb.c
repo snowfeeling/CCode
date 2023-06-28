@@ -29,7 +29,7 @@ Created by Wangss on 2023-06-21.
 #define FANGK "■"
 #define BLANK " "
 #define VBOARDER "|"
-#define HBOARDER "_"
+#define HBOARDER "__"
 
 //#define HBOARDER "_"
 
@@ -556,6 +556,12 @@ static bool check_lines_status()
 					nsum ++; //一个下落block期间，消除行数的计算。
 					grade += 10 * nsum; //加分规则：第一加10分；后面的行数*10；所以有连续行的话，消除两行=10+10*2=30；消除三行=10+10*2+10*3=60；消除四行=10+10*2+10*3+10*4=100
 					show_score(grade);  //显示得分
+					if (nsum >2 )
+					{
+						char str[BUFFER_SIZE];
+						sprintf(str, "Bingo! 获得高分%d!", 10*nsum);
+						show_game_status_line(str);
+					}
 					/*//清除得分行的方块信息；其实可以不用清除，因为后面会把上一行移动下来覆盖之；
 					for (j = 1; j < COL - 1; j++) 
 					{
@@ -582,6 +588,7 @@ static bool check_lines_status()
 							{
 								printf(BLANK BLANK); //打印空格（两个空格）
 							}
+			
 						}
 						if (sum == 0) //上一行全是空格，说明上面的行都是空，无需再将上层的方块向下移动（移动结束）；但是移动下来的可能还有满行，需要从底部再开始判断；
 						{
