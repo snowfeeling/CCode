@@ -29,7 +29,7 @@ Created by Wangss on 2023-06-21.
 #define FANGK "■"
 #define BLANK " "
 #define VBOARDER "|"
-#define HBOARDER "__"
+#define HBOARDER "_"
 
 //#define HBOARDER "_"
 
@@ -824,7 +824,24 @@ static int change_setting()
 	SWITCH_ALTERNATE_SCREEN();
 	
 	show_game_status_line("Change the game setting.");
-	Sleep(3000);
+
+	cursor_jump(COL/2, ROW/2);
+
+	printf(CSI "A." CSI "D");
+	printf(CSI "A." CSI "D");
+	printf(CSI "C." CSI "D");
+	
+	printf(CSI "C." CSI "D");
+	printf(CSI "B." CSI "D");
+
+	printf(CSI "B." CSI "D");
+
+	printf(CSI "D." CSI "D");
+
+	printf(CSI "D." CSI "D");
+	Sleep(600);
+
+	getch();
 
 	SWITCH_MAIN_SCREEN();
 	return 0;
