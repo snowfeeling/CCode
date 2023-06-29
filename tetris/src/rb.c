@@ -123,9 +123,11 @@ const int block_color[8] = {35, 31, 31, 32, 32, 33, 36, 0};
 [7]  - 0 其他默认设置为白色
 */
 
+/* ====== Main program =======*/
 int mytetris()
 {
-	init_main_screen();
+	if (init_main_screen() == -1)
+		return -1;
 	main_manual();
 	return 0;
 }
@@ -169,21 +171,21 @@ static void show_command_manual(void)
 
 static int init_main_screen()
 {
-	bool fSuccess = enable_VT_Mode();
-    if (!fSuccess)
-    {
-        return -1;
-    }
-	//设置title
-	SET_CONSOLE_TITLE();
 
 	// 设置UTF8 Code Page
 	//setlocale(LC_ALL, ".UTF8");
 	SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 
+	bool fSuccess = enable_VT_Mode();
+    if (!fSuccess)
+    {
+        return -1;
+    }
 	return 0;
 
+	//设置title
+	SET_CONSOLE_TITLE();
 }
 
 static int main_manual()
@@ -280,13 +282,23 @@ static bool enable_VT_Mode()
     }
 
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	//dwMode |= ENABLE_PROCESSED_OUTPUT ;
     if (!SetConsoleMode(hOut, dwMode))
     {		
 		printf("Error:SetConsoleMode.\n");
         return false;
     }
+    CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
+    GetConsoleScreenBufferInfo(hOut, &ScreenBufferInfo);
+    COORD Size;
+	Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
+    Size.Y = ScreenBufferInfo.srWindow.Bottom - ScreenBufferInfo.srWindow.Top + 1;
 
+	if (Size.X < COL || Size.Y <ROW +2)
+	{
+		printf("(W:%d, H:%d) 屏幕太小了. \n", Size.X, Size.Y);
+		return false;
+
+	}
     return true;
 }
 
@@ -829,15 +841,21 @@ static int change_setting()
 
 	printf(CSI "A." CSI "D");
 	printf(CSI "A." CSI "D");
+	printf(CSI "A." CSI "D");
+	Sleep(600);
+
 	printf(CSI "C." CSI "D");
-	
 	printf(CSI "C." CSI "D");
-	printf(CSI "B." CSI "D");
+	printf(CSI "C." CSI "D");
+	Sleep(600);
 
 	printf(CSI "B." CSI "D");
+	printf(CSI "B." CSI "D");
+	printf(CSI "B." CSI "D");
+	Sleep(600);
 
 	printf(CSI "D." CSI "D");
-
+	printf(CSI "D." CSI "D");
 	printf(CSI "D." CSI "D");
 	Sleep(600);
 
