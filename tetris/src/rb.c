@@ -293,7 +293,7 @@ static bool enable_VT_Mode()
 	Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
     Size.Y = ScreenBufferInfo.srWindow.Bottom - ScreenBufferInfo.srWindow.Top + 1;
 
-	if (Size.X < COL || Size.Y <ROW +2)
+	if (Size.X < COL+15 || Size.Y <ROW +2)
 	{
 		printf("(W:%d, H:%d) 屏幕太小了. \n", Size.X, Size.Y);
 		return false;
