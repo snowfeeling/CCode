@@ -6,13 +6,15 @@
 #ifndef BTREE_H_
 #define BTREE_H_
 
-#define Version "0.1.0"
+#define BPTVersion "0.1.0"
 
  #include <stdio.h>
  #include <string.h>
  #include <stdbool.h>
  #include <time.h>
  #include <stdlib.h>
+ #include <Windows.h>
+
 
 /*
 const definition.

@@ -24,18 +24,18 @@
 
         {
             "type": "cppbuild",
-            "label": "Mac C/C++: clang build active file",
-            "command": "/usr/bin/clang",
+            "label": "Mac C/C++: gcc.exe build active file",
+            "command": "/usr/bin/gcc",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
                 "${cwd}/app/*.c",
                 "${cwd}/src/*.c",
                 "-o",
-                "${cwd}/bin/${fileBasenameNoExtension}"
+                "${cwd}/bin/${fileBasenameNoExtension}.exe"
             ],
             "options": {
-                "cwd": "/usr/bin/clang"
+                "cwd": "/usr/bin/gcc"
             },
             "problemMatcher": [
                 "$gcc"

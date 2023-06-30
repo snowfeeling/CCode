@@ -75,7 +75,20 @@ static int get_tree_leaf_num(BPLUS_TREE *bpt);
 
 static void show_bpt_manual(void);
 static int bpt_manual();
+static int init_oper_screen();
+static bool enable_scr_Mode();
 
+
+
+/*=========初始化主屏幕
+*/
+static int init_oper_screen()
+{
+
+	SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    enable_scr_Mode();
+}
 
 /*=============================================================================
 * Fundation functions
@@ -1300,6 +1313,32 @@ static void show_bpt_manual(void)
            "\t? -- Print this help message.\n");
 }
 
+//设置屏幕为虚拟终端模式
+static bool enable_scr_Mode()
+{
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+		printf("Error:GetConsoleMode.\n");
+        return false;
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode))
+    {		
+		printf("Error:SetConsoleMode.\n");
+        return false;
+    }
+
+    return true;
+}
 /* ================Main Manual================================================
 *  功能：主操作界面
 *  返回值：0
@@ -1455,7 +1494,7 @@ static int bpt_manual()
             }
             return EXIT_SUCCESS;
         case 'c':
-            system("cls");
+            printf("\x1b[1;1H\x1b[2J");
             break;
         case '\n':
             input_consumed = true;
@@ -1481,6 +1520,7 @@ static int bpt_manual()
 */
 int test_bplus_tree()
 {
+    init_oper_screen();
     bpt_usage();
     init_tree(&bptree);
     make_tree_from_file();
