@@ -16,9 +16,10 @@
 				//"${fileDirname}/${fileBasenameNoExtension}"
 				"${cwd}/bin/${fileBasenameNoExtension}",
 			],
-			//"options": {
+			"options": {
 			//	"cwd": "${fileDirname}"
-			//},
+			"cwd":"${workspaceFolder}"
+			},
 			"problemMatcher": [
 				"$gcc"
 			],

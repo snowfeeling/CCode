@@ -27,7 +27,7 @@
             "label": "Mac C/C++: clang build active file",
             "command": "/usr/bin/clang",
             "args": [
-                //"-fdiagnostics-color=always",
+                "-fdiagnostics-color=always",
                 "-g",
                 "${cwd}/app/*.c",
                 "${cwd}/src/*.c",
@@ -35,7 +35,7 @@
                 "${cwd}/bin/${fileBasenameNoExtension}"
             ],
             "options": {
-                "cwd": "/usr/bin/clang"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"
