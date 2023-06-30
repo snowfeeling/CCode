@@ -60,7 +60,7 @@
             "externalConsole": false,
             //"MIMode": "gdb",
             //"miDebuggerPath": "/path/to/gdb",
-            "preLaunchTask": "Mac C/C++: gcc build active file",
+            "preLaunchTask": "Mac C/C++: clang build active file",
             "setupCommands": [
                 {
                     "description": "为 gdb 启用整齐打印",
