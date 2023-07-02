@@ -8,13 +8,19 @@
 
 #define BPTVersion "0.1.0"
 
- #include <stdio.h>
- #include <string.h>
- #include <stdbool.h>
- #include <time.h>
- #include <stdlib.h>
- #include <Windows.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
+ 
+#define _OS_WIN 0
+#define _OS_MAC 1
+#define _OS_LINUX 0
 
+#if (_OS_WIN)
+#include <Windows.h>
+#endif
 
 /*
 const definition.
@@ -24,6 +30,8 @@ const definition.
 #define NAME_LENGTH 40
 #define TIME_LENGTH 20
 #define DEFALUT_TREE_DEGREE 5
+
+
 
 /* Leaf - Data Record Struct
 */

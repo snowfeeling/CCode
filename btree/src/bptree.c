@@ -80,14 +80,18 @@ static bool enable_scr_Mode();
 
 
 
-/*=========初始化主屏幕
+/*=========初始化主屏幕 ========
 */
+
+
 static int init_oper_screen()
 {
-
+#if (_OS_WIN)
 	SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
     enable_scr_Mode();
+#endif
+    return 0;
 }
 
 /*=============================================================================
@@ -154,6 +158,7 @@ int init_tree(BPLUS_TREE *tree)
     tree->leaf_num = 0;
     tree->tree_height = 0;
     tree->root =  NULL;
+    return 0;
 
 }
 
@@ -631,7 +636,7 @@ static BPT_NODE *update_record_in_tree(BPLUS_TREE *tree, BPT_DATA_RECORD *drp)
 * Input: <void>
 * Return: the root pointer (BPT_NODE*). 
 */
-static BPT_NODE *make_tree_from_file()
+static  BPT_NODE *make_tree_from_file()
 {
     FILE *fp;
     char * input_file_name = "../data/mytree.txt";
@@ -670,6 +675,7 @@ static BPT_NODE *make_tree_from_file()
 
         return bptree.root;
     }
+    return NULL;
 }
 
 /*====== Functions of Finding key in tree==============================*/
@@ -1016,6 +1022,7 @@ static int doDelete (BPT_NODE *root, int val)
             }
         }            
     }
+    return 0;
 }
 
 /*==========合并右边节点====================================
@@ -1217,6 +1224,8 @@ static BPT_NODE *repairAfterDelete (BPT_NODE *tree)
         if (tree->parent != NULL)
         {	
         }
+
+    return bptree.root;
 }
 
 
@@ -1316,6 +1325,7 @@ static void show_bpt_manual(void)
 //设置屏幕为虚拟终端模式
 static bool enable_scr_Mode()
 {
+#if (_OS_WIN)
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
@@ -1336,6 +1346,7 @@ static bool enable_scr_Mode()
 		printf("Error:SetConsoleMode.\n");
         return false;
     }
+#endif
 
     return true;
 }
@@ -1520,6 +1531,7 @@ static int bpt_manual()
 */
 int test_bplus_tree()
 {
+
     init_oper_screen();
     bpt_usage();
     init_tree(&bptree);
