@@ -13,12 +13,11 @@
             "program": "${cwd}/bin/${fileBasenameNoExtension}.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            //"MIMode": "gdb",
             //"miDebuggerPath": "/path/to/gdb",
-            "preLaunchTask": "C/C++: gcc.exe build active file",
+            "preLaunchTask": "Windows C/C++: gcc.exe build active file",
             "setupCommands": [
                 {
                     "description": "为 gdb 启用整齐打印",

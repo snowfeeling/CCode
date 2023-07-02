@@ -13,12 +13,10 @@
             "program": "${cwd}/bin/${fileBasenameNoExtension}.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            //"cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            //"MIMode": "gdb",
-            //"miDebuggerPath": "/path/to/gdb",
-            //"preLaunchTask": "C/C++: gcc.exe build active file",
             "preLaunchTask": "Windows C/C++: gcc.exe build active file",
 
             "setupCommands": [
@@ -51,15 +49,12 @@
             "name": "Mac C/C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            //"program": "输入程序名称，例如 ${workspaceFolder}/a.exe",
             "program": "${cwd}/bin/${fileBasenameNoExtension}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            //"MIMode": "gdb",
-            //"miDebuggerPath": "/path/to/gdb",
             "preLaunchTask": "Mac C/C++: clang build active file",
             "setupCommands": [
                 {
