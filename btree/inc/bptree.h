@@ -14,12 +14,10 @@
 #include <time.h>
 #include <stdlib.h>
  
-#define _OS_WIN 0
-#define _OS_MAC 1
-#define _OS_LINUX 0
-
-#if (_OS_WIN)
-#include <Windows.h>
+#if WIN32
+    #include <Windows.h>
+#elif __APPLE__
+    #include <TargetConditionals.h>
 #endif
 
 /*
@@ -30,7 +28,6 @@ const definition.
 #define NAME_LENGTH 40
 #define TIME_LENGTH 20
 #define DEFALUT_TREE_DEGREE 5
-
 
 
 /* Leaf - Data Record Struct

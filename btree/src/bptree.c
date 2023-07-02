@@ -82,11 +82,9 @@ static bool enable_scr_Mode();
 
 /*=========初始化主屏幕 ========
 */
-
-
 static int init_oper_screen()
 {
-#if (_OS_WIN)
+#if WIN32
 	SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
     enable_scr_Mode();
@@ -978,8 +976,6 @@ static int doDelete (BPT_NODE *root, int val)
                         tree->leaf[j] = tree->leaf[j+1];
                     }
                     tree->keys_num--;			
-                    // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
-                    //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
                     // 如果要删除的key叶子节点中的第一个值，要找到 下一个最小的key；
                     // 如果现在叶子节点空了，往上找父节点，然后修复
                     if (i == 0 && tree->parent != NULL) 
@@ -1294,7 +1290,7 @@ static void get_tree_info(BPLUS_TREE *bpt)
 static void show_tree_info(BPLUS_TREE *bpt)
 {
     printf("\n************ The tree information ***************\n");
-    printf("*  DEGREE      : %5d\n", bpt->max_degreee);
+    printf("*  DEGREE(度)  : %5d\n", bpt->max_degreee);
     printf("*  Min Key Num : %5d\n", bpt->min_key_num);
     printf("*  Max Key Num : %5d\n", bpt->max_key_num);
     printf("*  Split Index : %5d\n", bpt->split_index);
@@ -1325,7 +1321,7 @@ static void show_bpt_manual(void)
 //设置屏幕为虚拟终端模式
 static bool enable_scr_Mode()
 {
-#if (_OS_WIN)
+#if WIN32
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
