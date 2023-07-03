@@ -1,6 +1,6 @@
 
-#include "../inc/consolevt.h"
 #include "../inc/sayhello.h"
+#include "../inc/consolevt.h"
 
 #define FANGK "■"
 
@@ -64,8 +64,7 @@ int oper1()
     GO_SCREEN_HOME();
     TURNOFF_CURSOR();
     //CLEAR_SCREEN();
-    printf("\nI am listening to the rain.");
-    printf("\n" FANGK "\n");
+    printf("I am listening to the rain.");
 
     do
     {
@@ -82,19 +81,15 @@ int oper1()
         {
         case UPKEY:
             printf("UP");
-            /* code */
             break;
         case DOWNKEY:
             printf("DOWN");
-            /* code */
             break;
         case LEFTKEY:
             printf("LEFT");
-            /* code */
             break;
         case RIGHTKEY:
             printf("RIGHT");
-            /* code */
             break;
         case ESCKEY:
             istop = false;

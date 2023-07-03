@@ -47,7 +47,6 @@ int set_console_CodePage();
 #if __APPLE__
 int _getch(void);
 int _getche(void);
-
 #endif
 
 
@@ -61,11 +60,13 @@ int _getche(void);
     #define ADDITIONKEY  224 //功能健的前8位
 
 #elif __APPLE__
+
     #define UPKEY	    65 //方向键：上A
     #define DOWNKEY 	66 //方向键：下B
     #define LEFTKEY 	67 //方向键：左C
     #define RIGHTKEY 	68 //方向键：右D
     #define ADDITIONKEY  27 //功能健的前8位
+    
 #endif
 
 #define SPACEKEY    32 //空格键
