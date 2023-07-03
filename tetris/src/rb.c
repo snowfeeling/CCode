@@ -726,7 +726,7 @@ static void StartGame()
 			}
 			while (--t)
 			{
-				if (kbhit() != 0) //若键盘被敲击，则退出循环
+				if (_kbhit() != 0) //若键盘被敲击，则退出循环
 					break;
 			}
 			if (t == 0) //键盘未被敲击
@@ -758,7 +758,12 @@ static void StartGame()
 			}
 			else //键盘被敲击
 			{
-				char ch = getch(); //读取键盘值
+				int ch = getch(); //读取键盘值
+				if (ch == 224 || ch == 0) 
+				{
+					ch = getch();
+					//show_game_status_line("多余的字符");
+				}
 				switch (ch)
 				{
 				case DOWN: //方向键：下
