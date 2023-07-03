@@ -79,7 +79,18 @@
             },
             
         },
-/*
+
+        {
+            "name": "Mac LLDB Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "Mac C/C++: clang build active file",
+        },
+
+        /*
         {
             "name": "(gdb) 启动",
             "type": "cppdbg",

@@ -29,6 +29,12 @@ int SayHello()
     oper1();
     SWITCH_MAIN_SCREEN();
 
+    getchar();
+
+    SWITCH_ALTERNATE_SCREEN();
+    oper1();
+    SWITCH_MAIN_SCREEN();
+
     TURNON_CURSOR();
     return 0;
 }
@@ -55,7 +61,9 @@ int oper1()
 
     int inputkey;
     bool istop = false;
+    GO_SCREEN_HOME();
     TURNOFF_CURSOR();
+    //CLEAR_SCREEN();
     printf("\nI am listening to the rain.");
     printf("\n" FANGK "\n");
 
@@ -98,6 +106,8 @@ int oper1()
             break;
         }
     } while (!istop );
+    cursor_jump(10,15);
+    printf("END.");
     
     return 0;
 }
