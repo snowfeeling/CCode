@@ -66,7 +66,6 @@ int _getche(void);
     #define LEFTKEY 	67 //方向键：左C
     #define RIGHTKEY 	68 //方向键：右D
     #define ADDITIONKEY  27 //功能健的前8位
-
 #endif
 
 #define SPACEKEY    32 //空格键

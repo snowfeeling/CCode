@@ -51,6 +51,10 @@ bool enable_VT_Mode()
 }
 
 
+/*======= MAC OS下定义新函数 =========
+    _getch()
+    _getche()
+*/
 #if __APPLE__
 
 int _getch(void)
