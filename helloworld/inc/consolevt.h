@@ -5,10 +5,12 @@
 #include <stdbool.h>
 #include <locale.h>
 
-#if WIN32
+#ifdef WIN32
     #include <windows.h>
     #include <conio.h>
-#elif __APPLE__
+#endif
+
+#ifdef __APPLE__
     #include <TargetConditionals.h>
     #include <termios.h>
     #include <unistd.h>
@@ -44,7 +46,7 @@
 bool enable_VT_Mode();
 int set_console_CodePage();
 
-#if __APPLE__
+#ifdef __APPLE__
 int _getch(void);
 int _getche(void);
 #endif
@@ -52,14 +54,14 @@ int _getche(void);
 
 /*=======Keys Ddefine =========
 */
-#if WIN32
+#if defined(WIN32)
     #define UPKEY	    72 //方向键：上
     #define DOWNKEY 	80 //方向键：下
     #define LEFTKEY 	75 //方向键：左
     #define RIGHTKEY 	77 //方向键：右
     #define ADDITIONKEY  224 //功能健的前8位
 
-#elif __APPLE__
+#elif defined(__APPLE__)
 
     #define UPKEY	    65 //方向键：上A
     #define DOWNKEY 	66 //方向键：下B

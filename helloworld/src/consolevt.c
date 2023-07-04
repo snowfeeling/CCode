@@ -7,7 +7,7 @@ Created by Wangss 2023-07-02
 
 int set_console_CodePage()
 {
-#if WIN32
+#ifdef WIN32
 	// 设置UTF8 Code Page
 	//setlocale(LC_ALL, ".UTF8");
 	SetConsoleCP(CODEPAGE_UTF8);
@@ -19,7 +19,7 @@ int set_console_CodePage()
 //设置屏幕为虚拟终端模式
 bool enable_VT_Mode()
 {
-#if WIN32
+#ifdef WIN32
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
@@ -55,7 +55,7 @@ bool enable_VT_Mode()
     _getch()
     _getche()
 */
-#if __APPLE__
+#if defined(__APPLE__)
 
 int _getch(void)
 {

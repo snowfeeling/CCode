@@ -19,7 +19,6 @@ int SayHello()
     TURNOFF_CURSOR();
     do
     {
-
         ch = _getch();
         printf("(the input key :%d)\n", ch);
         
@@ -28,14 +27,8 @@ int SayHello()
     SWITCH_ALTERNATE_SCREEN();
     oper1();
     SWITCH_MAIN_SCREEN();
-
-    getchar();
-
-    SWITCH_ALTERNATE_SCREEN();
-    oper1();
-    SWITCH_MAIN_SCREEN();
-
     TURNON_CURSOR();
+
     return 0;
 }
 
@@ -51,7 +44,7 @@ int init_main_screen()
 int close_main_screen()
 {
 
-
+    SWITCH_MAIN_SCREEN();
     return 0;
 }
 
