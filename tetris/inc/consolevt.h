@@ -90,7 +90,7 @@ int _kbhit(void);
     //code for mac
     #define CHECKKEY _kbhit()
     #define NBGETCHAR _getch()
-    #define SLEEP(t) {sleep(t);}
+    #define SLEEP(t) {sleep(t/1000);}
 
 #elif __linux__
     //code for linux

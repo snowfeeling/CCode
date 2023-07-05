@@ -728,12 +728,9 @@ static void StartGame()
 			else //键盘被敲击
 			{
 				int ch = _getch(); //读取键盘值
-				//int ch = NBGETCHAR;
-				//if (ch == 224 || ch == 0) 
 				if (ch == ADDITIONKEY || ch == 0) 
 				{
 					ch = _getch();
-					//ch = NBGETCHAR;
 					//show_game_status_line("多余的字符");
 				}
 				switch (ch)
@@ -811,6 +808,10 @@ static void WriteGrade()
 static int change_setting()
 {
 	SWITCH_ALTERNATE_SCREEN();
+	//光标到起始点，清屏，关闭光标
+	GO_SCREEN_HOME();
+	CLEAR_SCREEN();
+	TURNOFF_CURSOR();
 	
 	show_game_status_line("Change the game setting.");
 
