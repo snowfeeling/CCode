@@ -41,7 +41,7 @@
 //光标跳转
 #define cursor_jump(x, y) { printf(CSI "%d;%dH", y, x); }
 //设置窗口title
-#define SET_CONSOLE_TITLE(str) { printf (ESC "]2;%s\x07", str); }
+#define SET_CONSOLE_TITLE(str1) { printf (ESC "]2;%s\x07", str1); }
 //从当前位置清除到行尾巴
 #define CLEAN_LINE_TO_END { printf(CSI "K"); }; 
 
@@ -84,11 +84,13 @@ int _kbhit(void);
     //code for Windows (32-bit and 64-bit, this part is common)
     #define CHECKKEY _kbhit()
     #define NBGETCHAR _getch()
+    #define SLEEP(t) {Sleep(t);}
 
 #elif __APPLE__
     //code for mac
     #define CHECKKEY _kbhit()
     #define NBGETCHAR _getch()
+    #define SLEEP(t) {sleep(t);}
 
 #elif __linux__
     //code for linux

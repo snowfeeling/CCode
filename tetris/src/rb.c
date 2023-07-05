@@ -4,34 +4,27 @@ Created by Wangss on 2023-06-21.
 */
 
 #include <stdio.h>
-#include <Windows.h>
 #include <stdlib.h>
 #include <time.h>
-#include <conio.h>
 #include <stdbool.h>
 #include <locale.h>
+
+#ifdef WIN32
+#include <Windows.h>
+#include <conio.h>
+#endif
+
 #include "../inc/rb.h"
+#include "../inc/consolevt.h"
 
 #define BUFFER_SIZE 100
 #define ROW 29 //游戏区行数
 #define COL 16 //游戏区列数
 
-#define UPKEY	72 //方向键：上
-#define DOWN 	80 //方向键：下
-#define LEFT 	75 //方向键：左
-#define RIGHT 	77 //方向键：右
-
-#define SPACEKEY 32 //空格键
-#define ESCKEY	27 //Esc键
-
-#define ESC "\x1b"
-#define CSI "\x1b["
 #define FANGK "■"
 #define BLANK " "
 #define VBOARDER "|"
 #define HBOARDER "_"
-
-//#define HBOARDER "_"
 
 #define DATAFNAME "../data/tetris.dat"
 
@@ -45,24 +38,6 @@ typedef struct Block
 {
 	int space[4][4];
 } BLOCK;
-
-/*=======宏定义区域=======*/
-// 切换到主屏幕缓冲区
-#define SWITCH_MAIN_SCREEN()  { printf(CSI "?1049l"); }
-// 切换到备屏幕缓冲区
-#define SWITCH_ALTERNATE_SCREEN()  { printf(CSI "?1049h"); }
-// 跳转到屏幕起点
-#define GO_SCREEN_HOME() { printf(CSI "1;1H" ); }
-// 清屏 
-#define CLEAR_SCREEN() { printf(CSI "2J"); }
-// 关闭/打开光标
-#define TURNOFF_CURSOR()  { printf(CSI "?25l"); }
-#define TURNON_CURSOR()   { printf(CSI "?25h"); }
-//光标跳转
-#define cursor_jump(x, y) { printf(CSI "%d;%dH", y, x); }
-//设置窗口title
-#define SET_CONSOLE_TITLE() { printf (ESC "]2;Trteris-2023\x07"); }
-
 
 /*======函数定义区域======*/
 //初始化界面
@@ -89,7 +64,7 @@ static void ReadGrade();
 //更新最高分到文件
 static void WriteGrade();
 //设置屏幕为虚拟终端模式
-static bool enable_VT_Mode();
+static bool init_VT_Mode();
 //初始化屏幕
 static int init_game_screen();
 // 处理游戏结束
@@ -172,12 +147,14 @@ static void show_command_manual(void)
 static int init_main_screen()
 {
 
+#ifdef WIN32
 	// 设置UTF8 Code Page
 	//setlocale(LC_ALL, ".UTF8");
-	SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CODEPAGE_UTF8);
+    SetConsoleOutputCP(CODEPAGE_UTF8);
+#endif
 
-	bool fSuccess = enable_VT_Mode();
+	bool fSuccess = init_VT_Mode();
     if (!fSuccess)
     {
         return -1;
@@ -185,7 +162,7 @@ static int init_main_screen()
 	return 0;
 
 	//设置title
-	SET_CONSOLE_TITLE();
+	SET_CONSOLE_TITLE("Teteris 2023");
 }
 
 static int main_manual()
@@ -208,7 +185,7 @@ static int main_manual()
             break;
         case 's':
 			printf("Change the setting.\n");
-			Sleep(600);
+			//SLEEP(600);
 			change_setting();
             break;
         case 'q':           
@@ -234,25 +211,26 @@ static int main_manual()
 
 int test1()
 {	
-	enable_VT_Mode();
+/*	enable_VT_Mode();
 
-	SetConsoleCP(CP_UTF8);
-	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CODEPAGE_UTF8);
+	SetConsoleOutputCP(CODEPAGE_UTF8);
 	printf("Main Screen\n");
 	printf("开始了。。。");
-	Sleep(3000);
+	SLEEP(3000);
 
 	SWITCH_ALTERNATE_SCREEN();
 	//CLEAR_SCREEN();
 	TURNOFF_CURSOR();
 	printf("ALternate screen.\n");
-	Sleep(3000);
+	SLEEP(3000);
 
     // Exit the alternate buffer
 	SWITCH_MAIN_SCREEN();
     TURNON_CURSOR();
 	printf("Main Screen.\n");
-	Sleep(3000);
+	SLEEP(3000);
+*/
 	return 0;
 }
 
@@ -265,29 +243,16 @@ static void show_game_status_line(char * str)
 };
 
 //设置屏幕为虚拟终端模式
-static bool enable_VT_Mode()
+static bool init_VT_Mode()
 {
-    // Set output mode to handle virtual terminal sequences
+#if defined(WIN32)
+	enable_VT_Mode();
+
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        return false;
-    }
-
-    DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode))
-    {
-		printf("Error:GetConsoleMode.\n");
-        return false;
-    }
-
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    if (!SetConsoleMode(hOut, dwMode))
-    {		
-		printf("Error:SetConsoleMode.\n");
-        return false;
-    }
-    CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
+	DWORD dwMode = 0;
+	GetConsoleMode(hOut, &dwMode);
+    
+	CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
     GetConsoleScreenBufferInfo(hOut, &ScreenBufferInfo);
     COORD Size;
 	Size.X = ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1;
@@ -299,6 +264,8 @@ static bool enable_VT_Mode()
 		return false;
 
 	}
+#endif
+
     return true;
 }
 
@@ -574,13 +541,13 @@ static bool check_lines_status()
 						sprintf(str, "Bingo! 获得高分%d!", 10*nsum);
 						show_game_status_line(str);
 					}
-					/*//清除得分行的方块信息；其实可以不用清除，因为后面会把上一行移动下来覆盖之；
+					//清除得分行的方块信息；其实可以不用清除，因为后面会把上一行移动下来覆盖之；
 					for (j = 1; j < COL - 1; j++) 
 					{
 						scr.data[i][j] = 0; //该位置得分后被清除，标记为无方块
 						cursor_jump(2 * j, i); //光标跳转
 						printf(BLANK BLANK); //打印两个空格。
-					}*/
+					}
 					//把上面的行都向下挪一格；但是不判断是否满行；
 					for (m = i; m >1; m--)
 					{
@@ -651,9 +618,9 @@ static int handle_game_over()
 		}
 	printf(CSI "1m" CSI "5m" CSI "91m"); //1m增强、5m闪亮、91m亮红色
 	show_game_status_line(str);
-	Sleep(1800);
+	SLEEP(1800);
 	show_game_status_line("GAME OVER!");
-	Sleep(1800);
+	SLEEP(1800);
 
 	//恢复主屏幕
 	SWITCH_MAIN_SCREEN();
@@ -727,6 +694,8 @@ static void StartGame()
 			while (--t)
 			{
 				if (_kbhit() != 0) //若键盘被敲击，则退出循环
+				//if (CHECKKEY != 0) //若键盘被敲击，则退出循环
+				
 					break;
 			}
 			if (t == 0) //键盘未被敲击
@@ -758,29 +727,32 @@ static void StartGame()
 			}
 			else //键盘被敲击
 			{
-				int ch = getch(); //读取键盘值
-				if (ch == 224 || ch == 0) 
+				int ch = _getch(); //读取键盘值
+				//int ch = NBGETCHAR;
+				//if (ch == 224 || ch == 0) 
+				if (ch == ADDITIONKEY || ch == 0) 
 				{
-					ch = getch();
+					ch = _getch();
+					//ch = NBGETCHAR;
 					//show_game_status_line("多余的字符");
 				}
 				switch (ch)
 				{
-				case DOWN: //方向键：下
+				case DOWNKEY: //方向键：下
 					if (IsLegal(shape, form, x, y + 1) == 1) //判断方块向下移动一位后是否合法
 					{
 						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						y++; //纵坐标自增（下一次显示方块时就相当于下落了一格了）
 					}
 					break;
-				case LEFT: //方向键：左
+				case LEFTKEY: //方向键：左
 					if (IsLegal(shape, form, x - 1, y) == 1) //判断方块向左移动一位后是否合法
 					{
 						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
 						x--; //横坐标自减（下一次显示方块时就相当于左移了一格了）
 					}
 					break;
-				case RIGHT: //方向键：右
+				case RIGHTKEY: //方向键：右
 					if (IsLegal(shape, form, x + 1, y) == 1) //判断方块向右移动一位后是否合法
 					{
 						draw_space(shape, form, x, y); //用空格覆盖当前方块所在位置
@@ -798,8 +770,8 @@ static void StartGame()
 					bGameOver = true;
 					break;
 				case SPACEKEY: //空格键,暂停
-					getch();
-					//system("pause>nul"); //暂停（按任意键继续）
+					_getch();
+					//NBGETCHAR;
 					break;
 				}
 			}
@@ -847,24 +819,25 @@ static int change_setting()
 	printf(CSI "A." CSI "D");
 	printf(CSI "A." CSI "D");
 	printf(CSI "A." CSI "D");
-	Sleep(600);
+	SLEEP(600);
 
 	printf(CSI "C." CSI "D");
 	printf(CSI "C." CSI "D");
 	printf(CSI "C." CSI "D");
-	Sleep(600);
+	SLEEP(600);
 
 	printf(CSI "B." CSI "D");
 	printf(CSI "B." CSI "D");
 	printf(CSI "B." CSI "D");
-	Sleep(600);
+	SLEEP(600);
 
 	printf(CSI "D." CSI "D");
 	printf(CSI "D." CSI "D");
 	printf(CSI "D." CSI "D");
-	Sleep(600);
+	SLEEP(600);
 
-	getch();
+	//getch();
+	NBGETCHAR;
 
 	SWITCH_MAIN_SCREEN();
 	return 0;
