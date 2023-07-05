@@ -25,9 +25,9 @@ int SayHello()
     {
         ch = _getch();
         printf("(the input key :%d)\n", ch);
-        
+
     } while (ch != ESCKEY);
-    
+
     SWITCH_ALTERNATE_SCREEN();
     oper1();
     SWITCH_MAIN_SCREEN();
@@ -59,19 +59,28 @@ int oper1()
     bool istop = false;
     GO_SCREEN_HOME();
     TURNOFF_CURSOR();
-    //CLEAR_SCREEN();
+    // CLEAR_SCREEN();
     printf("I am listening to the rain.");
 
+    fflush(stdin);
     do
     {
+        int i = 0;
+        while (!_kbhit())
+        {
+            cursor_jump(10, 16);
+            printf("Waitting for input:%6d", ++i);
+        }
         inputkey = _getch();
-        if (inputkey == ADDITIONKEY) inputkey = _getch();
-        cursor_jump(10,3);
-        printf(CSI "K");  //清除本行光标之后的信息
+         if (inputkey == ADDITIONKEY) 
+            inputkey = _getch();
+        cursor_jump(10, 3);
+        printf(CSI "K"); // 清除本行光标之后的信息
         printf("(the input key:%d)\n", inputkey);
-    
-        cursor_jump(10,5);
-        printf(CSI "K");  //清除本行光标之后的信息
+        sleep(1);
+
+        cursor_jump(10, 5);
+        printf(CSI "K"); // 清除本行光标之后的信息
 
         switch (inputkey)
         {
@@ -94,10 +103,10 @@ int oper1()
         default:
             break;
         }
-    } while (!istop );
-    cursor_jump(10,15);
+    } while (!istop);
+    cursor_jump(10, 15);
     printf("END.");
-    
+
     return 0;
 }
 int init_oper_screen()
@@ -107,5 +116,3 @@ int init_oper_screen()
 
     return 0;
 }
-
-
