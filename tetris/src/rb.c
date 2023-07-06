@@ -15,7 +15,7 @@ Created by Wangss on 2023-06-21.
 #endif
 
 #include "../inc/rb.h"
-#include "../inc/consolevt.h"
+#include "../../base/inc/consolevt.h"
 
 #define BUFFER_SIZE 100
 #define ROW 29 //游戏区行数
@@ -148,10 +148,8 @@ static int init_main_screen()
 {
 
 #ifdef WIN32
-	// 设置UTF8 Code Page
-	//setlocale(LC_ALL, ".UTF8");
-	SetConsoleCP(CODEPAGE_UTF8);
-    SetConsoleOutputCP(CODEPAGE_UTF8);
+
+	set_console_CodePage(CODEPAGE_UTF8);
 #endif
 
 	bool fSuccess = init_VT_Mode();
@@ -807,6 +805,7 @@ static void WriteGrade()
 
 static int change_setting()
 {
+	//切换到备用屏幕
 	SWITCH_ALTERNATE_SCREEN();
 	//光标到起始点，清屏，关闭光标
 	GO_SCREEN_HOME();

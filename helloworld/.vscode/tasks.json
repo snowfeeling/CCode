@@ -9,6 +9,7 @@
                 "-g",
                 "${workspaceFolder}/app/*.c",
                 "${workspaceFolder}/src/*.c",
+                "../../base/src/*.c",
                 "-o",
                 "${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
             ],
@@ -32,6 +33,7 @@
                 "-g",
                 "${workspaceFolder}/app/*.c",
                 "${workspaceFolder}/src/*.c",
+                "../../base/src/*.c",
                 "-o",
                 "${workspaceFolder}/bin/${fileBasenameNoExtension}"
             ],

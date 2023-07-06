@@ -1,6 +1,6 @@
 
 #include "../inc/sayhello.h"
-#include "../inc/consolevt.h"
+#include "../../base/inc/consolevt.h"
 
 #define FANGK "■"
 
@@ -37,7 +37,7 @@ int SayHello()
 int init_main_screen()
 {
     enable_VT_Mode();
-    set_console_CodePage();
+    set_console_CodePage(CODEPAGE_UTF8);
 
     SET_CONSOLE_TITLE("你好，新世界");
     return 0;
@@ -70,12 +70,18 @@ int oper1()
             printf("Waitting for input:%6d", ++i);
         }
         inputkey = _getch();
-         if (inputkey == ADDITIONKEY) 
+         if (inputkey == ADDITIONKEY || inputkey ==0) 
+         {
+            cursor_jump(10, 3);
+            printf(CSI "K"); // 清除本行光标之后的信息
+            printf("(the function key:%d)", inputkey);
+            SLEEP(1000);
             inputkey = _getch();
+         }
         cursor_jump(10, 3);
         printf(CSI "K"); // 清除本行光标之后的信息
-        printf("(the input key:%d)\n", inputkey);
-        sleep(1);
+        printf("(the input key:%d)", inputkey);
+        SLEEP(1000);
 
         cursor_jump(10, 5);
         printf(CSI "K"); // 清除本行光标之后的信息
