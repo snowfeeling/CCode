@@ -61,27 +61,39 @@ int oper1()
     printf("I am listening to the rain.");
 
     fflush(stdin);
+    changemode(1);
+
     do
     {
-        int i = 0;
+    /*    int i = 0;
+        
         while (!_kbhit())
         {
             cursor_jump(10, 16);
             printf("Waitting for input:%6d", ++i);
         }
-        inputkey = _getch();
-         if (inputkey == ADDITIONKEY || inputkey ==0) 
-         {
+    */
+       inputkey = _getch();
+        if (inputkey == ADDITIONKEY || inputkey ==0) 
+        {
             cursor_jump(10, 3);
             printf(CSI "K"); // 清除本行光标之后的信息
-            printf("(the function key:%d)", inputkey);
+            printf("Function key:%3d - %3c", inputkey, inputkey);
             SLEEP(1000);
             inputkey = _getch();
-         }
+            if (inputkey == 91)
+            {
+                cursor_jump(10, 3);
+                printf(CSI "K"); // 清除本行光标之后的信息
+                printf("Function key:%3d - %3c", inputkey, inputkey);
+                SLEEP(1600);
+                inputkey = _getch();
+            }
+        }
         cursor_jump(10, 3);
         printf(CSI "K"); // 清除本行光标之后的信息
-        printf("(the input key:%d)", inputkey);
-        SLEEP(1000);
+        printf("Input key    :%3d - %3c", inputkey, inputkey);
+        //SLEEP(600);
 
         cursor_jump(10, 5);
         printf(CSI "K"); // 清除本行光标之后的信息
@@ -109,7 +121,7 @@ int oper1()
         }
     } while (!istop);
     cursor_jump(10, 15);
-    printf("END.");
+    printf("END.\n");
 
     return 0;
 }
@@ -120,3 +132,4 @@ int init_oper_screen()
 
     return 0;
 }
+

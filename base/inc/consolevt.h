@@ -54,6 +54,8 @@ int set_console_CodePage(int codepage);
 int _getch(void);
 int _getche(void);
 int _kbhit(void);
+void changemode(int dir);
+
 #endif
 
 
