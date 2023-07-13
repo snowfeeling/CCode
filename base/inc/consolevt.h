@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <locale.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef WIN32
     #include <windows.h>
     #include <conio.h>
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
     #include <TargetConditionals.h>
     #include <termios.h>
-    #include <unistd.h>
-    #include <fcntl.h>
 #endif
 
 /*======= CodePage      ======*/
@@ -50,7 +50,7 @@
 bool enable_VT_Mode();
 int set_console_CodePage(int codepage);
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 int _getch(void);
 int _getche(void);
 int _kbhit(void);
@@ -67,38 +67,37 @@ void changemode(int dir);
     #define LEFTKEY 	75 //方向键：左
     #define RIGHTKEY 	77 //方向键：右
     #define ADDITIONKEY  224 //功能健的前8位
+#endif
 
-#elif defined(__APPLE__)
-
+#if defined(__APPLE__)
     #define UPKEY	    65 //方向键：上A
     #define DOWNKEY 	66 //方向键：下B
     #define LEFTKEY 	68 //方向键：左C
     #define RIGHTKEY 	67 //方向键：右D
     #define ADDITIONKEY  27 //功能健的前8位
-    
 #endif
 
 #define SPACEKEY    32 //空格键
 #define ESCKEY	    27 //Esc键
 
 
-#ifdef _WIN32
+#if defined(_WIN32)
     //code for Windows (32-bit and 64-bit, this part is common)
     #define CHECKKEY _kbhit()
     #define NBGETCHAR _getch()
     #define SLEEP(t) Sleep(t)
 
-#elif __APPLE__
+#elif defined(__APPLE__)
     //code for mac
     #define CHECKKEY _kbhit()
     #define NBGETCHAR _getch()
-    #define SLEEP(t)    sleep(t/1000)
+    #define SLEEP(t)    sleep(t/600)
 
-#elif __linux__
+#elif defined(__linux__)
     //code for linux
     #define CHECKKEY  _kbhit()
     #define NBGETCHAR _getch()
-    #define SLEEP(t)    sleep(t/1000)
+    #define SLEEP(t)    sleep(t/600)
 
 #else
 #   error "Unknown compiler"

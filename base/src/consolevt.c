@@ -48,14 +48,12 @@ bool enable_VT_Mode()
 
 /*======= MAC OS下定义新函数 =========
     _getch()
-    _getche()
 */
 #if defined(__APPLE__)
 
 int _getch( ) {
-    struct termios oldt,
-                          newt;
-    int                  ch;
+    struct termios oldt, newt;
+    int ch;
     tcgetattr( STDIN_FILENO, &oldt );
     newt = oldt;
     newt.c_lflag &= ~( ICANON | ECHO );
@@ -137,5 +135,22 @@ void changemode(int dir)
     else
         tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
+
+int _kbhit1 (void)
+{
+  struct timeval tv;
+  fd_set rdfs;
+ 
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+ 
+  FD_ZERO(&rdfs);
+  FD_SET (STDIN_FILENO, &rdfs);
+ 
+  select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
+  return FD_ISSET(STDIN_FILENO, &rdfs);
+ 
+}
+
 
 #endif

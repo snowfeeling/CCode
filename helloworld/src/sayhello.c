@@ -17,7 +17,7 @@ int SayHello()
 {
     int ch;
     init_main_screen();
-    printf("Hello World.");
+    printf("Hello World.\n");
     TURNOFF_CURSOR();
     do
     {
@@ -61,19 +61,25 @@ int oper1()
     printf("I am listening to the rain.");
 
     fflush(stdin);
+    #if defined(__APPLE__)
     changemode(1);
+    #endif
 
     do
     {
-    /*    int i = 0;
+        int i = 0;
         
         while (!_kbhit())
         {
             cursor_jump(10, 16);
+            printf(CSI "K"); // 清除本行光标之后的信息
             printf("Waitting for input:%6d", ++i);
         }
-    */
-       inputkey = _getch();
+    
+        printf(" AAAAAA [%d]", i);
+
+        inputkey = _getch();
+        
         if (inputkey == ADDITIONKEY || inputkey ==0) 
         {
             cursor_jump(10, 3);

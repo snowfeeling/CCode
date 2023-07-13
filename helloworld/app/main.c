@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "../inc/sayhello.h"
+#include "../../base/inc/consolevt.h"
 
 int main()
 {
