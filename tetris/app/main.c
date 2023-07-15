@@ -7,7 +7,6 @@
 #include <conio.h> /*键盘输入获取*/
 #endif
 
-#include "../inc/mylog.h"
 #include "../inc/rb.h"
 
 int main ()

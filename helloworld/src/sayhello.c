@@ -19,12 +19,15 @@ int SayHello()
     init_main_screen();
     printf("Hello World.\n");
     TURNOFF_CURSOR();
+
+    changemode(1);
     do
     {
         ch = _getch();
-        printf("(the input key :%d)\n", ch);
+        //cursor_jump(10, 10);
+        printf("(the input key : %4d )\r", ch);
 
-    } while (ch != ESCKEY);
+    } while (ch != 'q');
 
     SWITCH_ALTERNATE_SCREEN();
     oper1();
@@ -57,10 +60,10 @@ int oper1()
     bool istop = false;
     GO_SCREEN_HOME();
     TURNOFF_CURSOR();
-    // CLEAR_SCREEN();
+    CLEAR_SCREEN();
     printf("I am listening to the rain.");
 
-    fflush(stdin);
+    fflush(stdin);  // 清除stdin，避免带入前面输入
     #if defined(__APPLE__)
     changemode(1);
     #endif
@@ -71,38 +74,37 @@ int oper1()
         
         while (!_kbhit())
         {
-            cursor_jump(10, 16);
+            cursor_jump(10, 16);           
+            printf("Waitting for input:");
             printf(CSI "K"); // 清除本行光标之后的信息
-            printf("Waitting for input:%6d", ++i);
+            printf("%d", ++i);
         }
     
-        printf(" AAAAAA [%d]", i);
-
         inputkey = _getch();
         
         if (inputkey == ADDITIONKEY || inputkey ==0) 
         {
-            cursor_jump(10, 3);
-            printf(CSI "K"); // 清除本行光标之后的信息
-            printf("Function key:%3d - %3c", inputkey, inputkey);
-            SLEEP(1000);
+            cursor_jump(1, 3);
+            CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
+            printf("Function key: [ %3d-%-3c ]", inputkey, inputkey);
+            //fflush(stdout);
             inputkey = _getch();
             if (inputkey == 91)
             {
-                cursor_jump(10, 3);
-                printf(CSI "K"); // 清除本行光标之后的信息
-                printf("Function key:%3d - %3c", inputkey, inputkey);
-                SLEEP(1600);
+                CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
+                printf("[ %3d-%-3c ] ", inputkey, inputkey);
+                fflush(stdout);
+                SLEEP(600);
                 inputkey = _getch();
             }
         }
-        cursor_jump(10, 3);
-        printf(CSI "K"); // 清除本行光标之后的信息
-        printf("Input key    :%3d - %3c", inputkey, inputkey);
-        //SLEEP(600);
+
+        cursor_jump(1, 3);
+        CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
+        printf("Input key    : %3d - %3c", inputkey, inputkey);
 
         cursor_jump(10, 5);
-        printf(CSI "K"); // 清除本行光标之后的信息
+        CLEAN_LINE_TO_END();  // 清除本行光标之后的信息
 
         switch (inputkey)
         {
@@ -125,9 +127,10 @@ int oper1()
         default:
             break;
         }
+        fflush(stdout);
+        SLEEP(600);
+
     } while (!istop);
-    cursor_jump(10, 15);
-    printf("END.\n");
 
     return 0;
 }

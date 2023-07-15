@@ -92,6 +92,7 @@ int _kbhit(void)
     struct termios oldt, newt;
     int ch;
     int oldf;
+    int rval = 0;
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
     newt.c_lflag &= ~(ICANON | ECHO);
@@ -100,13 +101,13 @@ int _kbhit(void)
     fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
     ch = getchar();
     fcntl(STDIN_FILENO, F_SETFL, oldf);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     if (ch != EOF)
     {
         ungetc(ch, stdin);
-        return 1;
+        rval = 1;
     }
-    return 0;
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    return rval;
 }
 
 void changemode(int dir)

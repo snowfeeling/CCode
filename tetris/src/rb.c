@@ -16,6 +16,7 @@ Created by Wangss on 2023-06-21.
 
 #include "../inc/rb.h"
 #include "../../base/inc/consolevt.h"
+#include "../../base/inc/wsslog.h"
 
 #define BUFFER_SIZE 100
 #define ROW 29 //游戏区行数

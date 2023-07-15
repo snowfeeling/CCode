@@ -300,12 +300,12 @@ static void destroy_bptree_nodes(BPT_NODE *root)
     if (root->is_leaf)
         for (i = 0; i < root->keys_num; i++)
         {
-            free(root->leaf[i]);
+            free(root->leaf[i]); //释放叶子节点内存
         }
     else
         for (i = 0; i < root->keys_num + 1; i++)
             destroy_bptree_nodes(root->pointers[i]);
-    free(root);
+    free(root);  //把本节点的内存释放掉。
 }
 
 static BPT_NODE *destroy_bptree(BPLUS_TREE *bptree)
@@ -1243,7 +1243,7 @@ static int deleteElement (BPLUS_TREE *bpt, int deletedValue)
 /*=================Tree functions=========================
 * 
 */
-
+/*======计算从本节点到根节点的高度======*/
 static int get_tree_hight(BPLUS_TREE *bpt)
 {
     BPT_NODE *r = bpt->root;
@@ -1261,17 +1261,18 @@ static int get_tree_hight(BPLUS_TREE *bpt)
     return h;
 }
 
+/*======计算所有叶子节点的数量======*/
 static int get_tree_leaf_num(BPLUS_TREE *bpt)
 {
     BPT_NODE *r = bpt->root;
     int c = 0;
     if (r != NULL)
     {
-        while (!r->is_leaf )
+        while (!r->is_leaf ) //找到第一个叶子节点
         {
             r = r->pointers[0];
         };
-        while (r != NULL)
+        while (r != NULL)  //从第一个叶子节点，计算到最后一个节点（next为空）
         {
             c = c +r->keys_num;
             r = r->next;
@@ -1280,7 +1281,10 @@ static int get_tree_leaf_num(BPLUS_TREE *bpt)
     bpt->leaf_num = c; 
     return c;
 }
-
+/*=======获取树的信息=======
+树的高度
+树里的叶子节点数量
+*/
 static void get_tree_info(BPLUS_TREE *bpt)
 {
     get_tree_hight(bpt);
@@ -1321,7 +1325,7 @@ static void show_bpt_manual(void)
 //设置屏幕为虚拟终端模式
 static bool enable_scr_Mode()
 {
-#if WIN32
+#if defined(WIN32)
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE)
