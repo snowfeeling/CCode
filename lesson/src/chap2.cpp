@@ -20,13 +20,13 @@ int testCalc()
     Calculator calc;
     int num;
     num = 10;
-    showNumChanged("Increment", num, calc.increment(num));
+    showNumChanged((char *)"Increment", num, calc.increment(num));
     num = 0;
-    showNumChanged("Negate", num, calc.negate(num));
+    showNumChanged((char *)"Negate", num, calc.negate(num));
     num = 100;
-    showNumChanged("Increment", num, calc.increment(num));
+    showNumChanged((char *)"Increment", num, calc.increment(num));
     num = -10;
-    showNumChanged("Negate", num, calc.negate(num));
+    showNumChanged((char *)"Negate", num, calc.negate(num));
     
     return 0;
 }
