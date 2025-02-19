@@ -5,6 +5,11 @@
 
 #include <stdio.h>
 #include "../inc/chap2.h"
+#include <iostream>
+#include <fstream>
+#include <stack>
+#include <string>
+
 
 int main()
 {

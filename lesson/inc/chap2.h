@@ -3,7 +3,10 @@
 #include <stdio.h>
 
 
-class Calculator {
+int testBracesMatch();
+
+
+class testCalculator {
     public:
         // increment函数实现参数加1
         int increment(int num) ;
