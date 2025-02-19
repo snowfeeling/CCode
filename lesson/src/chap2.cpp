@@ -4,12 +4,33 @@
 #include <string>
 using namespace std;
 
+// testStatic
+int testCount = 1;
+int testStatic()
+{
+    cout << "\nThe call number : " << testCount << endl;
+
+    static int numStatic;
+    static char charStatic;
+    cout << endl << "1. Static variable numStatic = " << numStatic << endl;
+    
+    numStatic = 222;
+    cout << "2. Static variable numStatic = " << numStatic << endl;
+
+    numStatic = 333;
+    cout << "3. Static variable numStatic = " << numStatic << endl;
+
+    testCount ++;
+    return 0;
+}
+
+// 统计一个c文件中，'{'和'}'的的数量是否一样；
 int testBracesMatch()
 {
-    char fileName[] ="../src/chap2.cpp" ;
+    string fileName("../src/chap2.cpp") ;
     ifstream fileBrace(fileName);
     if (!fileBrace) {
-        printf ( "无法打开文件:%s \n",  fileName);
+        cout<<  "无法打开文件:" << fileName << endl;
         return false;
     }
     int leftBracesNum=0, rightBracesNum = 0;
@@ -24,12 +45,13 @@ int testBracesMatch()
     }
     
     fileBrace.close();
-    printf("\nLeft  Braces Num = %d \nRight Brace Num=%d\n", leftBracesNum, rightBracesNum);
+    cout << endl <<"Left  Braces Num = " <<leftBracesNum ;
+    cout << endl <<"Right Braces Num = " << rightBracesNum << endl;
     if (leftBracesNum == rightBracesNum) {
-        printf("\nLeft Braces Num = Right Braces Num.\n");
+        cout << endl <<"Left Braces Num = Right Braces Num." << endl;
     }
     else {
-        printf("\nLeft Braces Num != Right Braces Num.\n");
+        cout << endl <<"Left Braces Num != Right Braces Num." << endl;
     }
     
     return (leftBracesNum == rightBracesNum);
@@ -46,7 +68,7 @@ int testCalculator::negate(int num) {
 }
 
 int showNumChanged(char *str, int orgNum, int num) {
-    printf("%s(%d) = %d\n", str, orgNum, num);
+    cout <<str << "(" << orgNum << ") = " <<num << endl;
     return 0;
 }
 
@@ -82,6 +104,13 @@ int testChap2()
     
     // Test 2.8-2;
     testBracesMatch();
+
+    // testStatic
+    testStatic();
+
+    testStatic();
+
+    testStatic();
 
     return 0;
 }

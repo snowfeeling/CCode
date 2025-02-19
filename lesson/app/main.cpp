@@ -4,6 +4,7 @@
 */
 
 #include <stdio.h>
+#include <limits.h>
 #include "../inc/chap2.h"
 #include <iostream>
 #include <fstream>
