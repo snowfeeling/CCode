@@ -2,7 +2,34 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cmath>
+#include <iomanip>
+
 using namespace std;
+
+// get Sqrt(n)
+int getSqrt(int num)
+{
+    double guess = 1;
+    double lastGuess;
+    double tolerance = 1e-10;
+    int i =0;
+
+    do
+    {
+        lastGuess = guess;
+        guess = (guess+ num/guess)/2;
+        i++;
+    } while (abs(guess-lastGuess) > tolerance);
+    
+    //if (abs(guess-lastGuess) <= tolerance) 
+    cout << "Computing times: " << i << endl;
+        
+    cout << fixed << setprecision(10);    
+    cout << guess << endl; 
+    printf("%.20f \n||\n%.20f\n", lastGuess, guess);
+    return 0;
+}
 
 // testStatic
 int testCount = 1;
@@ -92,7 +119,7 @@ int testCalc()
 int testChap2()
 {
     int xy/*Blald Bald */;
-    printf("\"Blunder\?\?!\??\"\n");
+    printf("\"{」Blunder\?\?!\??\"\n");
 
     printf("\100 \n");
 
@@ -105,12 +132,18 @@ int testChap2()
     // Test 2.8-2;
     testBracesMatch();
 
-    // testStatic
-    testStatic();
+    // test Static variable
+    //testStatic();
 
-    testStatic();
+    // Test expression
+    getSqrt(99);
 
-    testStatic();
+    int a =4, b;
+    b = a ++;
+    int c = a + (b <= 4);
+    cout  << "a="<<a << "  b="<< b << " c="<< c << endl;
 
+    int d = a * b++;
+    cout<< "d="<<d << "  b=" << b<< endl;
     return 0;
 }
