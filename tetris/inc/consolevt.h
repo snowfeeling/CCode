@@ -4,18 +4,17 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <locale.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 #ifdef WIN32
     #include <windows.h>
     #include <conio.h>
 #endif
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
     #include <TargetConditionals.h>
     #include <termios.h>
     #include <unistd.h>
+    #include <fcntl.h>
 #endif
 
 /*======= CodePage      ======*/
@@ -42,58 +41,64 @@
 //光标跳转
 #define cursor_jump(x, y) { printf(CSI "%d;%dH", y, x); }
 //设置窗口title
-#define SET_CONSOLE_TITLE(str) { printf (ESC "]2;%s\x07", str); }
+#define SET_CONSOLE_TITLE(str1) { printf (ESC "]2;%s\x07", str1); }
+//从当前位置清除到行尾巴
+#define CLEAN_LINE_TO_END { printf(CSI "K"); }; 
 
 /*====== 虚拟终端函数定义 ======*/
 //设置屏幕为虚拟终端模式
 bool enable_VT_Mode();
-int set_console_CodePage(int codepage);
+int set_console_CodePage();
 
 #ifdef __APPLE__
 int _getch(void);
 int _getche(void);
+int _kbhit(void);
 #endif
+
 
 /*=======Keys Ddefine =========
 */
-#define SPACEKEY    32 //空格键
-#define ESCKEY	    27 //Esc键
-
 #if defined(WIN32)
     #define UPKEY	    72 //方向键：上
     #define DOWNKEY 	80 //方向键：下
     #define LEFTKEY 	75 //方向键：左
     #define RIGHTKEY 	77 //方向键：右
     #define ADDITIONKEY  224 //功能健的前8位
+
 #elif defined(__APPLE__)
+
     #define UPKEY	    65 //方向键：上A
     #define DOWNKEY 	66 //方向键：下B
     #define LEFTKEY 	68 //方向键：左C
     #define RIGHTKEY 	67 //方向键：右D
     #define ADDITIONKEY  27 //功能健的前8位
-#endif
-
-#if defined(_WIN32)
-    //code for Windows (32-bit and 64-bit, this part is common)
-    #define CHECKKEY _kbhit()
-    #define NBGETCHAR _getch()
-    #define SLEEP(t) Sleep(t)
-#elif defined(__APPLE__)
-    //code for mac
-    #define CHECKKEY _kbhit()
-    #define NBGETCHAR _getch()
-    #define SLEEP(t)    sleep(t/600)
-#elif defined(__linux__)
-    //code for linux
-    #define CHECKKEY  _kbhit()
-    #define NBGETCHAR _getch()
-    #define SLEEP(t)    sleep(t/600)
-#else
-#   error "Unknown compiler"
+    
 #endif
 
 #define SPACEKEY    32 //空格键
 #define ESCKEY	    27 //Esc键
 
+
+#ifdef _WIN32
+    //code for Windows (32-bit and 64-bit, this part is common)
+    #define CHECKKEY _kbhit()
+    #define NBGETCHAR _getch()
+    #define SLEEP(t) {Sleep(t);}
+
+#elif __APPLE__
+    //code for mac
+    #define CHECKKEY _kbhit()
+    #define NBGETCHAR _getch()
+    #define SLEEP(t) {sleep(t);}
+
+#elif __linux__
+    //code for linux
+    #define CHECKKEY  _kbhit()
+    #define NBGETCHAR _getch()
+
+#else
+#   error "Unknown compiler"
+#endif
 
 #endif

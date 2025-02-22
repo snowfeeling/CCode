@@ -15,8 +15,6 @@ Created by Wangss on 2023-06-21.
 #endif
 
 #include "../inc/rb.h"
-#include "../../base/inc/consolevt.h"
-#include "../../base/inc/wsslog.h"
 
 #define BUFFER_SIZE 100
 #define ROW 29 //游戏区行数
@@ -148,12 +146,12 @@ static void show_command_manual(void)
 static int init_main_screen()
 {
 
-#ifdef WIN32
+	// 设置UTF8 Code Page
+	//setlocale(LC_ALL, ".UTF8");
+	SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
 
-	set_console_CodePage(CODEPAGE_UTF8);
-#endif
-
-	bool fSuccess = init_VT_Mode();
+	bool fSuccess = enable_VT_Mode();
     if (!fSuccess)
     {
         return -1;
@@ -726,10 +724,10 @@ static void StartGame()
 			}
 			else //键盘被敲击
 			{
-				int ch = _getch(); //读取键盘值
-				if (ch == ADDITIONKEY || ch == 0) 
+				int ch = getch(); //读取键盘值
+				if (ch == 224 || ch == 0) 
 				{
-					ch = _getch();
+					ch = getch();
 					//show_game_status_line("多余的字符");
 				}
 				switch (ch)

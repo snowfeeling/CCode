@@ -24,11 +24,10 @@ int SayHello()
     do
     {
         ch = _getch();
-        //cursor_jump(10, 10);
-        printf("(the input key : %4d )\r", ch);
-
-    } while (ch != 'q');
-
+        printf("(the input key :%d)\n", ch);
+        
+    } while (ch != ESCKEY);
+    
     SWITCH_ALTERNATE_SCREEN();
     oper1();
     SWITCH_MAIN_SCREEN();
@@ -60,51 +59,19 @@ int oper1()
     bool istop = false;
     GO_SCREEN_HOME();
     TURNOFF_CURSOR();
-    CLEAR_SCREEN();
+    //CLEAR_SCREEN();
     printf("I am listening to the rain.");
-
-    fflush(stdin);  // 清除stdin，避免带入前面输入
-    #if defined(__APPLE__)
-    changemode(1);
-    #endif
 
     do
     {
-        int i = 0;
-        
-        while (!_kbhit())
-        {
-            cursor_jump(10, 16);           
-            printf("Waitting for input:");
-            printf(CSI "K"); // 清除本行光标之后的信息
-            printf("%d", ++i);
-        }
-    
         inputkey = _getch();
-        
-        if (inputkey == ADDITIONKEY || inputkey ==0) 
-        {
-            cursor_jump(1, 3);
-            CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
-            printf("Function key: [ %3d-%-3c ]", inputkey, inputkey);
-            //fflush(stdout);
-            inputkey = _getch();
-            if (inputkey == 91)
-            {
-                CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
-                printf("[ %3d-%-3c ] ", inputkey, inputkey);
-                fflush(stdout);
-                SLEEP(600);
-                inputkey = _getch();
-            }
-        }
-
-        cursor_jump(1, 3);
-        CLEAN_LINE_TO_END(); // 清除本行光标之后的信息
-        printf("Input key    : %3d - %3c", inputkey, inputkey);
-
-        cursor_jump(10, 5);
-        CLEAN_LINE_TO_END();  // 清除本行光标之后的信息
+        if (inputkey == ADDITIONKEY) inputkey = _getch();
+        cursor_jump(10,3);
+        printf(CSI "K");  //清除本行光标之后的信息
+        printf("(the input key:%d)\n", inputkey);
+    
+        cursor_jump(10,5);
+        printf(CSI "K");  //清除本行光标之后的信息
 
         switch (inputkey)
         {
@@ -127,11 +94,10 @@ int oper1()
         default:
             break;
         }
-        fflush(stdout);
-        SLEEP(600);
-
-    } while (!istop);
-
+    } while (!istop );
+    cursor_jump(10,15);
+    printf("END.");
+    
     return 0;
 }
 int init_oper_screen()
@@ -141,4 +107,5 @@ int init_oper_screen()
 
     return 0;
 }
+
 
