@@ -7,6 +7,29 @@
 
 using namespace std;
 
+// test Pointer
+int testPointer()
+{
+    int a[3] = {3,14,25}, b = 8, c=16;    
+    int *p = NULL; 
+    int **pp = NULL;
+
+    p = a;
+    pp = &p;
+    cout << "[  a = " << a << "][  &a = " << &a << "]" << endl;
+    cout << "[  b = " << b << "][  &b = " << &b << "]" << endl;
+    cout << "[  c = " << c << "][  &c = " << &c << "]" << endl;
+    cout << "[ p   = " << p << "][  &p = " << &p <<  "][  *p = " << *p << "]" << endl;
+    p++;
+    int k = (*p)+1;
+    cout << "[ p+1 = "<< p << "][ *p = " << k << "]" << endl;
+    //p++;
+    cout << "[ p+1 = "<< p << "][ *p = " << *p << "]" << endl;
+
+    cout << "[ pp = " << pp <<"][ &pp = " << &pp << "][ *pp = " << *pp << "][**pp = " << **pp << "]" << endl;
+
+    return 0;
+}
 // get Sqrt(n)
 int getSqrt(int num)
 {
@@ -138,12 +161,9 @@ int testChap2()
     // Test expression
     getSqrt(99);
 
-    int a =4, b;
-    b = a ++;
-    int c = a + (b <= 4);
-    cout  << "a="<<a << "  b="<< b << " c="<< c << endl;
+    // test Pointer;
+    testPointer();
 
-    int d = a * b++;
-    cout<< "d="<<d << "  b=" << b<< endl;
+
     return 0;
 }
