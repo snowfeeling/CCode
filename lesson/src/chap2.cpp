@@ -7,32 +7,37 @@
 
 using namespace std;
 
+void printArray(int *arr, int num)
+{
+    cout <<"arr[] = ";
+    for (int i = 0; i< num; i ++, arr++)
+    cout <<"  " << *arr;
+    cout << endl;
+}
+
+void changeArray(int *arr, int num)
+{
+ 
+    for (int i = 0; i< num; i ++, arr++)
+    { 
+        *arr +=   i;
+    }
+    
+    
+} 
+
 // test Pointer
 int testPointer()
 {
-    int a[3] = {3,14,25}, b = 8, c=16;    
+    #define ARRAYSIZE 5
+    int arr[ARRAYSIZE] = {10, 20, 30, 40, 50}, b = 8, c=16;    
     int *p = NULL; 
-    int **pp = NULL;
+    p = arr;
+    printArray(p, ARRAYSIZE);
 
-    p = a;
-    pp = &p;
-    cout << "[  a = " << a << "][  &a = " << &a << "]" << endl;
-    cout << "[  b = " << b << "][  &b = " << &b << "]" << endl;
-    cout << "[  c = " << c << "][  &c = " << &c << "]" << endl;
-    cout << "[ p   = " << p << "][  &p = " << &p <<  "][  *p = " << *p << "]" << endl;
-    p++;
-    int k = (*p)+1;
-    cout << "[ p+1 = "<< p << "][ *p = " << k << "]" << endl;
-    //p++;
-    cout << "[ p+1 = "<< p << "][ *p = " << *p << "]" << endl;
+    changeArray(p, ARRAYSIZE);
 
-    cout << "[ pp = " << pp <<"][ &pp = " << &pp << "][ *pp = " << *pp << "][**pp = " << **pp << "]" << endl;
-
-    int  arr[]={6,7,8,9,10};
-    int  *ptr=arr;
-    *(ptr++)+=123;
-    printf("%d,%d\n",*ptr,*(++ptr));
-
+    printArray(p, ARRAYSIZE);
     return 0;
 }
 // get Sqrt(n)
@@ -146,25 +151,26 @@ int testCalc()
 // 验证程序
 int testChap2()
 {
-    int xy/*Blald Bald */;
+    /*
+    int xy;
     printf("\"{」Blunder\?\?!\??\"\n");
 
     printf("\100 \n");
-
+    */
     //test 2.7 - No 6:
-    int Case, If, While, Stop, stop;
+    //int Case, If, While, Stop, stop;
 
     //test 2.8-1 using class;
-    testCalc();
+    //testCalc();
     
     // Test 2.8-2;
-    testBracesMatch();
+    //testBracesMatch();
 
     // test Static variable
     //testStatic();
 
     // Test expression
-    getSqrt(99);
+    //getSqrt(99);
 
     // test Pointer;
     testPointer();

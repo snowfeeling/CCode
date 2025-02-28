@@ -17,7 +17,7 @@
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
-            "preLaunchTask": "Lesson - C/C++: g++.exe build active file",
+            "preLaunchTask": "Windows - C/C++: g++.exe build active file",
 
             "setupCommands": [
                 {
