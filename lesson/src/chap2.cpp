@@ -23,8 +23,26 @@ void changeArray(int *arr, int num)
         *arr +=   i;
     }
     
-    
-} 
+}
+
+void testStringAddress()
+{
+    #define MSG "I'm special"
+
+    char ar[] = MSG;
+    const char *pt = MSG;
+    printf("address of \"I'm special\": %p \n", "I'm special");
+    printf("              address ar: %p\n", ar);
+    printf("              address pt: %p\n", pt);
+    printf("          address of MSG: %p\n", MSG);
+    printf("address of \"I'm special\": %p \n", "I'm special");
+
+    for (int i = 0; i< 6; i++)
+        cout<< *pt + i<< "-";
+    cout << endl;
+
+
+}
 
 // test Pointer
 int testPointer()
@@ -38,6 +56,9 @@ int testPointer()
     changeArray(p, ARRAYSIZE);
 
     printArray(p, ARRAYSIZE);
+
+    testStringAddress();
+
     return 0;
 }
 // get Sqrt(n)
