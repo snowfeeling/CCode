@@ -12,7 +12,7 @@ int testPointerFunc()
 {
     SortArray testSA;
 
-    int arr[ARRAYSIZE] = { 212, 8, 120, 98, 123, 899, 123, 35, 901,  3, 81, 34};
+    int arr[ARRAYSIZE] = { 212, 98, 120, 8, 123, 899, 13, 35, 901,  3, 81, 34};
     //int arr[ARRAYSIZE] = {   1, 2,   3,  4,   5,   6,    7,  8,   9, 10, 12, 11};
 
     printArray(arr, ARRAYSIZE);
