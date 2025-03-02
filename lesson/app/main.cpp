@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include "../inc/chap2.h"
+#include "../inc/pointerfunc.h"
 #include <iostream>
 #include <fstream>
 #include <stack>
@@ -17,7 +18,8 @@ int main()
 
     printf("Hello world.\n");
 
-    testChap2();
+//    testChap2();
+    testPointerFunc();
 
     return 0;
 }

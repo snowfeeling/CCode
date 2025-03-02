@@ -15,6 +15,7 @@ class testCalculator {
     };
 
 int testChap2();
+void printArray(int *arr, int num);
 
 
 #endif

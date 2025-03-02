@@ -10,8 +10,8 @@ using namespace std;
 void printArray(int *arr, int num)
 {
     cout <<"arr[] = ";
-    for (int i = 0; i< num; i ++, arr++)
-    cout <<"  " << *arr;
+    for (int i = 0; i< num; i++, arr++)
+    cout << *arr << ((i==num-1 ) ? " " : ", ");
     cout << endl;
 }
 
