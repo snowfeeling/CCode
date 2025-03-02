@@ -9,20 +9,17 @@ using namespace std;
 
 void printArray(int *arr, int num)
 {
+    cout << setw(5);
     cout <<"arr[] = ";
     for (int i = 0; i< num; i++, arr++)
-    cout << *arr << ((i==num-1 ) ? " " : ", ");
+    cout << setw(6) << *arr << ((i==num-1 ) ? " " : ", ");
     cout << endl;
 }
 
 void changeArray(int *arr, int num)
 {
- 
     for (int i = 0; i< num; i ++, arr++)
-    { 
         *arr +=   i;
-    }
-    
 }
 
 void testStringAddress()
@@ -38,10 +35,8 @@ void testStringAddress()
     printf("address of \"I'm special\": %p \n", "I'm special");
 
     for (int i = 0; i< 6; i++)
-        cout<< *pt + i<< "-";
+        cout<< *pt + i<< ((i==5)? " ": "-");
     cout << endl;
-
-
 }
 
 // test Pointer

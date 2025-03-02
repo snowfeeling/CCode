@@ -18,7 +18,7 @@ int main()
 
     printf("Hello world.\n");
 
-//    testChap2();
+    testChap2();
     testPointerFunc();
 
     return 0;
