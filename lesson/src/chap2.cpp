@@ -12,7 +12,7 @@ void printArray(int *arr, int num)
     cout << setw(5);
     cout <<"arr[] = ";
     for (int i = 0; i< num; i++, arr++)
-    cout << setw(6) << *arr << ((i==num-1 ) ? " " : ", ");
+    cout << setw(5) << *arr << ((i==num-1 ) ? " " : ", ");
     cout << endl;
 }
 

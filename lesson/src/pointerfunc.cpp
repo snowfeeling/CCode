@@ -5,44 +5,61 @@
 using namespace std;
 
 #define ARRAYSIZE  12
-#define ASCENDING   1
-#define DESCENDING  2
 #define SORTSIZE   ARRAYSIZE
+
+void printTestSortResult(const char *str, SortArray testSA)
+{
+    cout << "[SortMode=" << ((testSA.getSortMode() == ASCENDING) ?  "Ascending" : "Descending") << "] ";
+    cout << "[SortMethod = " << ((testSA.getSortMethod() == BUBBLE) ? "Bubble" : "Quick") << "] ";
+    cout << "[SortTimes = " << testSA.getSortTimes() << "] " << endl << endl;
+} 
+
 int testPointerFunc()
 {
     SortArray testSA;
 
     int arr[ARRAYSIZE] = { 212, 98, 120, 8, 123, 899, 13, 35, 901,  3, 81, 34};
-    //int arr[ARRAYSIZE] = {   1, 2,   3,  4,   5,   6,    7,  8,   9, 10, 12, 11};
+    //int arr[ARRAYSIZE] = {   1, 2,   3,  4,   5,   7,    6,  8,   9, 10, 12, 11};
 
     printArray(arr, ARRAYSIZE);
 
-    testSA.quickSort(arr, SORTSIZE, ASCENDING);
+    testSA.setSortMode(ASCENDING);
+    testSA.setSortMethod(BUBBLE);
+    testSA.sortArray(arr, SORTSIZE);
     printArray(arr, ARRAYSIZE);
-    cout << "Quick Sort Times = " << testSA.getQuickSortTimes() << endl << endl;
+    printTestSortResult("Bubble", testSA);
 
-    testSA.quickSort(arr, SORTSIZE, DESCENDING);
+    // sort the array with quick sort
+    testSA.setSortMode(ASCENDING);
+    testSA.setSortMethod(QUICK);
+    testSA.sortArray(arr, SORTSIZE);
     printArray(arr, ARRAYSIZE);
-    cout << "Quick Sort Times = " << testSA.getQuickSortTimes() << endl << endl;
+    printTestSortResult("Quick", testSA);
 
-    testSA.bubbleSort(arr, SORTSIZE, ASCENDING);
+    // sort the array with descending mode
+    testSA.setSortMode(DESCENDING);
+    testSA.setSortMethod(BUBBLE);
+    testSA.sortArray(arr, SORTSIZE);
     printArray(arr, ARRAYSIZE);
-    cout << "Bubble Sort Times = " << testSA.getBubbleSortTimes() << endl << endl;
-
-    testSA.bubbleSort(arr, SORTSIZE, DESCENDING);
-    printArray(arr, ARRAYSIZE);
-    cout << "Bubble Sort Times = " << testSA.getBubbleSortTimes() << endl << endl;
-
-    testSA.quickSort(arr, SORTSIZE, DESCENDING);
-    printArray(arr, ARRAYSIZE);
-    cout << "Quick Sort Times = " << testSA.getQuickSortTimes() << endl << endl;
+    printTestSortResult("Bubble", testSA);
 
     return 0;
 }
 
-void SortArray::bubbleSort(int arr[], int n, int mode)
+SORTMODE SortArray::setSortMode(SORTMODE sMode)
+{
+    sortMode = sMode;
+    return sortMode;
+}
+
+SORTMODE SortArray::getSortMode()
+{
+    return sortMode;
+}
+void SortArray::bubbleSort(int arr[], int n)
 {   
-    if (mode == ASCENDING)
+
+    if (sortMode == ASCENDING)
         bubbleSortFunc(arr, n, ascending);
     else 
         bubbleSortFunc(arr, n, descending);
@@ -51,7 +68,7 @@ void SortArray::bubbleSort(int arr[], int n, int mode)
 
 void SortArray::bubbleSortFunc(int arr[], int n, compareFunc cmp) {
 
-    bubbleSortTimes = 0;
+    nSortTimes = 0;
     for (int i = 0; i < n - 1; i++) {
         bool swap = false;
         for (int j = 0; j < n - i - 1; j++) {
@@ -59,12 +76,12 @@ void SortArray::bubbleSortFunc(int arr[], int n, compareFunc cmp) {
                 // 交换元素
                 swapInt(arr[j], arr[j+1]);
 
-                bubbleSortTimes ++;
+                nSortTimes ++;
                 swap = true;
             }
         }
         if (!swap)  
-            bubbleSortTimes ++;
+            nSortTimes ++;
     }
 } 
 
@@ -86,17 +103,11 @@ void SortArray::swapInt(int &a, int &b)
     b = tmp;
 }
 
-SortArray::SortArray()
-{
-    bubbleSortTimes = 0;
-    quickSortTimes = 0;
-}
 
 int SortArray::getBubbleSortTimes()
 {
-    return bubbleSortTimes;
+    return bubbleSortTimes = nSortTimes;
 };
-
 
 /*
  * QuickSort
@@ -112,10 +123,11 @@ int SortArray::quickSortPartition(int arr[], int low, int high, compareFunc cmp)
             i++;
             swapInt(arr[i], arr[j]);
 
-            quickSortTimes ++;
+            nSortTimes ++;
         }
     }
     swapInt(arr[i + 1], arr[high]);
+
     return i + 1;
 }
 
@@ -132,17 +144,57 @@ void SortArray::quickSortFunc(int arr[], int low, int high, compareFunc cmp) {
     }
 }
 
-void SortArray::quickSort(int arr[], int n, int mode)
+void SortArray::quickSort(int arr[], int n)
 {
-    quickSortTimes = 0;
-    if (mode == ASCENDING)
+    nSortTimes = 0;
+    if (sortMode == ASCENDING)
         quickSortFunc(arr, 0, n-1, ascending);
     else
         quickSortFunc(arr, 0, n-1, descending);
-
 }
 
 int SortArray::getQuickSortTimes()
 {
-    return quickSortTimes;
+    return quickSortTimes = nSortTimes;
 };
+
+SORTMOTHOD SortArray::setSortMethod(SORTMOTHOD sMethod)
+{
+    sortMethod = sMethod;
+    return sortMethod;
+}
+SORTMOTHOD SortArray::getSortMethod()
+{
+    return sortMethod;
+}
+
+SortArray::SortArray()
+{
+    nSortTimes = 0;
+    bubbleSortTimes = 0;
+    quickSortTimes = 0;
+    sortMode = ASCENDING;
+    sortMethod = BUBBLE;
+}
+
+int SortArray::sortArray(int arr[], int n)
+{
+    // using switch case to implement the sortMethod
+    switch (sortMethod) {
+        case QUICK:
+            quickSort(arr, n);
+            break;
+        case BUBBLE:
+
+        default:
+            bubbleSort(arr, n);
+            break;
+    }
+
+    return 0;
+}
+
+int SortArray::getSortTimes()
+{
+    return nSortTimes;
+}
