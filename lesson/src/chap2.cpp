@@ -7,12 +7,20 @@
 
 using namespace std;
 
+void printArrayTitle(int arr[], int num)
+{
+    cout <<"arr[" << setw(3)<< num <<"]" << endl;
+    cout << "[";
+    for (int i = 0; i< num; i++)
+        cout << " " << setw(4) << i << ((i==num-1 )? " ]" : ", ");
+    cout << endl;
+}
 void printArray(int *arr, int num)
 {
-    cout << setw(5);
-    cout <<"arr[] = ";
-    for (int i = 0; i< num; i++, arr++)
-    cout << setw(5) << *arr << ((i==num-1 ) ? " " : ", ");
+    printArrayTitle(arr, num);
+    cout << "[";
+    for (int i = 0; i< num; i++)
+        cout << " " << setw(4) << arr[i] << ((i==num-1 ) ? " ]" : ", ");
     cout << endl;
 }
 
