@@ -9,13 +9,14 @@
                 "-g",
                 "${workspaceFolder}/app/*.c",
                 "${workspaceFolder}/src/*.c",
-                "../../base/src/*.c",
+                "../../base/src/wsslog.c",
                 "-o",
                 "${workspaceFolder}/bin/${fileBasenameNoExtension}.exe"
             ],
             "options": {
                 "cwd": "${fileDirname}"
             },
+            
             "problemMatcher": [
                 "$gcc"
             ],

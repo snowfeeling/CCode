@@ -1,7 +1,10 @@
-#include "../inc/pointerfunc.h"
 #include <iostream>
 #include <conio.h>
 #include <iomanip>
+#include <chrono>
+#include <ctime>
+
+#include "../inc/pointerfunc.h"
 
 #define DEBUG
 
@@ -12,8 +15,37 @@ using namespace std;
 
 std::ofstream tsaLogFile;
 
+string getCurrentTime()
+{
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", ltm);
+    return string(buffer);
+}
+std::string getCurrentTimeWithMilliseconds() {
+    auto now = std::chrono::system_clock::now();
+    auto now_time_t = std::chrono::system_clock::to_time_t(now);
+    auto now_tm = *std::localtime(&now_time_t);
+
+    // 获取毫秒部分
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()
+    ) % 1000;
+
+    // 格式化时间字符串
+    char buffer[80];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &now_tm);
+
+    std::ostringstream oss;
+    oss << buffer << "." << std::setfill('0') << std::setw(3) << milliseconds.count();
+    return oss.str();
+}
 void printArrayTitle(std::ofstream &tsaLogFile, int arr[], int num)
 {
+    tsaLogFile << endl << "[" << getCurrentTime() << "] " << endl;
+    tsaLogFile << "[" << getCurrentTimeWithMilliseconds() << "]" << endl;
+
     tsaLogFile << "arr[" << setw(3) << num << "]" << endl;
     tsaLogFile << "[";
     for (int i = 0; i < num; i++)
@@ -65,11 +97,13 @@ int testPointerFunc()
 {
     try
     {
-        tsaLogFile.open("../log1/tsaLogFile.txt", std::ios_base::out);
+        tsaLogFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+        tsaLogFile.open("../log/tsaLogFile.txt", std::ios_base::out);
         if (!tsaLogFile.is_open())
         {
             throw runtime_error("A runtime error occurred: Could not open the file!");
         }
+        
         SortArray testSA;
         int arr[MYARRAYSIZE] = {3, 8, 13, 50, 81, 34, 212, 98, 123, 120, 899, 901, 95};
 

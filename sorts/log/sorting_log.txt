@@ -1,0 +1,91 @@
+[2025-03-23 18:13:36.499] ------------------------------------
+[2025-03-23 18:13:36.500] Comparing   95 <->    3     Compare count: 1
+[2025-03-23 18:13:36.500]  Swapping    3 <->    3        Swap count: 1
+[2025-03-23 18:13:36.500] Comparing   95 <->    8     Compare count: 2
+[2025-03-23 18:13:36.500]  Swapping    8 <->    8        Swap count: 2
+[2025-03-23 18:13:36.500] Comparing   95 <->   13     Compare count: 3
+[2025-03-23 18:13:36.500]  Swapping   13 <->   13        Swap count: 3
+[2025-03-23 18:13:36.500] Comparing   95 <->   50     Compare count: 4
+[2025-03-23 18:13:36.500]  Swapping   50 <->   50        Swap count: 4
+[2025-03-23 18:13:36.500] Comparing   95 <->   81     Compare count: 5
+[2025-03-23 18:13:36.500]  Swapping   81 <->   81        Swap count: 5
+[2025-03-23 18:13:36.500] Comparing   95 <->   34     Compare count: 6
+[2025-03-23 18:13:36.500]  Swapping   34 <->   34        Swap count: 6
+[2025-03-23 18:13:36.500] Comparing   95 <->  212     Compare count: 7
+[2025-03-23 18:13:36.500] Comparing   95 <->   98     Compare count: 8
+[2025-03-23 18:13:36.500] Comparing   95 <->  123     Compare count: 9
+[2025-03-23 18:13:36.500] Comparing   95 <->  120     Compare count: 10
+[2025-03-23 18:13:36.500] Comparing   95 <->  899     Compare count: 11
+[2025-03-23 18:13:36.500] Comparing   95 <->  901     Compare count: 12
+[2025-03-23 18:13:36.500]  Swapping   95 <->  212        Swap count: 7
+[2025-03-23 18:13:36.500] Comparing   34 <->    3     Compare count: 13
+[2025-03-23 18:13:36.500]  Swapping    3 <->    3        Swap count: 8
+[2025-03-23 18:13:36.500] Comparing   34 <->    8     Compare count: 14
+[2025-03-23 18:13:36.501]  Swapping    8 <->    8        Swap count: 9
+[2025-03-23 18:13:36.501] Comparing   34 <->   13     Compare count: 15
+[2025-03-23 18:13:36.501]  Swapping   13 <->   13        Swap count: 10
+[2025-03-23 18:13:36.501] Comparing   34 <->   50     Compare count: 16
+[2025-03-23 18:13:36.501] Comparing   34 <->   81     Compare count: 17
+[2025-03-23 18:13:36.501]  Swapping   34 <->   50        Swap count: 11
+[2025-03-23 18:13:36.501] Comparing   13 <->    3     Compare count: 18
+[2025-03-23 18:13:36.501]  Swapping    3 <->    3        Swap count: 12
+[2025-03-23 18:13:36.501] Comparing   13 <->    8     Compare count: 19
+[2025-03-23 18:13:36.501]  Swapping    8 <->    8        Swap count: 13
+[2025-03-23 18:13:36.501]  Swapping   13 <->   13        Swap count: 14
+[2025-03-23 18:13:36.501] Comparing    8 <->    3     Compare count: 20
+[2025-03-23 18:13:36.501]  Swapping    3 <->    3        Swap count: 15
+[2025-03-23 18:13:36.501]  Swapping    8 <->    8        Swap count: 16
+[2025-03-23 18:13:36.501] Comparing   50 <->   81     Compare count: 21
+[2025-03-23 18:13:36.501]  Swapping   50 <->   81        Swap count: 17
+[2025-03-23 18:13:36.501] Comparing  212 <->   98     Compare count: 22
+[2025-03-23 18:13:36.501]  Swapping   98 <->   98        Swap count: 18
+[2025-03-23 18:13:36.501] Comparing  212 <->  123     Compare count: 23
+[2025-03-23 18:13:36.501]  Swapping  123 <->  123        Swap count: 19
+[2025-03-23 18:13:36.501] Comparing  212 <->  120     Compare count: 24
+[2025-03-23 18:13:36.501]  Swapping  120 <->  120        Swap count: 20
+[2025-03-23 18:13:36.501] Comparing  212 <->  899     Compare count: 25
+[2025-03-23 18:13:36.501] Comparing  212 <->  901     Compare count: 26
+[2025-03-23 18:13:36.501]  Swapping  212 <->  899        Swap count: 21
+[2025-03-23 18:13:36.501] Comparing  120 <->   98     Compare count: 27
+[2025-03-23 18:13:36.501]  Swapping   98 <->   98        Swap count: 22
+[2025-03-23 18:13:36.501] Comparing  120 <->  123     Compare count: 28
+[2025-03-23 18:13:36.501]  Swapping  120 <->  123        Swap count: 23
+[2025-03-23 18:13:36.501] Comparing  899 <->  901     Compare count: 29
+[2025-03-23 18:13:36.501]  Swapping  899 <->  901        Swap count: 24
+[2025-03-23 18:13:36.501] [   3,    8,   13,   34,   50,   81,   95,   98,  120,  123,  212,  899,  901]
+[2025-03-23 18:13:36.501] Total compare: 29  Total swap: 24
+[2025-03-23 18:13:36.501] ------------------------------------
+[2025-03-23 18:13:36.501] Comparing    3 <->   95     Compare count: 1
+[2025-03-23 18:13:36.502] Comparing    8 <->   98     Compare count: 2
+[2025-03-23 18:13:36.502] Comparing   13 <->  120     Compare count: 3
+[2025-03-23 18:13:36.502] Comparing   34 <->  123     Compare count: 4
+[2025-03-23 18:13:36.502] Comparing   50 <->  212     Compare count: 5
+[2025-03-23 18:13:36.502] Comparing   81 <->  899     Compare count: 6
+[2025-03-23 18:13:36.502] Comparing   95 <->  901     Compare count: 7
+[2025-03-23 18:13:36.502] Comparing    3 <->   34     Compare count: 8
+[2025-03-23 18:13:36.502] Comparing    8 <->   50     Compare count: 9
+[2025-03-23 18:13:36.502] Comparing   13 <->   81     Compare count: 10
+[2025-03-23 18:13:36.502] Comparing   34 <->   95     Compare count: 11
+[2025-03-23 18:13:36.502] Comparing   50 <->   98     Compare count: 12
+[2025-03-23 18:13:36.502] Comparing   81 <->  120     Compare count: 13
+[2025-03-23 18:13:36.502] Comparing   95 <->  123     Compare count: 14
+[2025-03-23 18:13:36.502] Comparing   98 <->  212     Compare count: 15
+[2025-03-23 18:13:36.502] Comparing  120 <->  899     Compare count: 16
+[2025-03-23 18:13:36.502] Comparing  123 <->  901     Compare count: 17
+[2025-03-23 18:13:36.502] Comparing    3 <->    8     Compare count: 18
+[2025-03-23 18:13:36.502] Comparing    8 <->   13     Compare count: 19
+[2025-03-23 18:13:36.502] Comparing   13 <->   34     Compare count: 20
+[2025-03-23 18:13:36.502] Comparing   34 <->   50     Compare count: 21
+[2025-03-23 18:13:36.502] Comparing   50 <->   81     Compare count: 22
+[2025-03-23 18:13:36.502] Comparing   81 <->   95     Compare count: 23
+[2025-03-23 18:13:36.502] Comparing   95 <->   98     Compare count: 24
+[2025-03-23 18:13:36.502] Comparing   98 <->  120     Compare count: 25
+[2025-03-23 18:13:36.502] Comparing  120 <->  123     Compare count: 26
+[2025-03-23 18:13:36.502] Comparing  123 <->  212     Compare count: 27
+[2025-03-23 18:13:36.502] Comparing  212 <->  899     Compare count: 28
+[2025-03-23 18:13:36.502] Comparing  899 <->  901     Compare count: 29
+[2025-03-23 18:13:36.502] [   3,    8,   13,   34,   50,   81,   95,   98,  120,  123,  212,  899,  901]
+[2025-03-23 18:13:36.502] Total compare: 29  Total swap: 0
+[2025-03-23 18:13:36.502] ------------------------------------
+[2025-03-23 18:13:36.502] [   3,    8]
+[2025-03-23 18:13:36.502] Total compare: 0  Total swap: 0

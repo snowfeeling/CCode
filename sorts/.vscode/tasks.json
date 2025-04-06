@@ -8,6 +8,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${workspaceFolder}/app/*.cpp",
+                "${workspaceFolder}/src/*.cpp",
                 "-o",
                 "${workspaceFolder}/bin/main.exe"
             ],
@@ -31,7 +32,9 @@
                 "-lcurses",
                 "-g",
                 "${workspaceFolder}/app/*.cpp",
-                //"${workspaceFolder}/src/*.cpp",
+                
+                "${workspaceFolder}/app/*.cpp",
+                "${workspaceFolder}/src/*.cpp",
                 "-o",
                 "${workspaceFolder}/bin/main"
             ],

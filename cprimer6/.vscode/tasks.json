@@ -2,12 +2,13 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "Windows - C/C++: g++.exe build active file",
-            "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+            "label": "Windows - C/C++: gcc.exe build active file",
+            "command": "C:\\msys64\\mingw64\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${workspaceFolder}/app/*.cpp",
+                "${workspaceFolder}/app/*.c",
+                "${workspaceFolder}/src/*.c",
                 "-o",
                 "${workspaceFolder}/bin/main.exe"
             ],
