@@ -16,6 +16,9 @@ void stringDemo(void)
         ch = tolower(getchar());
         if (ch != '\n')
             cleanInputBuffer();
+        else
+            continue;
+
         switch (ch)
         {
         case '1':
@@ -53,7 +56,7 @@ void strHandle(int ch)
     char line[MAX_LINE_LENGTH];
     int funIndex = ch - '1';
     char strBuffer[MAX_LINE_LENGTH];
-    sprintf(strBuffer, "\nStart the function: %s ",(char *) FUNC_NAMES[funIndex]);
+    sprintf(strBuffer, "*****Start the function: %s ****", (char *)FUNC_NAMES[funIndex]);
     logMessage(strBuffer);
 
     while (fgets(line, sizeof(line), file) != NULL)
@@ -70,7 +73,6 @@ void strHandle(int ch)
     fclose(file);
 }
 void strHandleOneLine(int ch, const char *str)
-
 {
     func_ptr funcPtr[4] = {strUpper, strLower, strReverse, strCapitalized};
     func_ptr fPtr;
@@ -82,9 +84,9 @@ void strHandleOneLine(int ch, const char *str)
     case '3':
     case '4':
     {
-        int funIndex = ch - '1';
-        fPtr = funcPtr[funIndex];
-        showString(fPtr, str);
+        int funcIndex = ch - '1';
+        fPtr = funcPtr[funcIndex];
+        strHandleString(fPtr, str);
         break;
     }
     case '5':
@@ -95,16 +97,20 @@ void strHandleOneLine(int ch, const char *str)
     }
 }
 
-void showString(func_ptr fPtr, const char *str)
+void strHandleString(func_ptr fPtr, const char *str)
 {
     if (str == NULL)
         return;
     char *newStr = (char *)malloc(strlen(str) + 1);
-    char *strBuffer = (char *)malloc(2 * strlen(str) + 1 + 10);
     if (newStr == NULL)
         return;
+    char *strBuffer = (char *)malloc(2 * strlen(str) + 1 + 10);
+    if (strBuffer == NULL)
+        return;
     strcpy(newStr, str);
+
     fPtr(newStr);
+
     sprintf(strBuffer, "[%s] -> [%s]", str, newStr);
     printf("%s\n", strBuffer);
     logMessage(strBuffer);
@@ -117,28 +123,26 @@ int strSplitTest(const char *text)
 {
     int count = 0;
     char **words = splitWords(text, &count);
-    char strBuffer [MAX_LINE_LENGTH];
 
-    if (NULL != words)
-    {
-        sprintf(strBuffer, "Found %d words:", count);
-        printf("%s\n", strBuffer);
-        logMessage(strBuffer);
-        for (int i = 0; i < count; i++)
-        {
-            sprintf(strBuffer,"[%s]", words[i]);
-            printf("%s\n", strBuffer);
-            logMessage(strBuffer);
-        }
-        // 释放内存
-        cleanWords(words, count);
-    }
-    else
+    if (NULL == words)
     {
         printf("Memory allocation failed!\n");
+        return 0;
     }
 
-    return 0;
+    char strBuffer[MAX_LINE_LENGTH];
+    sprintf(strBuffer, "Found %d words:", count);
+    printf("%s\n", strBuffer);
+    logMessage(strBuffer);
+    for (int i = 0; i < count; i++)
+    {
+        sprintf(strBuffer, "[%s]", words[i]);
+        printf("%s\n", strBuffer);
+        logMessage(strBuffer);
+    }
+    // 释放内存
+    cleanWords(words, count);
+    return count;
 }
 char **splitWords(const char *str, int *word_count)
 {
@@ -209,7 +213,7 @@ void cleanWords(char **words, int word_count)
 
 void strCapitalized(char *str)
 {
-    // 首字母大写zi dao
+    // 首字母大写
     if (NULL == str)
         return;
     int capitalizeNext = 1; // Flag to determine if the next character should be capitalized

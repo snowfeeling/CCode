@@ -14,6 +14,12 @@ void hello()
 
     showDataTypeSize();
 
+    {
+        int a = 10;
+        int b = 20;
+        printf("%d\n", a +++ b);
+    }
+    printf("%ld\n", __STDC__);
     printf("%ld\n", __STDC_VERSION__);
     printf("%ld\n", __STDC_HOSTED__);
     printf("%ld\n", __CHAR_BIT__);

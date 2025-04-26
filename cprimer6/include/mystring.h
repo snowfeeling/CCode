@@ -10,8 +10,14 @@
 
 #define MAX_LINE_LENGTH 1024
 
+typedef struct
+{
+    char *str;
+    int len;
+} str_t;
 typedef void (*func_ptr)(char *);
-void showString(func_ptr fPtr, const char *str);
+
+void strHandleString(func_ptr fPtr, const char *str);
 void strUpper(char *str);
 void strLower(char *str);
 void strReverse(char *str);
