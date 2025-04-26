@@ -5,11 +5,11 @@
 #include <assert.h>
 #include <ctype.h>
 
-#define LEX_GETC_IF(buffer, c, exp)      \
+#define LEX_GETC_IF(buffer, c, exp)     \
     for (c = peekc(); exp; c = peekc()) \
-    {                                    \
-        buffer_write(buffer, c);         \
-        nextc();                         \
+    {                                   \
+        buffer_write(buffer, c);        \
+        nextc();                        \
     }
 
 struct token *read_next_token();
@@ -74,6 +74,13 @@ static struct pos lex_file_position()
 {
     return lex_process->pos;
 }
+
+static char assert_next_char(char expected_char)
+{
+    char c = nextc();
+    assert(c == expected_char);
+    return c;
+}
 struct token *token_create(struct token *_token)
 {
     memcpy(&tmp_token, _token, sizeof(struct token));
@@ -119,6 +126,55 @@ struct token *token_make_number_for_value(unsigned long number)
 struct token *tokern_make_number()
 {
     return token_make_number_for_value(read_number());
+}
+
+static void lex_handle_escape_number(struct buffer *buf)
+{
+    long long number = read_number();
+    if (number > 255)
+    {
+        compile_error(lex_process->compiler, "Characters must be betwene 0-255 wide chars are not yet supported");
+    }
+    buffer_write(buf, number);
+}
+
+char lex_get_escaped_char(char c)
+{
+    char co = 0x00;
+    switch (c)
+    {
+    case 'n':
+        // New line escape?
+        co = '\n';
+        break;
+    case '\\':
+        co = '\\';
+    case 't':
+        co = '\t';
+        break;
+    case '\'':
+        co = '\'';
+        break;
+    default:
+        compile_error(lex_process->compiler, "Unknown escape token %c\n", c);
+    }
+    return co;
+}
+static void lex_handle_escape(struct buffer *buf)
+{
+    char c = peekc();
+    if (isdigit(c))
+    {
+        // We have a number?
+        lex_handle_escape_number(buf);
+        return;
+    }
+
+    char co = lex_get_escaped_char(c);
+
+    buffer_write(buf, co);
+    // Pop off the char
+    nextc();
 }
 static struct token *token_make_string(char start_delim, char end_delim)
 {
@@ -351,7 +407,6 @@ struct token *token_make_one_line_comment()
     struct buffer *buffer = buffer_create();
     char c = 0;
     LEX_GETC_IF(buffer, c, c != '\n' && c != EOF);
-    
 
     return token_create(&(struct token){TOKEN_TYPE_COMMENT, .sval = buffer_ptr(buffer)});
 }
@@ -419,6 +474,23 @@ static struct token *token_make_newline()
     nextc();
     return token_create(&(struct token){.type = TOKEN_TYPE_NEWLINE});
 }
+
+static struct token *token_make_quote()
+{
+    assert_next_char('\'');
+    char c = nextc();
+    if (c == '\\')
+    {
+        // We have an escape here.
+        c = nextc();
+        c = lex_get_escaped_char(c);
+    }
+
+    assert_next_char('\'');
+    // Characters are basically just small numbers. Treat it as such.
+    return token_create(&(struct token){TOKEN_TYPE_NUMBER, .cval = c});
+}
+
 struct token *read_next_token()
 {
     struct token *token = NULL;
@@ -444,6 +516,9 @@ struct token *read_next_token()
         break;
     case '"':
         token = token_make_string('"', '"');
+        break;
+    case '\'':
+        token = token_make_quote();
         break;
     case ' ':
     case '\t':
