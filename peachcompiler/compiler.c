@@ -8,7 +8,7 @@ struct lex_process_functions compiler_lex_functions = {
     .push_char = compile_process_push_char
 };
 
-void compile_error(struct compile_process *compiler, const char *msg, ...)
+void compiler_error(struct compile_process *compiler, const char *msg, ...)
 {
     va_list args;
     va_start(args, msg);
@@ -18,7 +18,7 @@ void compile_error(struct compile_process *compiler, const char *msg, ...)
     exit(-1);
 }
 
-void compile_warning(struct compile_process *compiler, const char *msg, ...)
+void compiler_warning(struct compile_process *compiler, const char *msg, ...)
 {
     va_list args;
     va_start(args, msg);
@@ -43,9 +43,18 @@ int compile_file(const char *filename, const char *out_filename, int flags)
     {
         return COMPILER_FAILED_WITH_ERRORS;
     }
+
+    process->token_vec = lex_process->token_vec;
+
     // Perform Parsing
 
+    if (parse(process) != PARSE_ALL_OK)
+    {
+        return COMPILER_FAILED_WITH_ERRORS;
+    }
     // Perfom Code Generation
 
+    fclose(process->cfile.fp);
+    fclose(process->ofile);
     return COMPILER_FILE_COMPILED_OK;
 }
