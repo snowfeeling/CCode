@@ -37,4 +37,6 @@
 // X 是一个变量，sizeof(X) 是一个运算符，用于获取变量 X 的大小（以字节为单位）。
 #define GET_TYPE_SIZE(X) sizeof(X)
 
+int testFuncPtr();
+
 #endif

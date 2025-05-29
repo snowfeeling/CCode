@@ -2,6 +2,7 @@
     "files.associations": {
         "hello.h": "c",
         "mystring.h": "c",
-        "ctype.h": "c"
+        "ctype.h": "c",
+        "mydatatype.h": "c"
     }
 }

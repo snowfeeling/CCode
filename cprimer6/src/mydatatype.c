@@ -23,12 +23,13 @@ void showDataTypeSize(void)
     signed si;
     void *ptr;
     _Bool b;
+    typeof(ch) nch;
 
     GET_TYPE_NAME(typeName, b);
     typeSize = GET_TYPE_SIZE(b);
     printf("Type: %s, Size: %zu byte(s)\n", typeName, typeSize);
 
-    PRINT_TYPE_INFO(typeSize,"size_t");
+    PRINT_TYPE_INFO(typeSize, "size_t");
     PRINT_TYPE_INFO(sh, "short");
     PRINT_TYPE_INFO(ch, "char");
     PRINT_TYPE_INFO(num, "int");
@@ -39,6 +40,59 @@ void showDataTypeSize(void)
     PRINT_TYPE_INFO(ptr, "void *");
     PRINT_TYPE_INFO(b, "_Bool");
     PRINT_TYPE_INFO(sizeof(int), "sizeof(int)");
+    PRINT_TYPE_INFO(nch, "typeof() declare char");
 }
 
+int (*mathOperation[4])(int, int);
+int add(int a, int b)
+{
+    return a + b;
+}
+int subtract(int a, int b)
+{
+    return a - b;
+}
+int multipy(int a, int b)
+{
+    return a * b;
+}
+int devide(int a, int b)
+{
+    if (b == 0)
+    {
+        printf("Error: devision by ZERO!");
+        return 0;
+    }
+    return a / b;
+}
+int testFuncPtr()
+{
+    mathOperation[0] = &add;
+    mathOperation[1] = &subtract;
+    mathOperation[2] = multipy;
+    mathOperation[3] = devide;
+    int a = 10;
+    int b = 2;
+    for (int i = 0; i < 4; i++)
+    {
+        int result = mathOperation[i](a, b);
+        switch (i)
+        {
+        case 0:
+            printf("%d + %d = %d\n", a, b, result);
+            break;
+         case 1:
+            printf("%d - %d = %d\n", a, b, result);
+            break;
+        case 2:
+            printf("%d * %d = %d\n", a, b, result);
+            break;
+        case 3:
+            printf("%d / %d = %d\n", a, b, result);
+            break;
+        default:
+            break;
+        }
+    }
+}
 #endif

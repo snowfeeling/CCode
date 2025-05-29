@@ -2,41 +2,6 @@
 #include "helpers/vector.h"
 #include <assert.h>
 
-// wangss add: Begin.
-char *NodeTypeStrings[] = {
-    "NODE_TYPE_EXPRESSION",
-    "NODE_TYPE_EXPRESSION_PARENTHESES",
-    "NODE_TYPE_NUMBER",
-    "NODE_TYPE_IDENTIFIER",
-    "NODE_TYPE_STRING",
-    "NODE_TYPE_VARIABLE",
-    "NODE_TYPE_VARIABLE_LIST",
-    "NODE_TYPE_FUNCTION",
-    "NODE_TYPE_BODY",
-    "NODE_TYPE_STATEMENT_RETURN",
-    "NODE_TYPE_STATEMENT_IF",
-    "NODE_TYPE_STATEMENT_ELSE",
-    "NODE_TYPE_STATEMENT_WHILE",
-    "NODE_TYPE_STATEMENT_DO_WHILE",
-    "NODE_TYPE_STATEMENT_FOR",
-    "NODE_TYPE_STATEMENT_BREAK",
-    "NODE_TYPE_STATEMENT_CONTINUE",
-    "NODE_TYPE_STATEMENT_SWITCH",
-    "NODE_TYPE_STATEMENT_CASE",
-    "NODE_TYPE_STATEMENT_DEFAULT",
-    "NODE_TYPE_STATEMENT_GOTO",
-    "NODE_TYPE_UNARY",
-    "NODE_TYPE_TENARY",
-    "NODE_TYPE_LABEL",
-    "NODE_TYPE_STRUCT",
-    "NODE_TYPE_UNION",
-    "NODE_TYPE_BRACKET",
-    "NODE_TYPE_CAST",
-    "NODE_TYPE_BLANK"};
-
-void showNodesFromRoot(struct vector *node_vec);
-
-// wangss add: End.
 static struct compile_process *current_process;
 static struct token *parser_last_token;
 extern struct expressionable_op_precedence_group op_precedence[TOTAL_OPERATOR_GROUPS];
@@ -514,10 +479,51 @@ void parse_datatype(struct datatype *dtype)
     parse_datatype_type(dtype);
     parse_datatype_modifiers(dtype);
 }
+bool parser_is_int_valid_after_datatype(struct datatype *dtype)
+{
+    return dtype->type == DATA_TYPE_LONG || dtype->type == DATA_TYPE_FLOAT || dtype->type == DATA_TYPE_DOUBLE;
+}
+
+/**
+ * long int abc;
+ *
+ */
+void parser_ignore_int(struct datatype *dtype)
+{
+    if (!token_is_keyword(token_peek_next(), "int"))
+    {
+        // No integer to ignore.
+        return;
+    }
+
+    if (!parser_is_int_valid_after_datatype(dtype))
+    {
+        compiler_error(current_process, "You provided a secondary \"int\" type however its not supported with this current abbrevation\n");
+    }
+
+    // Ignore the "int" token
+    token_next();
+}
+
 void parse_variable_function_or_struct_union(struct history *history)
 {
     struct datatype dtype;
     parse_datatype(&dtype);
+
+    // Ignore integer abbrevations if neccesary i.e "long int" becomes just "long"
+    parser_ignore_int(&dtype);
+
+    // int abc;
+    struct token *name_token = token_next();
+    if (name_token->type != TOKEN_TYPE_IDENTIFIER)
+    {
+        compiler_error(current_process, "Expecting a valid name for the given variable declaration\n");
+    }
+
+    // int abc()
+    // Check if this is a function declaration
+
+    parse_variable(&dtype, name_token, history);
 }
 void parse_keyword(struct history *history)
 {
@@ -619,51 +625,20 @@ int parse(struct compile_process *process)
     current_process = process;
     parser_last_token = NULL;
     node_set_vector(process->node_vec, process->node_tree_vec);
+    node_create(&(struct node){.type = NODE_TYPE_BLANK, .cval = '#'});
+
     struct node *node = NULL;
     vector_set_peek_pointer(process->token_vec, 0);
     while (parse_next() == 0)
     {
         node = node_peek();
         vector_push(process->node_tree_vec, &node);
+        // wangss add - start
+        showOneNode(node);
+        // Wangss add - end.
     }
     // wangss add - start
     showNodesFromRoot(process->node_tree_vec);
     // wangss add - end.
     return PARSE_ALL_OK;
 }
-// Wangss add - start
-void showOneNode(struct node *node)
-{
-    if (!node)
-        return;
-    // printf("Node[%d-%-25s]", node->type, NodeTypeStrings[node->type]);
-    switch (node->type)
-    {
-    case NODE_TYPE_EXPRESSION:
-        showOneNode(node->exp.left);
-        printf("[%s]", node->exp.op);
-        showOneNode(node->exp.right);
-        printf("\n");
-        break;
-    case NODE_TYPE_IDENTIFIER:
-        printf("[%s]", node->sval);
-        printf("\n");
-        break;
-    case NODE_TYPE_STRING:
-        break;
-    case NODE_TYPE_NUMBER:
-        printf("[%d]", node->llnum);
-        break;
-    default:
-        break;
-    }
-}
-void showNodesFromRoot(struct vector *node_vec)
-{
-    struct node *node = NULL;
-    void **ptr = NULL;
-    ptr = vector_at(node_vec, 0);
-    node = *ptr;
-    showOneNode(node);
-}
-// Wangss add - end

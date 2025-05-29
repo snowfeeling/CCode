@@ -3,17 +3,30 @@
         {
             "type": "cppbuild",
             "label": "Windows - C/C++: gcc.exe build active file",
-            "command": "C:\\msys64\\mingw64\\bin\\gcc.exe",
+            "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${workspaceFolder}/*.c",
-                "${workspaceFolder}/helpers/*.c",
+                "${workspaceFolder}/compiler.c",
+                "${workspaceFolder}/cprocess.c",
+                "${workspaceFolder}/datatype.c",
+                "${workspaceFolder}/expressionable.c",
+                "${workspaceFolder}/lex_process.c",
+                "${workspaceFolder}/lexer.c",
+                "${workspaceFolder}/main.c",
+                "${workspaceFolder}/mytools.c",
+                "${workspaceFolder}/node.c",
+                "${workspaceFolder}/parser.c",
+                "${workspaceFolder}/scope.c",
+                "${workspaceFolder}/symresolver.c",
+                "${workspaceFolder}/token.c",
+                "${workspaceFolder}/helpers/buffer.c",
+                "${workspaceFolder}/helpers/vector.c",
                 "-o",
                 "${workspaceFolder}/main.exe"
             ],
             "options": {
-                "cwd": "C:\\msys64\\mingw64\\bin"
+                "cwd": "C:\\msys64\\ucrt64\\bin"
             },
             "problemMatcher": [
                 "$gcc"

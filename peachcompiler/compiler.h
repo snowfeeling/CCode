@@ -138,6 +138,34 @@ enum
     COMPILER_FAILED_WITH_ERRORS
 };
 
+struct scope
+{
+    int flags;
+
+    // void*
+    struct vector *entities;
+
+    // The total number of bytes this scope uses. Aligned to 16 bytes.
+    size_t size;
+
+    // NULL if no parent.
+    struct scope *parent;
+};
+
+enum
+{
+    SYMBOL_TYPE_NODE,
+    SYMBOL_TYPE_NATIVE_FUNCTION,
+    SYMBOL_TYPE_UNKNOWN
+};
+
+struct symbol
+{
+    const char *name;
+    int type;
+    void *data;
+};
+
 struct compile_process
 {
     // the flags in regards to how the file will be compiled
@@ -155,6 +183,29 @@ struct compile_process
     struct vector *node_vec;
     struct vector *node_tree_vec;
     FILE *ofile;
+
+    struct
+    {
+        struct scope *root;
+        struct scope *current;
+    } scope;
+
+    struct
+    {
+        // Current active symbol table. struct symbol*
+        struct vector *table;
+
+        // struct vector* multiple symbol tables stored in here..
+        struct vector *tables;
+    } symbols;
+
+    // Pointer to our codegenerator.
+    struct code_generator *generator;
+    struct resolver_process *resolver;
+
+    // A vector of const char* that represents include directories.
+    struct vector *include_dirs;
+    struct preprocessor *preprocessor;
 };
 
 enum
@@ -253,17 +304,17 @@ struct node
 };
 enum
 {
-    DATATYPE_FLAG_IS_SIGNED             = 0b00000001,
-    DATATYPE_FLAG_IS_STATIC             = 0b00000010,
-    DATATYPE_FLAG_IS_CONST              = 0b00000100,
-    DATATYPE_FLAG_IS_POINTER            = 0b00001000,
-    DATATYPE_FLAG_IS_ARRAY              = 0b00010000,
-    DATATYPE_FLAG_IS_EXTERN             = 0b00100000,
-    DATATYPE_FLAG_IS_RESTRICT           = 0b01000000,
-    DATATYPE_FLAG_IGNORE_TYPE_CHECKING  = 0b10000000,
-    DATATYPE_FLAG_IS_SECONDARY          = 0b100000000,
-    DATATYPE_FLAG_STRUCT_UNION_NO_NAME  = 0b1000000000,
-    DATATYPE_FLAG_IS_LITERAL            = 0b10000000000,
+    DATATYPE_FLAG_IS_SIGNED = 0b00000001,
+    DATATYPE_FLAG_IS_STATIC = 0b00000010,
+    DATATYPE_FLAG_IS_CONST = 0b00000100,
+    DATATYPE_FLAG_IS_POINTER = 0b00001000,
+    DATATYPE_FLAG_IS_ARRAY = 0b00010000,
+    DATATYPE_FLAG_IS_EXTERN = 0b00100000,
+    DATATYPE_FLAG_IS_RESTRICT = 0b01000000,
+    DATATYPE_FLAG_IGNORE_TYPE_CHECKING = 0b10000000,
+    DATATYPE_FLAG_IS_SECONDARY = 0b100000000,
+    DATATYPE_FLAG_STRUCT_UNION_NO_NAME = 0b1000000000,
+    DATATYPE_FLAG_IS_LITERAL = 0b10000000000,
 };
 enum
 {
@@ -391,4 +442,10 @@ enum
     EXPRESSIONABLE_IS_PARENTHESES
 };
 
+// Wangss add - start
+int showTokens(struct lex_process *process);
+void showOneNode(struct node *node);
+void showNodesFromRoot(struct vector *node_vec);
+
+// Wangss add - end.
 #endif

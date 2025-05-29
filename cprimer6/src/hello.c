@@ -7,12 +7,12 @@
 #include "../include/mylog.h"
 #include "../include/mydatatype.h"
 
-
 void hello()
 {
     printf("Hello, World!\n");
 
     showDataTypeSize();
+    testFuncPtr();
 
     {
         int a = 10;
@@ -24,7 +24,7 @@ void hello()
     printf("%ld\n", __STDC_HOSTED__);
     printf("%ld\n", __CHAR_BIT__);
 
-    stringDemo();
+    stringDemo(); 
 }
 
 

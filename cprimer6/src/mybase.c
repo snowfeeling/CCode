@@ -7,5 +7,5 @@
 #include "../include/mylog.h"
 #include "../include/mystring.h"
 
-
+ 
 #endif

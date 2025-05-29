@@ -18,19 +18,6 @@ bool lex_is_in_expression();
 static struct lex_process *lex_process;
 static struct token tmp_token;
 
-// Wangss add - start.
-char *TokenTypeStrings[] = {
-    "TOKEN_TYPE_IDENTIFIER",
-    "TOKEN_TYPE_KEYWORD",
-    "TOKEN_TYPE_OPERATOR",
-    "TOKEN_TYPE_SYMBOL",
-    "TOKEN_TYPE_NUMBER",
-    "TOKEN_TYPE_STRING",
-    "TOKEN_TYPE_COMMENT",
-    "TOKEN_TYPE_NEWLINE"};
-
-int showTokens(struct lex_process *process);
-// Wangss add -  end.
 static char peekc()
 {
     return lex_process->function->peek_char(lex_process);
@@ -693,49 +680,6 @@ struct token *read_next_token()
 
     return token;
 };
-// Wangss add - start.
-int showTokens(struct lex_process *process)
-{
-    struct token *token;
-    printf("Lexica report starting...\nTOKEN COUNT: %d\n", process->token_vec->count);
-    for (int i = 0; i < process->token_vec->count; i++)
-    {
-        token = vector_at(process->token_vec, i);
-        printf("TOKEN[%3d] [%d-%-25s] ", i + 1, token->type, TokenTypeStrings[token->type]);
-        switch (token->type)
-        {
-        case TOKEN_TYPE_NUMBER:
-            printf("%d\n", token->llnum);
-            break;
-        case TOKEN_TYPE_STRING:
-            printf("%s\n", token->sval);
-            break;
-        case TOKEN_TYPE_IDENTIFIER:
-            printf("%s\n", token->sval);
-            break;
-        case TOKEN_TYPE_KEYWORD:
-            printf("%s\n", token->sval);
-            break;
-        case TOKEN_TYPE_OPERATOR:
-            printf("%s\n", token->sval);
-            break;
-        case TOKEN_TYPE_SYMBOL:
-            printf("%c\n", token->cval);
-            break;
-        case TOKEN_TYPE_COMMENT:
-            printf("%s\n", token->sval);
-            break;
-        case TOKEN_TYPE_NEWLINE:
-            printf("%s\n", token->sval);
-            break;
-        default:
-            printf("[Error:UNKNOWN]%d\n", token->type);
-            break;
-        }
-    }
-    printf("Lexical report end.\n");
-}
-// Wangss add - end.
 int lex(struct lex_process *process)
 {
     process->current_expression_count = 0;
@@ -752,7 +696,7 @@ int lex(struct lex_process *process)
 
     // Wangss add - start. For showing tokens.
     showTokens(process);
-    // Wanggss add - end.
+    // Wangss add - end.
     return LEXICAL_ANALYSIS_ALL_OK;
 }
 

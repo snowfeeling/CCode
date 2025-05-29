@@ -256,7 +256,7 @@ void strReverse(char *str)
         str[len - i - 1] = temp;
     }
 }
-
+  
 void strUpper(char *str)
 {
     while (*str)
