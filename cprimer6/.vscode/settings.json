@@ -3,6 +3,7 @@
         "hello.h": "c",
         "mystring.h": "c",
         "ctype.h": "c",
-        "mydatatype.h": "c"
+        "mydatatype.h": "c",
+        "mylog.h": "c"
     }
 }

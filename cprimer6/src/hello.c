@@ -24,7 +24,7 @@ void hello()
     printf("%ld\n", __STDC_HOSTED__);
     printf("%ld\n", __CHAR_BIT__);
 
-    stringDemo(); 
+    // stringDemo(); 
 }
 
 
