@@ -25,6 +25,7 @@ void hello()
     printf("%ld\n", __CHAR_BIT__);
 
     // stringDemo(); 
+    testNodeList();
 }
 
 

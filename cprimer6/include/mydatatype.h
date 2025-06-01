@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <stdbool.h>
 
 // 定义类型名称映射的宏
 #define TYPE_NAME(X) _Generic((X),            \
@@ -39,4 +41,52 @@
 
 int testFuncPtr();
 
+// Define the structure for the data node
+typedef struct DataNode
+{
+    int index;
+    char name[256]; // Adjust size as necessary
+    double value;   // Assuming the value is numeric
+    struct DataNode *prev;
+    struct DataNode *next;
+} DataNode;
+
+typedef struct {
+    DataNode* head;
+    DataNode* tail;
+} DataList;
+
+typedef struct
+{
+    DataNode **nodes;
+    int count;
+} DataNodeMatchResult;
+// 函数指针类型定义
+typedef bool (*CompareFunc)(DataNode *node, void *target);
+
+typedef struct CriteriaNode
+{
+    DataNode *head;
+    void *target;
+    CompareFunc compareFunc;
+} CriteriaNode;
+
+DataNodeMatchResult findNodesByValue(DataNode *head, double targetValue);
+void freeNodeMatchResult(DataNodeMatchResult *result);
+
+// 比较函数原型声明
+bool compareIndex(DataNode *node, void *target);
+bool compareValue(DataNode *node, void *target);
+bool compareName(DataNode *node, void *target);
+
+// 统一查询接口
+DataNodeMatchResult findNodesByCriteria(CriteriaNode  *criteriaNode);
+
+// Function prototypes
+DataNode *createNode(int index, const char *name, double value);
+void appendNode(DataList *list, int index, const char *name, double value);
+
+void freeList(DataList* list);
+DataList createNodeListFromFile();
+int testNodeList();
 #endif

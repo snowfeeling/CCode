@@ -4,6 +4,8 @@
         "mystring.h": "c",
         "ctype.h": "c",
         "mydatatype.h": "c",
-        "mylog.h": "c"
+        "mylog.h": "c",
+        "stdlib.h": "c",
+        "type_traits": "c"
     }
 }
