@@ -121,12 +121,14 @@ void appendNode(DataList *list, int index, const char *name, double value)
     {
         list->head = newNode;
         list->tail = newNode;
+        list->size = 1;
     }
     else
     {
         list->tail->next = newNode;
         newNode->prev = list->tail;
         list->tail = newNode;
+        list->size++;
     }
 }
 void freeList(DataList *list)
@@ -177,21 +179,18 @@ void printOneNode(DataNode *node)
 }
 void printListFromHead(const DataList *list)
 {
-    DataNode *current = list->head;
-    while (current != NULL)
+    for (DataNode *current = list->head; current != NULL; current = current->next)
     {
         printOneNode(current);
-        current = current->next;
     }
 }
 
 void printListFromTail(const DataList *list)
 {
     DataNode *current = list->tail;
-    while (current != NULL)
+    for (DataNode *current = list->tail; current != NULL; current = current->prev)
     {
         printOneNode(current);
-        current = current->prev;
     }
 }
 // 比较 index
@@ -213,6 +212,12 @@ bool compareName(DataNode *node, void *target)
 {
     const char *targetName = (const char *)target;
     return strcmp(node->name, targetName) == 0;
+}
+// 模糊比较 name（支持子字符串匹配）
+bool compareNameFuzzy(DataNode *node, void *target)
+{
+    const char *targetName = (const char *)target;
+    return strstr(node->name, targetName) != NULL;
 }
 DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode)
 {
@@ -252,12 +257,16 @@ DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode)
     DataNodeMatchResult result = {.nodes = resultArray, .count = count};
     return result;
 }
-DataNode *findNodeByIndex(DataNode *head, int targetIndex)
+DataNode *findFirstNodeByCriteria(CriteriaNode *criteriaNode)
 {
-    DataNode *current = head;
+    DataNode *current = criteriaNode->head;
+    void *target = criteriaNode->target;
+    CompareFunc compare = criteriaNode->compareFunc;
+    
     while (current != NULL)
     {
-        if (current->index == targetIndex)
+        if(compare(current, target))
+        //if (current->index == targetIndex)
         {
             return current; // 找到匹配的节点
         }
@@ -275,6 +284,19 @@ void freeNodeMatchResult(DataNodeMatchResult *result)
         result->count = 0;
     }
 }
+int findByCriteria(CriteriaNode *criteriaNode)
+{
+    DataNodeMatchResult result = findNodesByCriteria(criteriaNode);
+    for (int i = 0; i < result.count; i++)
+    {
+        printOneNode(result.nodes[i]);
+    }
+    int  resultCount = result.count;
+    freeNodeMatchResult(&result);
+    return resultCount;
+}
+
+CompareFunc comparFuncs[] = {compareIndex, compareName, compareValue, compareNameFuzzy};
 
 void find(DataList *list)
 {
@@ -282,54 +304,51 @@ void find(DataList *list)
     CriteriaNode criteriaNode;
     criteriaNode.head = list->head;
     criteriaNode.target = &searchIndex;
-    criteriaNode.compareFunc = compareIndex;
-
-    DataNodeMatchResult result = findNodesByCriteria(&criteriaNode);
-    printf("Found %d node(s) with Index %d:\n", result.count, searchIndex);
-    for (int i = 0; i < result.count; i++)
-    {
-        printOneNode(result.nodes[i]);
-    }
-    freeNodeMatchResult(&result);
+    criteriaNode.compareFunc = comparFuncs[0];
+    int resultCount = findByCriteria(&criteriaNode);
+    printf("Found %d node(s) with Index: %d\n\n", resultCount, searchIndex);
 
     // 查找 value == 90 的节点
-    double searchValue = 190.0;
+    double searchValue = 23.5;
     criteriaNode.head = list->head;
     criteriaNode.target = &searchValue;
-    criteriaNode.compareFunc = compareValue;
-    DataNodeMatchResult result1 = findNodesByCriteria(&criteriaNode);
-    printf("Found %d nodes with Value %.2f\n", result1.count, searchValue);
-    for (int i = 0; i < result1.count; i++)
-    {
-        printOneNode(result1.nodes[i]);
-    }
-    freeNodeMatchResult(&result1);
+    criteriaNode.compareFunc = comparFuncs[2];
+    resultCount = findByCriteria(&criteriaNode);
+    printf("Found %d nodes with Value: %.2f\n\n", resultCount, searchValue);
 
-    // 查找 name == "zhaoliu"
+    // 查找 name
     const char *searchName = "zhaowu";
     criteriaNode.head = list->head;
     criteriaNode.target = (void *)searchName;
-    criteriaNode.compareFunc = compareName;
-    DataNodeMatchResult result2 = findNodesByCriteria(&criteriaNode);
-    printf("Found %d nodes with Name '%s'\n", result2.count, searchName);
-    for (int i = 0; i < result2.count; i++)
-    {
-        printOneNode(result2.nodes[i]);
-    }
-    freeNodeMatchResult(&result2);
+    criteriaNode.compareFunc = comparFuncs[1];
+    resultCount = findByCriteria(&criteriaNode);
+    printf("Found %d nodes with Name: '%s'\n\n", resultCount, searchName);
+
+    // 查找 Fuzzy name
+    const char *searchFuzzyName = "Tom";
+    criteriaNode.head = list->head;
+    criteriaNode.target = (void *)searchFuzzyName;
+    criteriaNode.compareFunc = comparFuncs[3];
+    resultCount = findByCriteria(&criteriaNode);
+    printf("Found %d nodes with Name: '%s'\n\n", resultCount, searchFuzzyName);
 }
+
 void findByIndex(DataNode *head)
 {
     int searchIndex = 2;
-    DataNode *result = findNodeByIndex(head, searchIndex);
+    CriteriaNode criteriaNode;
+    criteriaNode.head = head;
+    criteriaNode.target = &searchIndex;
+    criteriaNode.compareFunc = comparFuncs[0];
+    DataNode *result = findFirstNodeByCriteria(&criteriaNode);
     if (result != NULL)
     {
-        printf("Found node with ");
         printOneNode(result);
+        printf("Found the node with Index %d\n",searchIndex);
     }
     else
     {
-        printf("No node found with Index %d\n", searchIndex);
+        printf("Found 0 node found with Index %d\n", searchIndex);
     }
 }
 int testNodeList()
@@ -340,15 +359,17 @@ int testNodeList()
         printf("Failed to create list from file.\n");
         return -1;
     }
-
+    /*
     printf("Print from head:\n");
     printListFromHead(&list);
 
     printf("\nPrint from tail:\n");
     printListFromTail(&list);
-
-    find(&list); 
+    */
+    find(&list);
     findByIndex(list.head);
+
+    printf("The size of list is %d\n", list.size);
 
     freeList(&list);
     return 0;

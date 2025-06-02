@@ -54,6 +54,7 @@ typedef struct DataNode
 typedef struct {
     DataNode* head;
     DataNode* tail;
+    int size;
 } DataList;
 
 typedef struct
