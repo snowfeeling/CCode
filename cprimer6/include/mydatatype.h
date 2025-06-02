@@ -50,13 +50,14 @@ typedef struct DataNode
     struct DataNode *prev;
     struct DataNode *next;
 } DataNode;
-
-typedef struct {
-    DataNode* head;
-    DataNode* tail;
+// 数据链表定义
+typedef struct
+{
+    DataNode *head;
+    DataNode *tail;
     int size;
 } DataList;
-
+// 查询返回结果的节点集合定义
 typedef struct
 {
     DataNode **nodes;
@@ -64,7 +65,7 @@ typedef struct
 } DataNodeMatchResult;
 // 函数指针类型定义
 typedef bool (*CompareFunc)(DataNode *node, void *target);
-
+// 条件节点定义
 typedef struct CriteriaNode
 {
     DataNode *head;
@@ -81,13 +82,13 @@ bool compareValue(DataNode *node, void *target);
 bool compareName(DataNode *node, void *target);
 
 // 统一查询接口
-DataNodeMatchResult findNodesByCriteria(CriteriaNode  *criteriaNode);
+DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode);
 
 // Function prototypes
 DataNode *createNode(int index, const char *name, double value);
 void appendNode(DataList *list, int index, const char *name, double value);
 
-void freeList(DataList* list);
+void freeList(DataList *list);
 DataList createNodeListFromFile();
 int testNodeList();
 #endif

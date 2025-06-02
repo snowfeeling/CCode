@@ -262,11 +262,10 @@ DataNode *findFirstNodeByCriteria(CriteriaNode *criteriaNode)
     DataNode *current = criteriaNode->head;
     void *target = criteriaNode->target;
     CompareFunc compare = criteriaNode->compareFunc;
-    
+
     while (current != NULL)
     {
-        if(compare(current, target))
-        //if (current->index == targetIndex)
+        if (compare(current, target))
         {
             return current; // 找到匹配的节点
         }
@@ -291,7 +290,7 @@ int findByCriteria(CriteriaNode *criteriaNode)
     {
         printOneNode(result.nodes[i]);
     }
-    int  resultCount = result.count;
+    int resultCount = result.count;
     freeNodeMatchResult(&result);
     return resultCount;
 }
@@ -344,7 +343,7 @@ void findByIndex(DataNode *head)
     if (result != NULL)
     {
         printOneNode(result);
-        printf("Found the node with Index %d\n",searchIndex);
+        printf("Found the node with Index %d\n", searchIndex);
     }
     else
     {
