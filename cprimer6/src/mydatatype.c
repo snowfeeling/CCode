@@ -193,38 +193,38 @@ void printListFromTail(const DataList *list)
         printOneNode(current);
     }
 }
-// 比较 index
+// 比较函数：index
 bool compareIndex(DataNode *node, void *target)
 {
     int targetIndex = *(int *)target;
     return node->index == targetIndex;
 }
 
-// 比较 value（使用精度判断）
+// 比较函数： value（使用精度判断）
 bool compareValue(DataNode *node, void *target)
 {
     double targetValue = *(double *)target;
     return fabs(node->value - targetValue) < 1e-6;
 }
 
-// 比较 name
+// 比较函数： name
 bool compareName(DataNode *node, void *target)
 {
     const char *targetName = (const char *)target;
     return strcmp(node->name, targetName) == 0;
 }
-// 模糊比较 name（支持子字符串匹配）
+// 比较函数： 模糊比较name（支持子字符串匹配）
 bool compareNameFuzzy(DataNode *node, void *target)
 {
     const char *targetName = (const char *)target;
     return strstr(node->name, targetName) != NULL;
 }
+
 DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode)
 {
     DataNode *current = criteriaNode->head;
     void *target = criteriaNode->target;
     CompareFunc compare = criteriaNode->compareFunc;
-
     int capacity = 4;
     int count = 0;
 
@@ -234,7 +234,6 @@ DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode)
         perror("Memory allocation failed");
         exit(EXIT_FAILURE);
     }
-
     while (current != NULL)
     {
         if (compare(current, target))
@@ -294,7 +293,7 @@ int findByCriteria(CriteriaNode *criteriaNode)
     freeNodeMatchResult(&result);
     return resultCount;
 }
-
+// Delare the array of comparison functions
 CompareFunc comparFuncs[] = {compareIndex, compareName, compareValue, compareNameFuzzy};
 
 void find(DataList *list)
@@ -350,6 +349,11 @@ void findByIndex(DataNode *head)
         printf("Found 0 node found with Index %d\n", searchIndex);
     }
 }
+
+int *(*abc)[5];
+int (*(*abcd())())[6];
+
+
 int testNodeList()
 {
     DataList list = createNodeListFromFile();

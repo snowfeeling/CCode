@@ -83,12 +83,13 @@ bool compareName(DataNode *node, void *target);
 
 // 统一查询接口
 DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode);
+DataNode *findFirstNodeByCriteria(CriteriaNode *criteriaNode);
 
-// Function prototypes
 DataNode *createNode(int index, const char *name, double value);
 void appendNode(DataList *list, int index, const char *name, double value);
-
-void freeList(DataList *list);
 DataList createNodeListFromFile();
+void freeList(DataList *list);
+
+// 测试函数
 int testNodeList();
 #endif
