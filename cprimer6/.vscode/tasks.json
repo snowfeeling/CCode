@@ -13,6 +13,7 @@
                 "${workspaceFolder}\\src\\mydatatype.c",
                 "${workspaceFolder}\\src\\mylog.c",
                 "${workspaceFolder}\\src\\mystring.c",
+                "${workspaceFolder}\\src\\tinycthread.c",
                 "-o",
                 "${workspaceFolder}\\bin\\main.exe",
                 "-I",

@@ -6,6 +6,8 @@
         "mydatatype.h": "c",
         "mylog.h": "c",
         "stdlib.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "pthread.h": "c",
+        "time.h": "c"
     }
 }

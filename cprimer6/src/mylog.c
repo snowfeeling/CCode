@@ -7,7 +7,8 @@
 #include <string.h>
 #include <time.h>
 #include "../include/mylog.h"
-  
+
+FILE  *logFile;
 // 新增函数：获取当前时间戳，精确到毫秒
 char *getCurrentTimestamp()
 {
@@ -24,19 +25,26 @@ char *getCurrentTimestamp()
     return timestamp;
 }
 
-// 新增函数：记录程序日志
-void logMessage(const char *message)
+int initLogFile()
 {
-    FILE *logFile = fopen("../log/program.log", "a"); // 以追加模式打开日志文件
+    logFile = fopen("../log/program.log", "a"); // 以写入模式打开日志文件
     if (logFile == NULL)
     {
         perror("Error opening log file");
-        return;
+        return  -1 ;
     }
-
+    return 0;
+}
+// 新增函数：记录程序日志
+void logMessage(const char *message)
+{
     char *timestamp = getCurrentTimestamp();
     fprintf(logFile, "[%s] %s\n", timestamp, message); // 写入日志信息
-    fclose(logFile);                                   // 关闭文件
+    fflush(logFile);
 }
 
+void closeLogFile()
+{
+    fclose(logFile); // 关闭文件
+}
 #endif

@@ -8,6 +8,8 @@
 #include <time.h>
 
 char *getCurrentTimestamp();
+int initLogFile();
 void logMessage(const char *message);
+void closeLogFile();
 
 #endif
