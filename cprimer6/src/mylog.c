@@ -8,7 +8,9 @@
 #include <time.h>
 #include "../include/mylog.h"
 
-FILE  *logFile;
+FILE *logFile;
+mtx_t mutex;
+
 // 新增函数：获取当前时间戳，精确到毫秒
 char *getCurrentTimestamp()
 {
@@ -27,24 +29,28 @@ char *getCurrentTimestamp()
 
 int initLogFile()
 {
-    logFile = fopen("../log/program.log", "a"); // 以写入模式打开日志文件
+    logFile = fopen("../log/program.log", "w"); // 以写入模式打开日志文件
     if (logFile == NULL)
     {
         perror("Error opening log file");
-        return  -1 ;
+        return -1;
     }
+    mtx_init(&mutex, mtx_plain);
     return 0;
 }
 // 新增函数：记录程序日志
 void logMessage(const char *message)
 {
+    mtx_lock(&mutex);
     char *timestamp = getCurrentTimestamp();
     fprintf(logFile, "[%s] %s\n", timestamp, message); // 写入日志信息
-    fflush(logFile);
+    //fflush(logFile);
+    mtx_unlock(&mutex);
 }
 
 void closeLogFile()
 {
+    mtx_destroy(&mutex);
     fclose(logFile); // 关闭文件
 }
 #endif

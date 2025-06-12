@@ -1,15 +1,9 @@
 #ifndef MYDATATYPE_C_GUARD
 #define MYDATATYPE_C_GUARD
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include <time.h>
 #include "../include/mylog.h"
 #include "../include/mydatatype.h"
-#include <time.h>
+
 void showDataTypeSize(void)
 {
     char typeName[10];
@@ -209,7 +203,6 @@ bool compareValue(DataNode *node, void *target)
     double targetValue = *(double *)target;
     return fabs(node->value - targetValue) < 1e-6;
 }
-
 // 比较函数： name
 bool compareName(DataNode *node, void *target)
 {
@@ -222,7 +215,6 @@ bool compareNameFuzzy(DataNode *node, void *target)
     const char *targetName = (const char *)target;
     return strstr(node->name, targetName) != NULL;
 }
-
 DataNodeMatchResult findNodesByCriteria(CriteriaNode *criteriaNode)
 {
     DataNode *current = criteriaNode->head;
@@ -389,232 +381,6 @@ void testArray()
     printNodeData(arrPtr[0]);
     printNodeData(&(arrPtr)[0][0]);
 }
-int runThread(void *arg)
-{
-    const char *threadName = "Thread1";
-    const char *threadMsg = (const char *)arg;
-    unsigned long threadId = (unsigned long)GetCurrentThreadId();
-    printf("Thread %s(%lu): %s\n", threadName, (unsigned long)threadId, threadMsg);
-    return 0;
-}
-int progress[100];
-#define BUFFER_SIZE 5    // 缓冲区大小
-#define PRODUCE_ITEMS 20 // 生产者生产的总数量
-#define CONSUME_ITEMS 8  // 消费者消费的总数量
-#define MAX_LINE_LENGTH 256
-
-#define showThrdMsg(msg) printf("%s\n", msg)
-// #define showThrdMsg(msg)  logMessage( msg)
-
-// 缓冲区结构
-int buffer[BUFFER_SIZE];
-int producerId[BUFFER_SIZE];
-int in = 0;    // 生产者放入位置
-int out = 0;   // 消费者取出位置
-int count = 0; // 缓冲区中当前元素数量
-bool qStop = false;
-
-// 同步原语
-mtx_t mutex;     // 互斥锁，保护缓冲区
-cnd_t not_full;  // 条件变量：缓冲区非满时通知生产者
-cnd_t not_empty; // 条件变量：缓冲区非空时通知消费者
-void showQueue()
-{
-    char bufferStr[256]; // Buffer to hold the constructed string
-    int offset = 0;      // Offset for appending to the buffer
-
-    offset += snprintf(bufferStr + offset, sizeof(bufferStr) - offset,
-                       "(Count:%d, Head:%d, Tail:%d)", count, in, out);
-
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        offset += snprintf(bufferStr + offset, sizeof(bufferStr) - offset,
-                           "[pid:%d data:%d] ", producerId[i], buffer[i]);
-    }
-
-    showThrdMsg(bufferStr); // Print the complete string
-}
-int producer(void *arg)
-{
-    int id = *(int *)arg;
-    char logMsg[MAX_LINE_LENGTH];
-    for (int i = 0; i < PRODUCE_ITEMS && !qStop; i++)
-    {
-        // 生成随机数模拟数据
-        int item = rand() % 100;
-        // 加锁保护缓冲区
-        mtx_lock(&mutex);
-        // 缓冲区已满，进入等待状态
-        while (count == BUFFER_SIZE && !qStop)
-        {
-
-            sprintf(logMsg, "Producer %d: Buffer FULL, waiting...", id);
-            showThrdMsg(logMsg);
-            cnd_wait(&not_full, &mutex); // 释放锁并等待通知
-        }
-        if (qStop)
-        {
-            mtx_unlock(&mutex); // 释放锁
-            break;
-        }
-        // 放入数据到缓冲区
-        buffer[in] = item;
-        producerId[in] = id;
-
-        sprintf(logMsg, "Producer %d(%d/%d): Data[%d] (Pos: %d)", id, i + 1, PRODUCE_ITEMS, item, in);
-        showThrdMsg(logMsg);
-        in = (in + 1) % BUFFER_SIZE;
-        count++;
-        showQueue();
-        // 通知消费者缓冲区非空
-        cnd_signal(&not_empty);
-        mtx_unlock(&mutex); // 释放锁
-
-        // 模拟生产耗时
-        Sleep(rand() % 200); // 0.2秒内随机延迟
-    }
-
-    sprintf(logMsg, "Producer %d: Produce completed.", id);
-    showThrdMsg(logMsg);
-    return 0;
-}
-
-int consumer(void *arg)
-{
-    int id = *(int *)arg;
-    int item;
-    char logMsg[MAX_LINE_LENGTH];
-
-    for (int i = 0; i < CONSUME_ITEMS && !qStop; i++)
-    {
-        // 加锁保护缓冲区
-        mtx_lock(&mutex);
-        // 等待缓冲区非空
-        while (count == 0)
-        {
-            sprintf(logMsg, "Consumer %d: Buffer EMPTY, waiting...", id);
-            cnd_wait(&not_empty, &mutex); // 释放锁并等待通知
-        }
-        // 从缓冲区取出数据
-        item = buffer[out];
-        int pId = producerId[out];
-
-        sprintf(logMsg, "Consumer %d(%d/%d): Data [%d] (pos: %d - Producer: %d)", id, i + 1, CONSUME_ITEMS, item, out, pId);
-        showThrdMsg(logMsg);
-        out = (out + 1) % BUFFER_SIZE;
-        count--;
-
-        // showQueue();
-        //  通知生产者缓冲区非满
-        cnd_signal(&not_full);
-        mtx_unlock(&mutex); // 释放锁
-
-        // 模拟消费耗时
-        Sleep(rand() % 300); // 0.3秒内随机延迟
-    }
-
-    sprintf(logMsg, "Consumer %d: consume completed.", id);
-    showThrdMsg(logMsg);
-    return item;
-}
-int checkQueue(void *arg)
-{
-    int checkNum = 0;
-    while (!qStop)
-    {
-        showQueue();
-        Sleep(500);
-        checkNum++;
-        if (checkNum > 25)
-        {
-            qStop = true;
-            // cnd_signal(&not_full);
-            cnd_broadcast(&not_full);
-        }
-        printf("Check number: %d\n", checkNum);
-    }
-    showThrdMsg("Check thread completed.\n");
-    return 0;
-}
-int testSimpleThread()
-{
-    thrd_t thread;
-    const char *threadMsg = "Hello from thread!";
-    // create a thread
-    int result = thrd_create(&thread, runThread, (void *)threadMsg);
-    if (result != thrd_success)
-    {
-        printf("Failed to create thread.\n");
-        return -1;
-    }
-    int threadResult;
-    if (thrd_join(thread, &threadResult) != thrd_success)
-    {
-        printf("Failed to join thread.\n");
-        return -1;
-    }
-
-    printf("Thread exited with: %d\n", threadResult);
-    return 0;
-}
-
-int testThread()
-{
-    testSimpleThread();
-    for (int i = 0; i < 100; i++)
-    {
-        progress[i] = 0;
-    }
-
-    srand(time(NULL)); // 初始化随机数种子
-
-    // 初始化同步原语
-    mtx_init(&mutex, mtx_plain);
-    cnd_init(&not_full);
-    cnd_init(&not_empty);
-
-    // 创建生产者和消费者线程
-    thrd_t producers[2]; // 2个生产者
-    thrd_t consumers[3]; // 3个消费者
-    int producer_ids[2] = {1, 2};
-    int consumer_ids[3] = {1, 2, 3};
-
-    for (int i = 0; i < 2; i++)
-    {
-        thrd_create(&producers[i], producer, &producer_ids[i]);
-    }
-    showThrdMsg("All producer are all startd...");
-    for (int i = 0; i < 3; i++)
-    {
-        thrd_create(&consumers[i], consumer, &consumer_ids[i]);
-    }
-    showThrdMsg("All consumer are all started...");
-
-    thrd_t checkId;
-    thrd_create(checkId, checkQueue, NULL);
-
-    showThrdMsg("The monitor is started...");
-    // 等待所有线程结束
-
-    for (int i = 0; i < PRODUCE_ITEMS; i++)
-    {
-        thrd_join(producers[i], NULL);
-    }
-    for (int i = 0; i < CONSUME_ITEMS; i++)
-    {
-        thrd_join(consumers[i], NULL);
-    }
-    // thrd_join(checkId, NULL);
-    showThrdMsg("All tasks are all started...");
-
-    // 销毁同步原语
-    cnd_destroy(&not_full);
-    cnd_destroy(&not_empty);
-    mtx_destroy(&mutex);
-
-    showThrdMsg("All task are completed.");
-    return 0;
-}
 
 void testStruct()
 {
@@ -645,35 +411,126 @@ void testStruct()
     printf("**b = %d\n", (**b).index);
     printOneNode(&q);
 };
+/***********************************************************************************
+** 线程例子
+************************************************************************************
+*/
+#define BUFFER_SIZE 5    // 生产产品的缓冲区大小
+#define PRODUCE_ITEMS 20 // 每个生产者生产的总数量
+#define CONSUME_ITEMS 8  // 每个消费者消费的总数量
+#define MAX_LINE_LENGTH 256
 
-#define BUFFER_SIZE 5
-#define TIMEOUT_SECONDS 30 // 3分钟
-#define PRODUCER_COUNT 2
-#define CONSUMER_COUNT 3
+#define TIMEOUT_SECONDS 30 // 30秒-如果有空闲就停止
+#define PRODUCER_COUNT 3   // 生产者线程数量
+#define CONSUMER_COUNT 4   // 消费者线程数量
 
+// #define showThrdMsg(msg) printf("%s\n", msg)
+#define showThrdMsg(msg) logMessage(msg)
+int runThread(void *arg)
+{
+    const char *threadName = "Thread1";
+    const char *threadMsg = (const char *)arg;
+    unsigned long threadId = (unsigned long)GetCurrentThreadId();
+    printf("Thread %s(%lu): %s\n", threadName, (unsigned long)threadId, threadMsg);
+    return 0;
+}
+
+int testSimpleThread()
+{
+    thrd_t thread;
+    const char *threadMsg = "Hello from thread!";
+    // create a thread
+    int result = thrd_create(&thread, runThread, (void *)threadMsg);
+    if (result != thrd_success)
+    {
+        printf("Failed to create thread.\n");
+        return -1;
+    }
+    int threadResult;
+    if (thrd_join(thread, &threadResult) != thrd_success)
+    {
+        printf("Failed to join thread.\n");
+        return -1;
+    }
+
+    printf("Thread exited with: %d\n", threadResult);
+    return 0;
+}
+
+typedef enum
+{
+    PRODUCER,
+    CONSUMER,
+    MONITOR
+} ThreadType;
+typedef enum
+{
+    RUNNING,
+    WAITING,
+    STOPPED
+
+} ThreadStatus;
 typedef struct
 {
     int buffer[BUFFER_SIZE];
+    int producerId[BUFFER_SIZE];
     int count;
     int in;
     int out;
+
     mtx_t mutex;
     cnd_t not_full;
     cnd_t not_empty;
     time_t last_activity; // 记录最后一次活动时间
     bool running;         // 程序运行状态
+    mtx_t showMutex;
 } ProducerConsumer;
 
 typedef struct
 {
     ProducerConsumer *pc;
     int thread_id;
+    ThreadType type;
+    ThreadStatus status;
+    pid_t processId;
+    DWORD threadId;
 } ThreadArgs;
-
 // 获取当前时间戳（秒）
 time_t get_current_time()
 {
     return time(NULL);
+}
+void clearScreen()
+{
+    printf("\033[2J\033[H");
+}
+
+int showStatus(ThreadArgs *arg, ThreadStatus status)
+{
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
+    thrdArg->status = status;
+    char logMsg[MAX_LINE_LENGTH];
+
+    mtx_lock(&pc->showMutex);
+
+    sprintf(logMsg, "[Queue Length:%d, Head:%d, Tail:%d]", pc->count, pc->in, pc->out);
+    printf("\033[%d;1H", 1);
+    printf("\r%s", logMsg);
+    char strPC[MAX_LINE_LENGTH], strStatus[MAX_LINE_LENGTH];
+    sprintf(strPC, "Thread %d: %s", id, (thrdArg->type == PRODUCER ? "Producer" : (thrdArg->type == CONSUMER ? "Consumer" : "Monitor ")));
+    sprintf(strStatus, "%s", (thrdArg->status == WAITING ? "WAITING" : (thrdArg->status == RUNNING ? "RUNNING" : "STOPPED")));
+    sprintf(logMsg, "%s(%5d-%5d-%2d) : %s.", strPC, thrdArg->processId, thrdArg->threadId, thrdArg->thread_id, strStatus);
+    if (thrdArg->type == PRODUCER)
+        printf("\033[%d;1H", thrdArg->thread_id + 1);
+    if (thrdArg->type == CONSUMER)
+        printf("\033[%d;1H", thrdArg->thread_id + 4 + 1);
+    if (thrdArg->type == MONITOR)
+        printf("\033[%d;1H", thrdArg->thread_id + 8 + 1);
+    printf("\r%s", logMsg);
+    mtx_unlock(&pc->showMutex);
+    return 0;
 }
 
 // 初始化缓冲区
@@ -682,6 +539,7 @@ void init_buffer(ProducerConsumer *pc)
     for (int i = 0; i < BUFFER_SIZE; i++)
     {
         pc->buffer[i] = 0;
+        pc->producerId[i] = 0;
     }
     pc->count = 0;
     pc->in = 0;
@@ -691,23 +549,34 @@ void init_buffer(ProducerConsumer *pc)
     mtx_init(&pc->mutex, mtx_plain);
     cnd_init(&pc->not_full);
     cnd_init(&pc->not_empty);
+    mtx_init(&pc->showMutex, mtx_plain);
 }
-
+void destroy_buffer(ProducerConsumer *pc)
+{
+    mtx_destroy(&pc->mutex);
+    cnd_destroy(&pc->not_full);
+    cnd_destroy(&pc->not_empty);
+    mtx_destroy(&pc->showMutex);
+}
 // 生产者放入数据
 void produce(ThreadArgs *arg, int item)
 {
-    ThreadArgs *thread_args = (ThreadArgs *)arg;
-    ProducerConsumer *pc = thread_args->pc;
-    int id = thread_args->thread_id;
-
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
+    thrdArg->processId = getpid();
+    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
+
     mtx_lock(&pc->mutex);
 
     // 检查程序是否应该继续运行
     while (pc->count == BUFFER_SIZE && pc->running)
     {
-        sprintf(logMsg, "Producer %d: Buffer is full. Waiting...", id);
+        sprintf(logMsg, "Producer(%5d-%5d-%2d): Buffer is FULL. Waiting...", thrdArg->processId, thrdArg->threadId, id);
         showThrdMsg(logMsg);
+
+        showStatus(arg, WAITING);
         cnd_wait(&pc->not_full, &pc->mutex);
     }
 
@@ -719,33 +588,38 @@ void produce(ThreadArgs *arg, int item)
 
     // 放入数据
     pc->buffer[pc->in] = item;
+    pc->producerId[pc->in] = id;
     pc->count++;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Producer(%d): [data: %d] (Pos: %d, count=%d)", id, item, pc->in, pc->count);
+    sprintf(logMsg, "Producer(%5d-%5d-%2d): [data: %d] (Pos: %d, count=%d, pID: %d)", thrdArg->processId, thrdArg->threadId, id, item, pc->in, pc->count, id);
     showThrdMsg(logMsg);
 
     pc->in = (pc->in + 1) % BUFFER_SIZE;
+    showStatus(arg, RUNNING);
     // 广播通知可能有消费者在等待
     cnd_broadcast(&pc->not_empty);
-
+    // cnd_signal(&pc->not_empty);
     mtx_unlock(&pc->mutex);
 }
 
 // 消费者取出数据
 int consume(ThreadArgs *arg)
 {
-    ThreadArgs *thread_args = (ThreadArgs *)arg;
-    ProducerConsumer *pc = thread_args->pc;
-    int id = thread_args->thread_id;
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
+    thrdArg->processId = getpid();
+    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
 
     mtx_lock(&pc->mutex);
 
     // 检查程序是否应该继续运行
     while (pc->count == 0 && pc->running)
     {
-        sprintf(logMsg, "Consumer %d: Buffer is empty. Waiting...", id);
+        sprintf(logMsg, "Consumer(%5d-%5d-%2d): Buffer is EMPTY. Waiting...", thrdArg->processId, thrdArg->threadId, id);
         showThrdMsg(logMsg);
+        showStatus(arg, WAITING);
         cnd_wait(&pc->not_empty, &pc->mutex);
     }
 
@@ -757,14 +631,16 @@ int consume(ThreadArgs *arg)
 
     // 取出数据
     int item = pc->buffer[pc->out];
-    pc->out = (pc->out + 1) % BUFFER_SIZE;
     pc->count--;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Consumer(%d): [data: %d] (Pos: %d, count=%d)", id, item, pc->out, pc->count);
+    sprintf(logMsg, "Consumer(%5d-%5d-%2d): [data: %d] (Pos: %d, count=%d, pID: %d)", thrdArg->processId, thrdArg->threadId, id, item, pc->out, pc->count, pc->producerId[pc->out]);
     showThrdMsg(logMsg);
 
+    pc->out = (pc->out + 1) % BUFFER_SIZE;
+    showStatus(arg, RUNNING);
     // 广播通知可能有生产者在等待
     cnd_broadcast(&pc->not_full);
+    // cnd_signal(&pc->not_full);
 
     mtx_unlock(&pc->mutex);
     return item;
@@ -773,27 +649,40 @@ int consume(ThreadArgs *arg)
 // 监控线程函数
 int monitor_thread(void *arg)
 {
-    ProducerConsumer *pc = (ProducerConsumer *)arg;
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
+    char logMsg[MAX_LINE_LENGTH];
+    thrdArg->processId = getpid();
+    thrdArg->threadId = GetCurrentThreadId();
 
     while (pc->running)
     {
         mtx_lock(&pc->mutex);
 
-        time_t current_time = get_current_time();
-        if (current_time - pc->last_activity >= TIMEOUT_SECONDS)
+        int n = get_current_time() - pc->last_activity;
+        if (n >= TIMEOUT_SECONDS)
         {
-            printf("Timeout: No activity for %d seconds. Terminating...\n", TIMEOUT_SECONDS);
+            sprintf(logMsg, "Monitor (%5d-%5d-%2d): Timeout for %d seconds. Terminating...", thrdArg->processId, thrdArg->threadId, id, TIMEOUT_SECONDS);
+            showThrdMsg(logMsg);
             pc->running = false;
-
+            showStatus(arg, STOPPED);
             // 唤醒所有等待的线程
             cnd_broadcast(&pc->not_full);
             cnd_broadcast(&pc->not_empty);
+        }
+        else
+        {
+            showStatus(arg, RUNNING);
+            sprintf(logMsg, "Monitor (%5d-%5d-%2d): Checking the status - no activity in %d seconds.", thrdArg->processId, thrdArg->threadId, id, n);
+            showThrdMsg(logMsg);
         }
 
         mtx_unlock(&pc->mutex);
 
         // 每隔10秒检查一次
-        thrd_sleep(&(struct timespec){.tv_sec = 10}, NULL);
+        if (pc->running)
+            thrd_sleep(&(struct timespec){.tv_sec = 10}, NULL);
     }
 
     return 0;
@@ -802,27 +691,34 @@ int monitor_thread(void *arg)
 // 生产者线程函数
 int producer_thread(void *arg)
 {
-    ThreadArgs *thread_args = (ThreadArgs *)arg;
-    ProducerConsumer *pc = thread_args->pc;
-    int id = thread_args->thread_id;
-    ThreadArgs newArg = {.pc = pc, .thread_id = id};
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
+    char logMsg[MAX_LINE_LENGTH];
+    thrdArg->processId = getpid();
+    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
 
     for (int i = 0; i < PRODUCE_ITEMS && pc->running; i++)
     {
-        produce(&newArg, id * 10 + i);
-        thrd_sleep(&(struct timespec){.tv_nsec = 100000000}, NULL); // 0.1秒
+        produce(arg, id * 10 + i);
+        thrd_sleep(&(struct timespec){.tv_nsec = 1000000000}, NULL); // 0.1秒
     }
 
-    printf("Producer %d exiting\n", id);
+    sprintf(logMsg, "Producer(%5d-%5d-%2d): Exit.", thrdArg->processId, thrdArg->threadId, id);
+    showThrdMsg(logMsg);
+    showStatus(arg, STOPPED);
     return 0;
 }
 
 // 消费者线程函数
 int consumer_thread(void *arg)
 {
-    ThreadArgs *thread_args = (ThreadArgs *)arg;
-    ProducerConsumer *pc = thread_args->pc;
-    int id = thread_args->thread_id;
+    ThreadArgs *thrdArg = (ThreadArgs *)arg;
+    ProducerConsumer *pc = thrdArg->pc;
+    int id = thrdArg->thread_id;
+    char logMsg[MAX_LINE_LENGTH];
+    thrdArg->processId = getpid();
+    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
 
     while (pc->running)
     {
@@ -831,11 +727,15 @@ int consumer_thread(void *arg)
             break; // 程序已终止
 
         // 使用取出的数据进行处理
-        (void)item;
+        //(void)item;
+        showStatus(arg, RUNNING);
         thrd_sleep(&(struct timespec){.tv_nsec = 800000000}, NULL); // 0.8秒
     }
 
-    printf("Consumer %d exiting\n", id);
+    sprintf(logMsg, "Consumer(%5d-%5d-%2d): exit.", thrdArg->processId, thrdArg->threadId, id);
+    showThrdMsg(logMsg);
+
+    showStatus(arg, STOPPED);
     return 0;
 }
 
@@ -843,7 +743,7 @@ int testProducerConsumer()
 {
     ProducerConsumer pc;
     init_buffer(&pc);
-
+    clearScreen();
     // 创建线程ID
     int producer_ids[PRODUCER_COUNT];
     for (int i = 0; i < PRODUCER_COUNT; i++)
@@ -853,16 +753,17 @@ int testProducerConsumer()
     int consumer_ids[CONSUMER_COUNT];
     for (int i = 0; i < CONSUMER_COUNT; i++)
     {
-        consumer_ids[i] = i * 10 + 1;
+        consumer_ids[i] = i + 1;
     }
 
     // 创建线程
-    thrd_t producerThreads[PRODUCER_COUNT], consumerThreads[CONSUMER_COUNT], monitor;
+    thrd_t producerThreads[PRODUCER_COUNT], consumerThreads[CONSUMER_COUNT], monitorThreads[1];
+    ThreadArgs producerArgs[PRODUCER_COUNT], consumerArgs[CONSUMER_COUNT], monitorArgs[1];
 
     for (int i = 0; i < PRODUCER_COUNT; i++)
     {
-        ThreadArgs args = {&pc, producer_ids[i]};
-        int result = thrd_create(&producerThreads[i], producer_thread, (void *)&args);
+        producerArgs[i] = (ThreadArgs){&pc, producer_ids[i], PRODUCER};
+        int result = thrd_create(&producerThreads[i], producer_thread, (void *)&producerArgs[i]);
         if (result != thrd_success)
         {
             printf("Failed to create thread.\n");
@@ -872,16 +773,17 @@ int testProducerConsumer()
 
     for (int i = 0; i < CONSUMER_COUNT; i++)
     {
-        ThreadArgs args = {&pc, consumer_ids[i]};
+        consumerArgs[i] = (ThreadArgs){&pc, consumer_ids[i], CONSUMER};
 
-        int result = thrd_create(&consumerThreads[i], consumer_thread, &args);
+        int result = thrd_create(&consumerThreads[i], consumer_thread, &consumerArgs[i]);
         if (result != thrd_success)
         {
             printf("Failed to create thread.\n");
             return -1;
         }
     }
-    thrd_create(&monitor, monitor_thread, &pc);
+    monitorArgs[0] = (ThreadArgs){.pc = &pc, .thread_id = 1, .type = MONITOR};
+    thrd_create(&monitorThreads[0], monitor_thread, &monitorArgs[0]);
 
     // 等待生产者完成（消费者会被监控线程终止）
     for (int i = 0; i < PRODUCER_COUNT; i++)
@@ -889,7 +791,7 @@ int testProducerConsumer()
         thrd_join(producerThreads[i], NULL);
     }
     // 等待监控线程完成
-    thrd_join(monitor, NULL);
+    thrd_join(monitorThreads[0], NULL);
     // 等待消费者完成
     for (int i = 0; i < CONSUMER_COUNT; i++)
     {
@@ -897,11 +799,10 @@ int testProducerConsumer()
     }
 
     // 清理资源
-    cnd_destroy(&pc.not_empty);
-    cnd_destroy(&pc.not_full);
-    mtx_destroy(&pc.mutex);
+    destroy_buffer(&pc);
 
-    printf("Program terminated normally\n");
+    showThrdMsg("Program terminated normally.");
+    printf("\033[15;1H");
     return 0;
 }
 int testNodeList()
@@ -923,7 +824,7 @@ int testNodeList()
     findByIndex(list.head);
 
     printf("The size of list is %d\n", list.size);
-*/
+    */
     // testArray();
     // testStruct();
     // testThread();

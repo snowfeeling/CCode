@@ -8,9 +8,12 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
-#include "../include/tinycthread.h"
-//#include <threads.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <time.h>
 
+#include "../include/tinycthread.h"
+// #include <threads.h>
 
 // 定义类型名称映射的宏
 #define TYPE_NAME(X) _Generic((X),            \
@@ -77,13 +80,7 @@ typedef struct CriteriaNode
 } CriteriaNode;
 
 // 动态缓冲区结构
-typedef struct {
 
-    int count;
-    mtx_t mutex;
-    cnd_t not_empty;
-    cnd_t not_full;
-} ThreadNode;
 
 DataNodeMatchResult findNodesByValue(DataNode *head, double targetValue);
 void freeNodeMatchResult(DataNodeMatchResult *result);
