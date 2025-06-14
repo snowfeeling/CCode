@@ -415,7 +415,7 @@ void testStruct()
 ** 线程例子
 ************************************************************************************
 */
-#define BUFFER_SIZE 5    // 生产产品的缓冲区大小
+#define BUFFER_SIZE 8    // 生产产品的缓冲区大小
 #define PRODUCE_ITEMS 20 // 每个生产者生产的总数量
 #define CONSUME_ITEMS 8  // 每个消费者消费的总数量
 #define MAX_LINE_LENGTH 256
@@ -423,6 +423,7 @@ void testStruct()
 #define TIMEOUT_SECONDS 30 // 30秒-如果有空闲就停止
 #define PRODUCER_COUNT 3   // 生产者线程数量
 #define CONSUMER_COUNT 4   // 消费者线程数量
+#define MONITOR_COUNT 3    // 监控线程数量
 
 // #define showThrdMsg(msg) printf("%s\n", msg)
 #define showThrdMsg(msg) logMessage(msg)
@@ -590,7 +591,7 @@ void produce(ThreadArgs *arg, int item)
     pc->producerId[pc->in] = id;
     pc->count++;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Producer(%5d-%5d-%2d): [data: %d] (Pos: %d, count=%d, pID: %d)", thrdArg->processId, thrdArg->threadId, id, item, pc->in, pc->count, id);
+    sprintf(logMsg, "Producer(%5d-%5d-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->in, pc->count, id);
     showThrdMsg(logMsg);
 
     pc->in = (pc->in + 1) % BUFFER_SIZE;
@@ -632,7 +633,7 @@ int consume(ThreadArgs *arg)
     int item = pc->buffer[pc->out];
     pc->count--;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Consumer(%5d-%5d-%2d): [data: %d] (Pos: %d, count=%d, pID: %d)", thrdArg->processId, thrdArg->threadId, id, item, pc->out, pc->count, pc->producerId[pc->out]);
+    sprintf(logMsg, "Consumer(%5d-%5d-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->out, pc->count, pc->producerId[pc->out]);
     showThrdMsg(logMsg);
 
     pc->out = (pc->out + 1) % BUFFER_SIZE;
@@ -667,7 +668,6 @@ int monitorThread(void *arg)
             sprintf(logMsg, "Monitor (%5d-%5d-%2d): Timeout for %d seconds. Terminating...", thrdArg->processId, thrdArg->threadId, id, TIMEOUT_SECONDS);
             showThrdMsg(logMsg);
             pc->running = false;
-            showStatus(arg, STOPPED);
             // 唤醒所有等待的线程
             cnd_broadcast(&pc->not_full);
             cnd_broadcast(&pc->not_empty);
@@ -686,6 +686,7 @@ int monitorThread(void *arg)
             thrd_sleep(&(struct timespec){.tv_sec = 10}, NULL);
     }
 
+    showStatus(arg, STOPPED);
     return 0;
 }
 
@@ -747,7 +748,7 @@ int consumerThread(void *arg)
 int testProducerConsumer()
 {
     ProducerConsumer pc;
-    ThreadArgs producerArgs[PRODUCER_COUNT], consumerArgs[CONSUMER_COUNT], monitorArgs[1];
+    ThreadArgs producerArgs[PRODUCER_COUNT], consumerArgs[CONSUMER_COUNT], monitorArgs[MONITOR_COUNT];
 
     init_buffer(&pc);
     CLEAR_SCREEN();
@@ -772,8 +773,15 @@ int testProducerConsumer()
             return -1;
         }
     }
-    monitorArgs[0] = (ThreadArgs){.pc = &pc, .thread_id = 1, .type = MONITOR};
-    thrd_create(&monitorArgs[0].thread, monitorThread, &monitorArgs[0]);
+    for (int i = 0; i < MONITOR_COUNT; i++)
+    {
+        monitorArgs[i] = (ThreadArgs){.pc = &pc, .thread_id = i + 1, .type = MONITOR};
+        int result = thrd_create(&monitorArgs[i].thread, monitorThread, &monitorArgs[i]);
+        if (result != thrd_success)
+        {
+            printf("Failed to create thread.\n");
+        }
+    }
 
     // 等待生产者完成（消费者会被监控线程终止）
     for (int i = 0; i < PRODUCER_COUNT; i++)

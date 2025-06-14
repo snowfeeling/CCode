@@ -44,7 +44,7 @@ void logMessage(const char *message)
     mtx_lock(&mutex);
     char *timestamp = getCurrentTimestamp();
     fprintf(logFile, "[%s] %s\n", timestamp, message); // 写入日志信息
-    //fflush(logFile);
+    fflush(logFile);
     mtx_unlock(&mutex);
 }
 
