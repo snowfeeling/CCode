@@ -610,7 +610,7 @@ int consume(ThreadArgs *arg)
     int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
-    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
+    thrdArg->threadId = GetCurrentThreadId(); 
 
     mtx_lock(&pc->mutex);
 
@@ -655,6 +655,8 @@ int monitor_thread(void *arg)
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
     thrdArg->threadId = GetCurrentThreadId();
+    sprintf(logMsg, "Monitor (%5d-%5d-%2d): Monitor thread started.", thrdArg->processId, thrdArg->threadId, id);
+    showThrdMsg(logMsg);
 
     while (pc->running)
     {
@@ -697,7 +699,9 @@ int producer_thread(void *arg)
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
     thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
-
+    sprintf(logMsg, "Producer(%5d-%5d-%2d): Started.", thrdArg->processId, thrdArg->threadId, id);
+    showThrdMsg(logMsg);
+    
     for (int i = 0; i < PRODUCE_ITEMS && pc->running; i++)
     {
         produce(arg, id * 10 + i);
@@ -719,6 +723,8 @@ int consumer_thread(void *arg)
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
     thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
+    sprintf(logMsg, "Consumer(%5d-%5d-%2d): Started.", thrdArg->processId, thrdArg->threadId, id);
+    showThrdMsg(logMsg);
 
     while (pc->running)
     {
