@@ -668,6 +668,8 @@ int monitorThread(void *arg)
             sprintf(logMsg, "Monitor (%5d-%5d-%2d): Timeout for %d seconds. Terminating...", thrdArg->processId, thrdArg->threadId, id, TIMEOUT_SECONDS);
             showThrdMsg(logMsg);
             pc->running = false;
+            showStatus(arg, WAITING);
+
             // 唤醒所有等待的线程
             cnd_broadcast(&pc->not_full);
             cnd_broadcast(&pc->not_empty);
