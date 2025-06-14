@@ -292,4 +292,10 @@
 [2025-06-14 22:56:48.777] Producer(21936- 9268- 3): Exit.
 [2025-06-14 22:56:48.793] Producer(21936-24716- 2): Exit.
 [2025-06-14 22:56:58.652] Monitor (21936-12376- 1): Checking the status - no activity in 11 seconds.
-[2025-06-14 22:57:08.666] Monitor (21936-12376- 1): Checking the status - no activity in 21 second
+[2025-06-14 22:57:08.666] Monitor (21936-12376- 1): Checking the status - no activity in 21 seconds.
+[2025-06-14 22:57:18.667] Monitor (21936-12376- 1): Timeout for 30 seconds. Terminating...
+[2025-06-14 22:57:18.668] Consumer(21936-23712- 4): exit.
+[2025-06-14 22:57:18.668] Consumer(21936-15728- 1): exit.
+[2025-06-14 22:57:18.668] Consumer(21936-18196- 2): exit.
+[2025-06-14 22:57:18.668] Consumer(21936-24804- 3): exit.
+[2025-06-14 22:57:18.670] Program terminated normally.
