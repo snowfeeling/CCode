@@ -3,7 +3,7 @@
 #define MYTHREAD_C_GUARD
 #include "../include/mythread.h"
 
-void init_thread_pool(ThreadPool *pool)
+void initThreadPool(ThreadPool *pool)
 {
     pool->task_count = 0;
     pool->running = true;
@@ -13,7 +13,7 @@ void init_thread_pool(ThreadPool *pool)
 
     for (int i = 0; i < TOTAL_TASKS; ++i)
     {
-        Task *task = (Task *)malloc(sizeof(Task));
+        Task *task = (Task *)calloc(1, sizeof(Task));
         task->id = i + 1;
         task->status = PENDING;
         task->execute_time = time(NULL); // 初始立即执行
@@ -41,14 +41,14 @@ int worker_thread(void *arg)
 
         if (next_task != NULL)
         {
-            mtx_unlock(&pool->lock);
-
             printf("Thread %lu is executing task %d\n", (unsigned long)GetCurrentThreadId(), next_task->id);
             next_task->status = SUSPENDED; // 执行完成后挂起
+            mtx_unlock(&pool->lock);
+
             Sleep(TASK_INTERVAL); // 模拟执行耗时
 
             mtx_lock(&pool->lock);
-            next_task->status = COMPLETED; // 执行完成后挂起
+            next_task->status = COMPLETED; // 执行后设置为完成
             pool->completed_tasks++;
             mtx_unlock(&pool->lock);
         }
@@ -61,63 +61,53 @@ int worker_thread(void *arg)
     return 0;
 }
 
-void start_thread_pool(ThreadPool *pool)
+void startThreadPool(ThreadPool *pool)
 {
     for (int i = 0; i < NUM_THREADS; ++i)
     {
         thrd_create(&pool->workers[i], worker_thread, pool);
     }
 }
-int monitor_thread(void *arg)
+int monitorThreadPool(void *arg)
 {
     ThreadPool *pool = (ThreadPool *)arg;
     while (pool->running)
     {
         mtx_lock(&pool->lock);
-        int suspended = 0, running = 0, pending = 0, completed = 0;
+        int statusCount[4] = {0};
 
         for (int i = 0; i < TOTAL_TASKS; ++i)
         {
-            switch (pool->tasks[i]->status)
-            {
-            case PENDING:
-                pending++;
-                break;
-            case RUNNING:
-                running++;
-                break;
-            case SUSPENDED:
-                suspended++;
-                break;
-            case COMPLETED:
-                completed++;
-                break;
-            }
+            statusCount[pool->tasks[i]->status]++;
         }
 
-        float percent_complete = ((float)completed / TOTAL_TASKS) * 100;
+        float percent_complete = ((float)statusCount[COMPLETED] / TOTAL_TASKS) * 100;
         printf("[Monitor] Running: %d | Suspended: %d | Pending: %d | Completed: %d (%.2f%%)\n",
-               running, suspended, pending, completed, percent_complete);
+               statusCount[RUNNING], statusCount[SUSPENDED], statusCount[PENDING], statusCount[COMPLETED], percent_complete);
 
-        if (completed == TOTAL_TASKS)
+        if (statusCount[COMPLETED] == TOTAL_TASKS)
         {
+            // 运行状态改为false，停止！
             pool->running = false;
             printf("All tasks completed.\n");
         }
 
         mtx_unlock(&pool->lock);
-        thrd_sleep(&(struct timespec){.tv_sec = 2}, NULL); // 每5秒更新一次
+        if (pool->running)
+        {
+            thrd_sleep(&(struct timespec){.tv_sec = 2}, NULL); // 每2秒监控一次
+        }
     }
     return 0;
 }
 int testThreadPool()
 {
     ThreadPool pool;
-    init_thread_pool(&pool);
-    start_thread_pool(&pool);
+    initThreadPool(&pool);
+    startThreadPool(&pool);
 
     thrd_t monitor;
-    thrd_create(&monitor, monitor_thread, &pool);
+    thrd_create(&monitor, monitorThreadPool, &pool);
 
     // 等待监控线程结束
     thrd_join(monitor, NULL);
