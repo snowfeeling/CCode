@@ -13,6 +13,7 @@
 #include "../include/mystring.h"
 #include "../include/mylog.h"
 #include "../include/mydatatype.h"
+#include "../include/mythread.h"
 
 void testProgressBar()
 {
@@ -60,5 +61,6 @@ void hello()
     testSomething();
     // testProgressBar();
     // stringDemo();
-    testNodeList();
+    //testNodeList();
+    testThreadPool();
 }

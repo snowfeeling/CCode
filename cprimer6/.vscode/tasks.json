@@ -14,6 +14,7 @@
                 "${workspaceFolder}\\src\\mylog.c",
                 "${workspaceFolder}\\src\\mystring.c",
                 "${workspaceFolder}\\src\\tinycthread.c",
+                "${workspaceFolder}\\src\\mythread.c",
                 "-o",
                 "${workspaceFolder}\\bin\\main.exe",
                 "-I",
