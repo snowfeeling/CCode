@@ -1,4 +1,3 @@
-
 #ifndef MYTHREAD_C_GUARD
 #define MYTHREAD_C_GUARD
 #include "../include/mythread.h"
@@ -20,7 +19,7 @@ void initThreadPool(ThreadPool *pool)
         pool->tasks[i] = task;
     }
 }
-int worker_thread(void *arg)
+int workerThread(void *arg)
 {
     ThreadPool *pool = (ThreadPool *)arg;
     while (pool->running)
@@ -65,7 +64,7 @@ void startThreadPool(ThreadPool *pool)
 {
     for (int i = 0; i < NUM_THREADS; ++i)
     {
-        thrd_create(&pool->workers[i], worker_thread, pool);
+        thrd_create(&pool->workers[i], workerThread, pool);
     }
 }
 int monitorThreadPool(void *arg)
