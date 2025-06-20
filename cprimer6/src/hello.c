@@ -61,6 +61,6 @@ void hello()
     testSomething();
     // testProgressBar();
     // stringDemo();
-    //testNodeList();
-    testThreadPool();
+    testNodeList();
+    testThread();
 }
