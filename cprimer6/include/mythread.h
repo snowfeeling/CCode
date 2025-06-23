@@ -87,7 +87,7 @@ typedef struct
     ThreadType type;
     ThreadStatus status;
     pid_t processId;
-    DWORD threadId;
+    unsigned long  threadId;
     thrd_t thread;
 } ThreadArgs;
 
