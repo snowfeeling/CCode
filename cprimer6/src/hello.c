@@ -17,20 +17,18 @@
 
 void testProgressBar()
 {
+#ifdef _WIN32
     for (int i = 0; i < 101; i++)
     {
         int n = i;
         n += 5;
         n /= 10;
         printf("%-12s %d%%", "**********" + 10 - n, i);
-#ifdef _WIN32
         Sleep(100);
-#else
-        sleep(2);
-#endif
         printf("\r");
     }
     printf("\n");
+#endif
 }
 
 void testSomething()
@@ -43,13 +41,13 @@ void testSomething()
     printf("\"ASL\"[1] = %c\n", "ASL"[1]);
     printf("*\"ASL\" = %c\n", *"ASL");
     printf("*\"ASL\"+1 = %c\n", *"ASL" + 1);
-    printf("*(\"ASL\"+1) = %c\n", *("ASL" + 1));
+    //printf("*(\"ASL\"+1) = %c\n", "ASL" + 1);
     printf("%c\n", "0123456789ABCDEF"[12 % 16]);
 
-    printf("__STDC__         = %ld\n", __STDC__);
+    printf("__STDC__         = %d\n", __STDC__);
     printf("__STDC_VERSION__ = %ld\n", __STDC_VERSION__);
-    printf("__STDC_HOSTED__  = %ld\n", __STDC_HOSTED__);
-    printf("__CHAR_BIT__     = %ld\n", __CHAR_BIT__);
+    printf("__STDC_HOSTED__  = %d\n", __STDC_HOSTED__);
+    printf("__CHAR_BIT__     = ld\n", __CHAR_BIT__);
     //    printf("__STDC_NO_THREADS__     = %ld\n", __STDC_NO_THREADS__);
 }
 void hello()

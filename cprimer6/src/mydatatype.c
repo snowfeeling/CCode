@@ -91,6 +91,7 @@ int testFuncPtr()
         }
     }
     free(mathOperation);
+    return 0;
 }
 
 DataNode *createNode(int index, const char *name, double value)
@@ -403,7 +404,7 @@ void testStruct()
     q = **b;
 
     printf("a = %p\n", a);
-    printf("*a = %p\n", *a);
+    printf("*a = %p\n", (void*)a);
     printf("a->x = %d\n", a->index);
     printf("*b = %p\n", *b);
     printf("b = %p\n", b);

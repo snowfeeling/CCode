@@ -2,6 +2,38 @@
 #define MYTHREAD_C_GUARD
 #include "../include/mythread.h"
 
+#ifdef _WIN32
+#include <windows.h>
+typedef DWORD thread_id_t;
+
+thread_id_t getThreadId(void)
+{
+    return GetCurrentThreadId();
+}
+
+const char *format_thread_id(thread_id_t id)
+{
+    static char buffer[32];
+    sprintf(buffer, "%lu", id);
+    return buffer;
+}
+
+#else
+#include <pthread.h>
+typedef pthread_t thread_id_t;
+
+thread_id_t getThreadId(void)
+{
+    return pthread_self();
+}
+
+const char *format_thread_id(thread_id_t id)
+{
+    static char buffer[32];
+    sprintf(buffer, "%lu", (unsigned long)id);
+    return buffer;
+}
+#endif
 void initThreadPool(ThreadPool *pool)
 {
     pool->task_count = 0;
@@ -19,6 +51,8 @@ void initThreadPool(ThreadPool *pool)
         pool->tasks[i] = task;
     }
 }
+
+
 int workerThread(void *arg)
 {
     ThreadPool *pool = (ThreadPool *)arg;
@@ -34,7 +68,7 @@ int workerThread(void *arg)
             {
                 next_task = pool->tasks[i];
                 next_task->status = RUNNING;
-                printf("Thread %lu is executing task %d\n", (unsigned long)GetCurrentThreadId(), next_task->id);
+                printf("Thread %lu is executing task %d\n", (unsigned long)getThreadId(), next_task->id);
                 // next_task->status = SUSPENDED; // 执行完成后挂起
                 mtx_unlock(&pool->lock);
                 // 模拟执行耗时3秒钟
@@ -105,7 +139,7 @@ int runThread(void *arg)
 {
     const char *threadName = "Thread1";
     const char *threadMsg = (const char *)arg;
-    unsigned long threadId = (unsigned long)GetCurrentThreadId();
+    unsigned long threadId = (unsigned long)getThreadId();
     printf("Thread %s(%lu): %s\n", threadName, (unsigned long)threadId, threadMsg);
     return 0;
 }
@@ -156,13 +190,13 @@ int showStatus(ThreadArgs *arg, ThreadStatus status)
     char strPC[MAX_LINE_LENGTH], strStatus[MAX_LINE_LENGTH];
     sprintf(strPC, "Thread %d: %s", id, GET_THREAD_TYPE_STRING(thrdArg->type));
     sprintf(strStatus, "%s", GET_THREAD_STATUS_STRING(thrdArg->status));
-    sprintf(logMsg, "%s(%5d-%5d-%2d) : %s.", strPC, thrdArg->processId, thrdArg->threadId, thrdArg->thread_id, strStatus);
+    sprintf(logMsg, "%s(%5d-%5lu-%2lu) : %s.", strPC, thrdArg->processId, thrdArg->threadId, thrdArg->thread_id, strStatus);
     if (thrdArg->type == PRODUCER)
-        printf("\033[%d;1H", thrdArg->thread_id + 1);
+        printf("\033[%lu;1H", thrdArg->thread_id + 1);
     if (thrdArg->type == CONSUMER)
-        printf("\033[%d;1H", thrdArg->thread_id + 4 + 1);
+        printf("\033[%lu;1H", thrdArg->thread_id + 4 + 1);
     if (thrdArg->type == MONITOR)
-        printf("\033[%d;1H", thrdArg->thread_id + 9 + 1);
+        printf("\033[%lu;1H", thrdArg->thread_id + 9 + 1);
     printf("\r%s", logMsg);
     mtx_unlock(&pc->showMutex);
     return 0;
@@ -206,7 +240,7 @@ void produce(ThreadArgs *arg, int item)
     // 检查程序是否应该继续运行
     while (pc->count == BUFFER_SIZE && pc->running)
     {
-        sprintf(logMsg, "Producer(%5d-%5d-%2d): Buffer is FULL. Waiting...", thrdArg->processId, thrdArg->threadId, id);
+        sprintf(logMsg, "Producer(%5d-%5lu-%2d): Buffer is FULL. Waiting...", thrdArg->processId, thrdArg->threadId, id);
         showThrdMsg(logMsg);
 
         showStatus(arg, WAITING);
@@ -224,7 +258,7 @@ void produce(ThreadArgs *arg, int item)
     pc->producerId[pc->in] = id;
     pc->count++;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Producer(%5d-%5d-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->in, pc->count, id);
+    sprintf(logMsg, "Producer(%5d-%5lu-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->in, pc->count, id);
     showThrdMsg(logMsg);
 
     pc->in = (pc->in + 1) % BUFFER_SIZE;
@@ -247,7 +281,7 @@ int consume(ThreadArgs *arg)
     // 检查数据区为空，且线程未终止
     while (pc->count == 0 && pc->running)
     {
-        sprintf(logMsg, "Consumer(%5d-%5d-%2d): Buffer is EMPTY. Waiting...", thrdArg->processId, thrdArg->threadId, id);
+        sprintf(logMsg, "Consumer(%5d-%5lu-%2d): Buffer is EMPTY. Waiting...", thrdArg->processId, thrdArg->threadId, id);
         showThrdMsg(logMsg);
         showStatus(arg, WAITING);
         // 等待非空，同时锁释放
@@ -264,7 +298,7 @@ int consume(ThreadArgs *arg)
     int item = pc->buffer[pc->out];
     pc->count--;
     pc->last_activity = get_current_time(); // 更新活动时间
-    sprintf(logMsg, "Consumer(%5d-%5d-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->out, pc->count, pc->producerId[pc->out]);
+    sprintf(logMsg, "Consumer(%5d-%5lu-%2d): [data: %d] (Pos:%d, count:%d, pID:%d)", thrdArg->processId, thrdArg->threadId, id, item, pc->out, pc->count, pc->producerId[pc->out]);
     showThrdMsg(logMsg);
 
     pc->out = (pc->out + 1) % BUFFER_SIZE;
@@ -284,9 +318,9 @@ int monitorThread(void *arg)
     int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
-    thrdArg->threadId = GetCurrentThreadId();
+    thrdArg->threadId = (unsigned long) getThreadId();
 
-    sprintf(logMsg, "Monitor (%5d-%5d-%2d): Monitor thread started.", thrdArg->processId, thrdArg->threadId, id);
+    sprintf(logMsg, "Monitor (%5d-%5lu-%2d): Monitor thread started.", thrdArg->processId, thrdArg->threadId, id);
     showThrdMsg(logMsg);
 
     while (pc->running)
@@ -296,7 +330,7 @@ int monitorThread(void *arg)
         int n = get_current_time() - pc->last_activity;
         if (n >= TIMEOUT_SECONDS)
         {
-            sprintf(logMsg, "Monitor (%5d-%5d-%2d): Timeout for %d seconds. Terminating...", thrdArg->processId, thrdArg->threadId, id, TIMEOUT_SECONDS);
+            sprintf(logMsg, "Monitor (%5d-%5lu-%2d): Timeout for %d seconds. Terminating...", thrdArg->processId, thrdArg->threadId, id, TIMEOUT_SECONDS);
             showThrdMsg(logMsg);
             pc->running = false;
             showStatus(arg, WAITING);
@@ -308,7 +342,7 @@ int monitorThread(void *arg)
         else
         {
             showStatus(arg, RUNNING);
-            sprintf(logMsg, "Monitor (%5d-%5d-%2d): Checking the status - no activity in %d seconds.", thrdArg->processId, thrdArg->threadId, id, n);
+            sprintf(logMsg, "Monitor (%5d-%5lu-%2d): Checking the status - no activity in %d seconds.", thrdArg->processId, thrdArg->threadId, id, n);
             showThrdMsg(logMsg);
         }
 
@@ -331,9 +365,9 @@ int producerThread(void *arg)
     int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
-    thrdArg->threadId = GetCurrentThreadId();
+    thrdArg->threadId = (unsigned long) getThreadId();
 
-    sprintf(logMsg, "Producer(%5d-%5d-%2d): Started.", thrdArg->processId, thrdArg->threadId, id);
+    sprintf(logMsg, "Producer(%5d-%5lu-%2d): Started.", thrdArg->processId, thrdArg->threadId, id);
     showThrdMsg(logMsg);
 
     for (int i = 0; i < PRODUCE_ITEMS && pc->running; i++)
@@ -342,7 +376,7 @@ int producerThread(void *arg)
         thrd_sleep(&(struct timespec){.tv_nsec = 1000000000}, NULL); // 0.1秒
     }
 
-    sprintf(logMsg, "Producer(%5d-%5d-%2d): Exit.", thrdArg->processId, thrdArg->threadId, id);
+    sprintf(logMsg, "Producer(%5d-%5lu-%2d): Exit.", thrdArg->processId, (unsigned long) thrdArg->threadId, id);
     showThrdMsg(logMsg);
     showStatus(arg, STOPPED);
     return 0;
@@ -356,9 +390,9 @@ int consumerThread(void *arg)
     int id = thrdArg->thread_id;
     char logMsg[MAX_LINE_LENGTH];
     thrdArg->processId = getpid();
-    thrdArg->threadId = GetCurrentThreadId(); // thrd_current();
+    thrdArg->threadId = (unsigned long) getThreadId(); // thrd_current();
 
-    sprintf(logMsg, "Consumer(%5d-%5d-%2d): Started.", thrdArg->processId, thrdArg->threadId, id);
+    sprintf(logMsg, "Consumer(%5d-%5lu-%2d): Started.", thrdArg->processId, (unsigned long) thrdArg->threadId, id);
     showThrdMsg(logMsg);
 
     while (pc->running)
@@ -373,7 +407,7 @@ int consumerThread(void *arg)
         thrd_sleep(&(struct timespec){.tv_nsec = 800000000}, NULL); // 0.8秒
     }
 
-    sprintf(logMsg, "Consumer(%5d-%5d-%2d): exit.", thrdArg->processId, thrdArg->threadId, id);
+    sprintf(logMsg, "Consumer(%5d-%5lu-%2d): exit.", thrdArg->processId, thrdArg->threadId, id);
     showThrdMsg(logMsg);
 
     showStatus(arg, STOPPED);

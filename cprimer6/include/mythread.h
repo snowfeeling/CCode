@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef MYTHREAD_H
 #define MYTHREAD_H
 #include <stdio.h>
@@ -9,7 +11,20 @@
 #include <unistd.h>
 
 #include "tinycthread.h"
+#include "mybase.h"
 #include "mylog.h"
+
+#if defined(_WIN32)
+typedef DWORD my_thread_t;
+typedef struct thread_attr
+{
+    DWORD dwStackSize;
+    int detachstate;
+} my_thread_attr_t;
+#else
+typedef pthread_t my_thread_t;
+typedef pthread_attr_t my_thread_attr_t;
+#endif
 
 #define NUM_THREADS 10
 #define TOTAL_TASKS 100
@@ -29,6 +44,8 @@
 
 // #define showThrdMsg(msg) printf("%s\n", msg)
 #define showThrdMsg(msg) logMessage(msg)
+
+
 
 typedef enum
 {
@@ -83,11 +100,11 @@ typedef struct
 typedef struct
 {
     ProducerConsumer *pc;
-    int thread_id;
+    unsigned long thread_id;
     ThreadType type;
     ThreadStatus status;
     pid_t processId;
-    unsigned long  threadId;
+    unsigned long threadId;
     thrd_t thread;
 } ThreadArgs;
 
